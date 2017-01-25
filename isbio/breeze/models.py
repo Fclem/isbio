@@ -142,7 +142,7 @@ class Group(CustomModelAbstract):
 		return self.name
 
 
-class ObjectsWithACL(CustomModelAbstract):
+class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 	# clem 20/06/2016 moved 18/01/2017 from managers
 	@staticmethod
 	def admin_override_param(user):
