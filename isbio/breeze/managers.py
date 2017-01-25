@@ -106,6 +106,13 @@ class CustomManager(Manager):
 		elif hasattr(obj, 'script_buyer'): # CartInfo
 			auth = obj.script_buyer
 		return auth
+	
+	# clem 18/01/2017
+	@classmethod
+	def is_owner_param(cls, obj, user):
+		# assert isinstance(user, User)
+		author = cls.get_author_param(obj) # author/owner of the object
+		return author == user
 
 	# clem 20/06/2016
 	@classmethod
@@ -119,9 +126,7 @@ class CustomManager(Manager):
 		:return: True | False
 		:rtype: bool
 		"""
-		# author = cls.get_author_param(obj) # author/owner of the object
-		# return author == user or cls.admin_override_param(user)
-		return obj.is_owner(user) or cls.admin_override_param(user)
+		return cls.is_owner_param(obj, user) or cls.admin_override_param(user)
 
 	# clem 20/06/2016
 	@classmethod
@@ -139,7 +144,7 @@ class CustomManager(Manager):
 		:rtype: bool
 		"""
 		# return cls.has_full_access_param(obj, user) or obj.has
-		return obj.has_access(user)
+		return hasattr(obj, 'has_access') and obj.has_access(user) or cls.has_full_access_param(obj, user)
 
 	@property
 	def _has_context(self):
