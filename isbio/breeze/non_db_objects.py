@@ -488,7 +488,7 @@ class FolderObj(object):
 		return CachedFile(arch_full_name, os.path.join(self.base_folder, '_cache'), auto_cache)
 	
 	# clem 27/01/2017
-	def _archive_conf(self, auto_cache, cat=None, ):
+	def _archive_conf(self, auto_cache, cat='', ):
 		""" Return data regarding download and caching along with cache file object
 		
 		:param auto_cache:
@@ -513,7 +513,7 @@ class FolderObj(object):
 		return self.make_zip(cat, auto_cache)
 
 	# clem 26/01/2017
-	def make_zip(self, cat=None, auto_cache=True, threaded=False):
+	def make_zip(self, cat='', auto_cache=True, threaded=False):
 		""" Compress the folder object for storage or streaming
 		
 		<i>cat</i> argument enables to implement different kind of selective downloads into
@@ -552,7 +552,7 @@ class FolderObj(object):
 		return cached_file, not auto_cache
 
 	# clem 27/01/2017
-	def download_zip(self, cat=None, auto_cache=True):
+	def download_zip(self, cat='', auto_cache=True):
 		if not self.ALLOW_DOWNLOAD:
 			raise PermissionDenied
 		
