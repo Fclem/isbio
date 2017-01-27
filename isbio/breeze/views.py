@@ -2047,7 +2047,7 @@ def send_zipfile_j(request, jid, mod=None):
 
 
 @login_required(login_url='/')
-def send_zipfile(request, jid, mod=None, serv_obj=None):
+def send_zipfile(request, jid, mod='', serv_obj=None):
 	# 28/08/2015 changes : ACL, object agnostic, added Reports
 	# 02/10/2015 migrated to Runnable and FolderObj
 	# 20/01/2017 changed HttpResponse to StreamingHttpResponse for large file transfer
