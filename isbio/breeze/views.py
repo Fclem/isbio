@@ -2054,7 +2054,6 @@ def send_zipfile(request, jid, mod=None, serv_obj=None):
 	# 25/01/2017 add nginx internal redirect ( HTTP header X-Accel-Redirect ) if archive already exists,
 	# stream otherwise
 	assert issubclass(serv_obj, Runnable)
-	from django.http import StreamingHttpResponse
 	try:
 		run_instance = serv_obj.objects.secure_get(id=jid, user=request.user)
 		assert isinstance(run_instance, Runnable)
@@ -2065,20 +2064,22 @@ def send_zipfile(request, jid, mod=None, serv_obj=None):
 		raise PermissionDenied(request=request)
 
 	try:
-		wrapper, name, size, stream = run_instance.download_zip(mod)
+		# wrapper, name, size, stream = run_instance.download_zip(mod)
+		temp_file, do_stream = run_instance.download_zip(mod)
+		
+		content_dispo = 'attachment; filename=' + temp_file.name
+		if do_stream:
+			from django.http import StreamingHttpResponse
+			response = StreamingHttpResponse(wrapper, content_type=c_t.ZIP)
+		else:
+			response = HttpResponse(content_type=c_t.ZIP)
+			response['X-Accel-Redirect'] = '%s%s' % (settings.REPORTS_CACHE_INTERNAL_URL, temp_file.name)
+		response['Content-Disposition'] = content_dispo
+		response['Content-Length'] = temp_file.size
+		response['Content-Transfer-Encoding'] = 'binary'
+		return response
 	except OSError as e:
 		return aux.fail_with404(request, 'Some OS disk operation failed : %s' % e)
-
-	zip_name = 'attachment; filename=' + name + '.zip'
-	if stream:
-		response = StreamingHttpResponse(wrapper, content_type=c_t.ZIP)
-	else:
-		response = HttpResponse()
-		response['X-Accel-Redirect'] = '/cached/reports/%s.zip' % name
-	response['Content-Disposition'] = zip_name
-	response['Content-Length'] = size
-	response['Content-Transfer-Encoding'] = 'binary'
-	return response
 
 
 @login_required(login_url='/')

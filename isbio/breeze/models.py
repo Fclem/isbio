@@ -2332,6 +2332,7 @@ class Report(Runnable):
 		if self.is_report and self.fm_flag and isfile(self.fm_file_path):
 			run = open(self.fm_file_path).read().split("\"")[1]
 			os.system(run)
+		self.make_zip('-result', threaded=True)
 
 	@property
 	def dump_project_parameters(self):
