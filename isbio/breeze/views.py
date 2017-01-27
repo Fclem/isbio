@@ -2036,13 +2036,13 @@ def view_group(request, gid):
 
 # Clem 28/08/2015
 @login_required(login_url='/')
-def send_zipfile_r(request, jid, mod=None):
+def send_zipfile_r(request, jid, mod=''):
 	return send_zipfile(request, jid, mod=mod, serv_obj=Report)
 
 
 # Clem 28/08/2015
 @login_required(login_url='/')
-def send_zipfile_j(request, jid, mod=None):
+def send_zipfile_j(request, jid, mod=''):
 	return send_zipfile(request, jid, mod, Jobs)
 
 
