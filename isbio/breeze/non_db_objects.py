@@ -268,7 +268,7 @@ class CachedFile(object):
 			self._open_archive()
 		return self._archive
 	
-	def _open_archive(self, mode='rb'):
+	def _open_archive(self, mode='r'):
 		if not self._archive or self._archive_opened_mode != mode:
 			import zipfile
 			import tempfile
@@ -292,7 +292,7 @@ class CachedFile(object):
 	# clem 27/01/2017
 	def open(self, mode=None):
 		if not mode:
-			mode = 'rb' if self.exists else 'wb'
+			mode = 'r' if self.exists else 'w'
 		return self._open_archive(mode)
 	
 	def __exit__(self, exc_type, exc_val, exc_tb):
