@@ -499,7 +499,7 @@ class FolderObj(object):
 	# clem 27/01/2017
 	@new_thread
 	def _make_zip_threaded(self, cat, auto_cache):
-		self.make_zip(cat, auto_cache)
+		return self.make_zip(cat, auto_cache)
 
 	# clem 26/01/2017
 	def make_zip(self, cat=None, auto_cache=True, threaded=False):

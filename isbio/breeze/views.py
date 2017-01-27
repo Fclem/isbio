@@ -2070,7 +2070,7 @@ def send_zipfile(request, jid, mod=None, serv_obj=None):
 		content_dispo = 'attachment; filename=' + temp_file.name
 		if do_stream:
 			from django.http import StreamingHttpResponse
-			response = StreamingHttpResponse(wrapper, content_type=c_t.ZIP)
+			response = StreamingHttpResponse(temp_file.stream(), content_type=c_t.ZIP)
 		else:
 			response = HttpResponse(content_type=c_t.ZIP)
 			response['X-Accel-Redirect'] = '%s%s' % (settings.REPORTS_CACHE_INTERNAL_URL, temp_file.name)
