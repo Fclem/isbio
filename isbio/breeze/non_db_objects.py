@@ -305,6 +305,11 @@ class CachedFile(object):
 		if not mode:
 			mode = 'r' if self.exists else 'w'
 		return self._open_archive(mode)
+		
+	# clem 27/01/2017
+	def delete(self):
+		if self.exists:
+			os.remove(self.full_path)
 	
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.close()
@@ -473,7 +478,7 @@ class FolderObj(object):
 		return self._walks_folder_generic(self.home_folder_full_path, filter_list, ignore_list)
 
 	# clem 27/01/2017
-	def _make_cache_file(self, auto_cache, sup=''):
+	def _get_cache_file(self, auto_cache, sup=''):
 		""" Returns the cache file object with appropriate name for this FolderObj
 		
 		:param auto_cache:
@@ -505,7 +510,7 @@ class FolderObj(object):
 		# get the ignore and filtering list
 		ignore_list, filter_list, sup = self._download_ignore(cat)
 		# create the cached file object
-		return self._make_cache_file(auto_cache, sup), folder_to_archive, ignore_list, filter_list
+		return self._get_cache_file(auto_cache, sup), folder_to_archive, ignore_list, filter_list
 
 	# clem 27/01/2017
 	@new_thread
@@ -559,6 +564,7 @@ class FolderObj(object):
 		return self.make_zip(cat, auto_cache)
 	
 	def delete(self, using=None):
+		self._get_cache_file().delete()
 		safe_rm(self.home_folder_full_path)
 		super(FolderObj, self).delete(using=using)
 		return True
