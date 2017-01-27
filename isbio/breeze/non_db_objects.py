@@ -269,10 +269,11 @@ class CachedFile(object):
 		return self._archive
 	
 	# clem 27/01/2017
-	@staticmethod
-	def _get_temp_file():
+	def _get_temp_file(self):
 		import tempfile
-		return tempfile.TemporaryFile()
+		if not self._fd:
+			self._fd = tempfile.TemporaryFile()
+		return self._fd
 	
 	def _open_archive(self, mode='r'):
 		if not self._archive or self._archive_opened_mode != mode:
@@ -536,7 +537,7 @@ class FolderObj(object):
 		cached_file, folder_to_archive, ignore_list, filter_list = self._archive_conf(auto_cache, cat)
 		
 		# if cached zip file exists, send it directly
-		if cached_file.exists:
+		if cached_file.exists and auto_cache:
 			return cached_file, False
 		# otherwise, creates a new zip
 		with cached_file as archive:
@@ -548,7 +549,7 @@ class FolderObj(object):
 				logger.exception(e)
 				raise OSError(e)
 		
-		return cached_file, True
+		return cached_file, not auto_cache
 
 	# clem 27/01/2017
 	def download_zip(self, cat=None, auto_cache=True):
