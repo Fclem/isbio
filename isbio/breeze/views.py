@@ -2065,7 +2065,7 @@ def send_zipfile(request, jid, mod='', serv_obj=None):
 
 	try:
 		# wrapper, name, size, stream = run_instance.download_zip(mod)
-		temp_file, do_stream = run_instance.download_zip(mod)
+		temp_file, do_stream = run_instance.download_zip(mod or '')
 		
 		content_dispo = 'attachment; filename=' + temp_file.name
 		if do_stream:
