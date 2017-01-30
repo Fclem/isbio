@@ -478,7 +478,7 @@ class FolderObj(object):
 		return self._walks_folder_generic(self.home_folder_full_path, filter_list, ignore_list)
 
 	# clem 27/01/2017
-	def _get_cache_file(self, auto_cache, sup=''):
+	def _get_cache_file(self, auto_cache=True, sup=''):
 		""" Returns the cache file object with appropriate name for this FolderObj
 		
 		:param auto_cache:
