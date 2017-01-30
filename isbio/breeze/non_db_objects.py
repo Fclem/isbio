@@ -582,7 +582,7 @@ class FolderObj(object):
 		return self.make_zip(cat, auto_cache)
 	
 	def delete(self, using=None):
-		self._get_cache_file().delete()
+		self._get_cache_file().delete(False)
 		safe_rm(self.home_folder_full_path)
 		super(FolderObj, self).delete(using=using)
 		return True
