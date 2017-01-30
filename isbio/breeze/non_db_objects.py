@@ -228,6 +228,16 @@ class JobStat(object):
 		return self.stat_text
 
 
+# clem 30/01/2017
+class CacheFolderAbstract(object):
+	pass
+
+
+# clem 30/01/2017
+class CacheFolder(CacheFolderAbstract):
+	pass
+
+
 # clem 26/01/2017
 class CachedFile(object):
 	name = ''
@@ -247,8 +257,6 @@ class CachedFile(object):
 				except Exception:
 					raise
 			self.path = path
-			
-		logger.debug('New CachedFileObj : %s (save ? %s) : %s' % (self.name, self.save, self.full_path))
 	
 	# clem 27/01/2017
 	@property
@@ -309,11 +317,17 @@ class CachedFile(object):
 		return self._open_archive(mode)
 		
 	# clem 27/01/2017
-	def delete(self):
-		if self.exists:
-			os.remove(self.full_path)
-		else:
-			logger.debug('Cannot delete non existing file %s' % self.full_path)
+	def delete(self, only_this=True):
+		if only_this: # delete this very file
+			if self.exists:
+				remove_file_safe(self.full_path)
+			else:
+				logger.debug('cannot delete non existing CachedFile %s' % self.full_path)
+		else: # delete all files cached for this report (there is result, but also all, and so on)
+			for base_p, sub_p, file_list in os.walk(self.path):
+				for each_name in file_list:
+					if each_name.startswith(self.base_name):
+						remove_file_safe(os.path.join(base_p, each_name))
 	
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.close()
