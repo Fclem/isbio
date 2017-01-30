@@ -247,6 +247,8 @@ class CachedFile(object):
 				except Exception:
 					raise
 			self.path = path
+			
+		logger.debug('New CachedFileObj : %s (save ? %s) : %s' % (self.name, self.save, self.full_path))
 	
 	# clem 27/01/2017
 	@property
@@ -310,6 +312,8 @@ class CachedFile(object):
 	def delete(self):
 		if self.exists:
 			os.remove(self.full_path)
+		else:
+			logger.debug('Cannot delete non existing file %s' % self.full_path)
 	
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.close()
