@@ -2168,8 +2168,7 @@ class Report(Runnable):
 	# clem 01/02/2017
 	def get_suffix(self):
 		the_name = self.get_striped_name()
-		
-		res = Report.objects.filter(_name__startswith=the_name)
+		res = Report.objects.f.owned(self._author).filter(_name__startswith=the_name).filter()
 		count_list = list()
 		
 		if len(res) > 0:
