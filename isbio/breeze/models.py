@@ -2149,24 +2149,46 @@ class Report(Runnable):
 	# @property
 	# def _rtype_config_path(self):
 	# 	return settings.MEDIA_ROOT + str(self._type.config)
-
+	
+	# clem 01/02/2017
+	@property
+	def has_count_suffix(self):
+		suffix = self.name.split('_')
+		if len(suffix) > 1:
+			try:
+				return bool(int(suffix[-1]))
+			except ValueError:
+				pass
+		return False
+	
+	# clem 01/02/2017
+	def get_striped_name(self):
+		return '_'.join(self.name.split('_')[:-1]) if self.has_count_suffix else self.name
+	
 	# clem 01/02/2017
 	def get_suffix(self):
-		res = Report.objects.filter(_name__startswith=self.name)
+		the_name = self.get_striped_name()
+		
+		res = Report.objects.filter(_name__startswith=the_name)
 		count_list = list()
-		if len(res) > 1:
+		
+		if len(res) > 0:
 			for each in res:
-				rep = each.name.replace(self.name, u'').split(u'_')
-				if len(rep) == 2:
+				rep = each.name.replace(the_name, u'').split(u'_')
+				if len(rep) > 0:
+					pass
+				if len(rep) >= 2:
 					try:
-						count_list.append(int(rep[1]))
+						count_list.append(int(rep[-1]))
 					except ValueError:
 						pass
+			if not count_list:
+				count_list.append(0)
 		return u'_%s' % str(max(count_list) + 1) if count_list else u''
-		
+	
 	# clem 01/02/2017
 	def get_repeat_name(self):
-		return unicode(self.name).decode('utf8') + self.get_suffix()
+		return self.get_striped_name() + self.get_suffix()
 
 	@property
 	def title(self):
