@@ -2175,8 +2175,6 @@ class Report(Runnable):
 		if len(res) > 0:
 			for each in res:
 				rep = each.name.replace(the_name, u'').split(u'_')
-				if len(rep) > 0:
-					pass
 				if len(rep) >= 2:
 					try:
 						count_list.append(int(rep[-1]))
