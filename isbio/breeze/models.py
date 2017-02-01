@@ -2150,6 +2150,24 @@ class Report(Runnable):
 	# def _rtype_config_path(self):
 	# 	return settings.MEDIA_ROOT + str(self._type.config)
 
+	# clem 01/02/2017
+	def get_suffix(self):
+		res = Report.objects.filter(_name__startswith=self.name)
+		count_list = list()
+		if len(res) > 1:
+			for each in res:
+				rep = each.name.replace(self.name, u'').split(u'_')
+				if len(rep) == 2:
+					try:
+						count_list.append(int(rep[1]))
+					except ValueError:
+						pass
+		return u'_%s' % str(max(count_list) + 1) if count_list else u''
+		
+	# clem 01/02/2017
+	def get_repeat_name(self):
+		return unicode(self.name).decode('utf8') + self.get_suffix()
+
 	@property
 	def title(self):
 		return u'%s Report :: %s  <br>  %s' % (self.type, unicode(self.name).decode('utf8'), self.type.description)

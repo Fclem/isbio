@@ -958,7 +958,7 @@ def report_overview(request, rtype, iname=None, iid=None, mod=None):
 		except ObjectDoesNotExist:
 			return aux.fail_with404(request, 'There is no report with id ' + iid + ' in database')
 		rtype = str(report.type)
-		iname = report.name + '_bis'
+		iname = report.get_repeat_name()
 		iid = report.rora_id
 		try:
 			# filter tags according to report type (here we pick non-draft tags):
