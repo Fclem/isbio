@@ -2168,8 +2168,7 @@ class Report(Runnable):
 	# clem 01/02/2017
 	def get_suffix(self):
 		the_name = self.get_striped_name()
-		# res = Report.objects.f.owned(self._author).filter(_name__startswith=the_name)
-		res = Report.objects.filter(_name__startswith=the_name, _author__exact=self._author)
+		res = Report.objects.f.owned(self._author).filter(_name__startswith=the_name + u'_')
 		count_list = list()
 		
 		if len(res) > 0:
@@ -2180,8 +2179,8 @@ class Report(Runnable):
 						count_list.append(int(rep[-1]))
 					except ValueError:
 						pass
-			if not count_list:
-				count_list.append(0)
+		if not count_list:
+			count_list.append(0)
 		return u'_%s' % str(max(count_list) + 1) if count_list else u''
 	
 	# clem 01/02/2017
