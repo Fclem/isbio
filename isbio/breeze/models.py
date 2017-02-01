@@ -2149,6 +2149,43 @@ class Report(Runnable):
 	# @property
 	# def _rtype_config_path(self):
 	# 	return settings.MEDIA_ROOT + str(self._type.config)
+	
+	# clem 01/02/2017
+	@property
+	def has_count_suffix(self):
+		suffix = self.name.split('_')
+		if len(suffix) > 1:
+			try:
+				return bool(int(suffix[-1]))
+			except ValueError:
+				pass
+		return False
+	
+	# clem 01/02/2017
+	def get_striped_name(self):
+		return '_'.join(self.name.split('_')[:-1]) if self.has_count_suffix else self.name
+	
+	# clem 01/02/2017
+	def get_suffix(self):
+		the_name = self.get_striped_name()
+		res = Report.objects.f.owned(self._author).filter(_name__startswith=the_name + u'_')
+		count_list = list()
+		
+		if len(res) > 0:
+			for each in res:
+				rep = each.name.replace(the_name, u'').split(u'_')
+				if len(rep) >= 2:
+					try:
+						count_list.append(int(rep[-1]))
+					except ValueError:
+						pass
+		if not count_list:
+			count_list.append(0)
+		return u'_%s' % str(max(count_list) + 1) if count_list else u''
+	
+	# clem 01/02/2017
+	def get_repeat_name(self):
+		return self.get_striped_name() + self.get_suffix()
 
 	@property
 	def title(self):
@@ -2332,6 +2369,7 @@ class Report(Runnable):
 		if self.is_report and self.fm_flag and isfile(self.fm_file_path):
 			run = open(self.fm_file_path).read().split("\"")[1]
 			os.system(run)
+		self.make_zip('-result', threaded=True)
 
 	@property
 	def dump_project_parameters(self):
