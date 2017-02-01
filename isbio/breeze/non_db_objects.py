@@ -228,6 +228,114 @@ class JobStat(object):
 		return self.stat_text
 
 
+# clem 30/01/2017
+class CacheFolderAbstract(object):
+	pass
+
+
+# clem 30/01/2017
+class CacheFolder(CacheFolderAbstract):
+	pass
+
+
+# clem 26/01/2017
+class CachedFile(object):
+	name = ''
+	path = ''
+	save = None
+	_fd = None
+	_archive = None
+	_archive_opened_mode = ''
+	
+	def __init__(self, name, path='', save=True):
+		self.name = name # slugify(name)
+		self.save = save
+		if self.save:
+			if not os.path.isdir(path):
+				try:
+					os.mkdir(path)
+				except Exception:
+					raise
+			self.path = path
+	
+	# clem 27/01/2017
+	@property
+	def base_name(self):
+		return self.name.rsplit('.', 1)[0] if '.' in self.name else self.name
+	
+	@property
+	def full_path(self):
+		return '%s/%s' % (self.path, self.name) if self.save and self.path else ''
+		
+	@property
+	def exists(self):
+		return os.path.isfile(self.full_path)
+	
+	# clem 27/01/2017
+	@property
+	def archive(self):
+		if not self._archive:
+			self._open_archive()
+		return self._archive
+	
+	# clem 27/01/2017
+	def _get_temp_file(self):
+		import tempfile
+		if not self._fd:
+			self._fd = tempfile.TemporaryFile()
+		return self._fd
+	
+	def _open_archive(self, mode='r'):
+		if not self._archive or self._archive_opened_mode != mode:
+			import zipfile
+			opener = self.full_path if self.save and self.path else self._get_temp_file()
+			self._archive = zipfile.ZipFile(opener, mode, zipfile.ZIP_DEFLATED, True)
+		return self._archive
+	
+	@property
+	def size(self):
+		return os.path.getsize(self.full_path) if self.exists else 0
+	
+	# clem 27/01/2017
+	@property
+	def _descriptor(self):
+		return file(self.full_path) if self.exists else self._get_temp_file()
+	
+	def stream(self, chunk_size=8192):
+		from wsgiref.util import FileWrapper
+		return FileWrapper(self._descriptor, chunk_size)
+	
+	# clem 27/01/2017
+	def close(self):
+		if self._archive:
+			self.archive.close()
+	
+	# clem 27/01/2017
+	def open(self, mode=None):
+		if not mode:
+			mode = 'r' if self.exists else 'w'
+		return self._open_archive(mode)
+		
+	# clem 27/01/2017
+	def delete(self, only_this=True):
+		if only_this: # delete this very file
+			if self.exists:
+				remove_file_safe(self.full_path)
+			else:
+				logger.debug('cannot delete non existing CachedFile %s' % self.full_path)
+		else: # delete all files cached for this report (there is result, but also all, and so on)
+			for base_p, sub_p, file_list in os.walk(self.path):
+				for each_name in file_list:
+					if each_name.startswith(self.base_name):
+						remove_file_safe(os.path.join(base_p, each_name))
+	
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.close()
+		
+	def __enter__(self):
+		return self.open()
+
+
 class FolderObj(object):
 	BASE_FOLDER_NAME = None # To define
 	SYSTEM_FILES = [] # list of system files, that are required by the object
@@ -353,58 +461,20 @@ class FolderObj(object):
 		"""
 		raise not_imp(self)
 
-	# clem 02/10/2015
-	# TODO : download with no subdirs
-	def download_zip(self, cat=None, auto_cache=True): # FIXME remove useless filtering
-		""" Compress the folder object for download
-		<i>cat</i> argument enables to implement different kind of selective downloads into <i>download_ignore(cat)</i>
-		auto_cache determine if generated zip should be saved for caching purposes
+	# clem 27/01/2017
+	@staticmethod
+	def _walks_folder_generic(path, filter_list, ignore_list):
+		""" walks path to list files and folder, while applying filters and exclusions
 
-		Returns
-			_ a zip file using <i>download_ignore(cat)</i> as  a filtering function, in a Django FileWrapper
-			_ the name of the generated file
-			_ the size of the generated file
-
-		Return : Tuple(wrapper, file_name, file_size)
-
-
-		:type cat : str
-		:type auto_cache : bool
-		:return: wrapper of zip object, file name, file size
-		:rtype: FileWrapper, str, int
+		:type path: str
+		:yield: (path to file, name/path to register relatively)
 		"""
-		if not self.ALLOW_DOWNLOAD:
-			raise PermissionDenied
-		import tempfile
-		import zipfile
-		import os
-		from wsgiref.util import FileWrapper
-		# from django.core.servers.basehttp import FileWrapper
-		loc = self.home_folder_full_path # writing shortcut
-		if cat == "-result": # returning only the Results sub-folder for result switch
-			loc += '/Results'
-		arch_name = str(self.folder_name)
-
-		ignore_list, filter_list, sup = self._download_ignore(cat)
-		arch_name += sup
-		# check if cache folder exists
-		if not os.path.isdir(os.path.join(self.base_folder, '_cache')):
-			os.mkdir(os.path.join(self.base_folder, '_cache'))
-		# full path to cached zip_file
-		cached_file_full_path = os.path.join(self.base_folder, '_cache', arch_name + '.zip')
-		# if cached zip file exists, send it instead
-		if os.path.isfile(cached_file_full_path):
-			return open(cached_file_full_path, "rb"), arch_name, os.path.getsize(cached_file_full_path), False
-		# otherwise, creates a new zip
-		temp = tempfile.TemporaryFile()
-		archive = zipfile.ZipFile(temp, 'w', zipfile.ZIP_DEFLATED, True)
-
 		def filters(file_n, a_pattern_list):
 			return not a_pattern_list or file_inter_pattern_list(file_n, a_pattern_list)
-
+		
 		def no_exclude(file_n, a_pattern_list):
 			return not a_pattern_list or not file_inter_pattern_list(file_n, a_pattern_list)
-
+		
 		def file_inter_pattern_list(file_n, a_pattern_list):
 			""" Returns if <i>file_n</i> is match at least one pattern in <i>a_pattern_list</i>
 			"""
@@ -413,34 +483,106 @@ class FolderObj(object):
 				if fnmatch.fnmatch(file_n, each):
 					return True
 			return False
-
-		# walks loc to add files and folder to archive, while allying filters and exclusions
-		try:
-			for root, dirs, files in os.walk(loc):
-				for name in files:
-					if filters(name, filter_list) and no_exclude(name, ignore_list):
-						new_p = os.path.join(root, name)
-						name = new_p.replace(loc, '')
-						archive.write(new_p, str(name))
-		except OSError as e:
-			logger.exception(e)
-			raise OSError(e)
 		
-		archive.close()
-		chunk_size = 8192
-		wrapper = FileWrapper(temp, chunk_size)
-		size = temp.tell()
-		temp.seek(0)
+		for root, dirs, files in os.walk(path):
+			for name in files:
+				if filters(name, filter_list) and no_exclude(name, ignore_list):
+					path_to_file = os.path.join(root, name)
+					name_in_arch = path_to_file.replace(path, '')
+					yield path_to_file, str(name_in_arch)
+	
+	# clem 27/01/2017
+	def walks_folder(self, filter_list=list(), ignore_list=list()):
+		return self._walks_folder_generic(self.home_folder_full_path, filter_list, ignore_list)
+
+	# clem 27/01/2017
+	def _get_cache_file(self, auto_cache=True, sup=''):
+		""" Returns the cache file object with appropriate name for this FolderObj
 		
-		if auto_cache:
-			# save this zipfile for caching (disable to save space vs CPU)
-			with open(cached_file_full_path, "wb") as f: # use `wb` mode
-				f.write(temp.read())
-			temp.seek(0)
+		:param auto_cache:
+		:type auto_cache: bool
+		:param sup:
+		:type sup: str
+		:return:
+		:rtype: CachedFile
+		"""
+		arch_full_name = str(self.folder_name) + sup + '.zip'
+		# create the cached file object
+		return CachedFile(arch_full_name, os.path.join(self.base_folder, '_cache'), auto_cache)
+	
+	# clem 27/01/2017
+	def _archive_conf(self, auto_cache, cat='', ):
+		""" Return data regarding download and caching along with cache file object
+		
+		:param auto_cache:
+		:type auto_cache: bool
+		:param cat:
+		:type cat: str
+		:return:
+		:rtype:
+		"""
+		folder_to_archive = self.home_folder_full_path # writing shortcut
+		if cat.endswith('-result'): # returning only the Results sub-folder for result switch
+			folder_to_archive += '/Results'
+		
+		# get the ignore and filtering list
+		ignore_list, filter_list, sup = self._download_ignore(cat)
+		# create the cached file object
+		return self._get_cache_file(auto_cache, sup), folder_to_archive, ignore_list, filter_list
 
-		return wrapper, arch_name, size, True
+	# clem 27/01/2017
+	@new_thread
+	def _make_zip_threaded(self, cat, auto_cache):
+		return self.make_zip(cat, auto_cache)
 
+	# clem 26/01/2017
+	def make_zip(self, cat='', auto_cache=True, threaded=False):
+		""" Compress the folder object for storage or streaming
+		
+		<i>cat</i> argument enables to implement different kind of selective downloads into
+		<i>download_ignore(cat)</i>
+		auto_cache determine if generated zip should be saved for caching purposes or not
+		auto_cache => not do_stream and not auto_cache => do_stream
+
+		Returns
+			_ a CachedFile object
+			_ should the file content be streamed from the object (True) or can it be read from
+				the fs directly (False). auto_cache implies NOT_stream and vice-versa
+		
+		
+		:type cat : str
+		:type auto_cache : bool
+		:type threaded : bool
+		:return: the cached file (either temp-file or actual), read from obj ?
+		"""
+		if threaded:
+			return self._make_zip_threaded(cat, auto_cache)
+		cached_file, folder_to_archive, ignore_list, filter_list = self._archive_conf(auto_cache, cat)
+		
+		# if cached zip file exists, send it directly
+		if cached_file.exists and auto_cache:
+			return cached_file, False
+		# otherwise, creates a new zip
+		with cached_file as archive:
+			# add files and folder to the archive, while applying filters and exclusions
+			try:
+				for new_p, name in self._walks_folder_generic(folder_to_archive, filter_list, ignore_list):
+					archive.write(new_p, str(name))
+			except OSError as e:
+				logger.exception(e)
+				raise OSError(e)
+		
+		return cached_file, not auto_cache
+
+	# clem 27/01/2017
+	def download_zip(self, cat='', auto_cache=True):
+		if not self.ALLOW_DOWNLOAD:
+			raise PermissionDenied
+		
+		return self.make_zip(cat, auto_cache)
+	
 	def delete(self, using=None):
+		self._get_cache_file().delete(False)
 		safe_rm(self.home_folder_full_path)
 		super(FolderObj, self).delete(using=using)
 		return True
