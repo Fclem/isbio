@@ -409,7 +409,7 @@ def reports(request):
 	# get the user's institute
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
-	all_reports = Report.objects.filter(status="succeed", institude_id=insti).order_by(sorting)
+	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
 	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
@@ -2812,10 +2812,10 @@ def report_search(request):
 	insti = UserProfile.get_institute(request.user)
 	# Process the query
 	if entry_query is None:
-		found_entries = Report.objects.filter(status="succeed", institude_id=insti).order_by(sorting)  #
+		found_entries = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)  #
 	# .distinct()
 	else:
-		found_entries = Report.objects.filter(entry_query, status="succeed", institude_id=insti).order_by(
+		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
 			sorting).distinct()
 	count = {'total': found_entries.count()}
 	# apply pagination
