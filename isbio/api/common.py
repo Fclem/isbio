@@ -16,11 +16,13 @@ HTTP_SUCCESS = 200
 HTTP_FAILED = 400
 HTTP_NOT_FOUND = 404
 HTTP_NOT_IMPLEMENTED = 501
+HTTP_FORBIDDEN = 403
 CUSTOM_MSG = {
 	HTTP_SUCCESS: 'ok',
 	HTTP_FAILED: 'error',
 	HTTP_NOT_FOUND: 'NOT FOUND',
 	HTTP_NOT_IMPLEMENTED: 'NOT IMPLEMENTED YET',
+	HTTP_FORBIDDEN: 'ACCESS DENIED'
 }
 
 
@@ -143,3 +145,18 @@ def root(_):
 # clem 17/10/2016
 def handler404(_):
 	return get_response_opt(http_code=HTTP_NOT_FOUND)
+
+
+# clem 20/02/2017
+# @login_required(login_url='/')
+def is_authenticated(request):
+	if request and hasattr(request, 'user'):
+		data = { 'auth': request.user.is_authenticated() }
+		return get_response(data=data)
+	raise default_suspicious(request)
+
+
+# clem 20/02/2017
+@login_required(login_url='/')
+def has_auth(request):
+	return root(request)
