@@ -57,7 +57,7 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 	"""
 	assert isinstance(data, dict)
 	if not message:
-		make_message(http_code=http_code)
+		message = make_message(http_code=http_code)
 	result = { 'api':
 		{'version': version, },
 		'result'       : http_code,
