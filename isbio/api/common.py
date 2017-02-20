@@ -16,11 +16,13 @@ HTTP_SUCCESS = 200
 HTTP_FAILED = 400
 HTTP_NOT_FOUND = 404
 HTTP_NOT_IMPLEMENTED = 501
+HTTP_FORBIDDEN = 403
 CUSTOM_MSG = {
 	HTTP_SUCCESS: 'ok',
 	HTTP_FAILED: 'error',
 	HTTP_NOT_FOUND: 'NOT FOUND',
 	HTTP_NOT_IMPLEMENTED: 'NOT IMPLEMENTED YET',
+	HTTP_FORBIDDEN: 'ACCESS DENIED'
 }
 
 
@@ -55,7 +57,7 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 	"""
 	assert isinstance(data, dict)
 	if not message:
-		make_message(http_code=http_code)
+		message = make_message(http_code=http_code)
 	result = { 'api':
 		{'version': version, },
 		'result'       : http_code,
@@ -130,6 +132,12 @@ def match_filter(payload, filter_dict, org_key=''):
 				return False
 	return True
 
+
+# clem 20/02/2017
+# @login_required(login_url='/')
+def _is_authenticated(request):
+	return request.user.is_authenticated() if request and hasattr(request, 'user') else False
+
 ##############
 # COMMON VIEWS
 ##############
@@ -143,3 +151,17 @@ def root(_):
 # clem 17/10/2016
 def handler404(_):
 	return get_response_opt(http_code=HTTP_NOT_FOUND)
+
+
+# clem 20/02/2017
+# @login_required(login_url='/')
+def is_authenticated(request):
+	auth = _is_authenticated(request)
+	data = { 'auth': auth}
+	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
+
+
+# clem 20/02/2017
+@login_required(login_url='/')
+def has_auth(request):
+	return root(request)

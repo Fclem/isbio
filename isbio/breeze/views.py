@@ -407,9 +407,10 @@ def reports(request):
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
 	# get the user's institute
-	insti = UserProfile.objects.get(user=request.user).institute_info
-	# all_reports = Report.objects.filter(status="succeed", institute=insti).order_by(sorting)
-	all_reports = Report.objects.filter(status="succeed").order_by(sorting)
+	# insti = UserProfile.objects.get(user=request.user).institute_info
+	insti = UserProfile.get_institute(request.user)
+	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
+	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
 	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
@@ -2765,7 +2766,7 @@ def report_search(request):
 
 	if not request.is_ajax():
 		request.method = 'GET'
-		return reports(request)  # Redirects to the default view (internaly : no new HTTP request)
+		return reports(request)  # Redirects to the default view (internally : no new HTTP request)
 	
 	request = legacy_request(request)
 
@@ -2807,12 +2808,15 @@ def report_search(request):
 		sorting = request.REQUEST.get('sort')
 	else:
 		sorting = '-_created'
-
+	
+	insti = UserProfile.get_institute(request.user)
 	# Process the query
 	if entry_query is None:
-		found_entries = Report.objects.filter(status="succeed").order_by(sorting)  # .distinct()
+		found_entries = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)  #
+	# .distinct()
 	else:
-		found_entries = Report.objects.filter(entry_query, status="succeed").order_by(sorting).distinct()
+		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
+			sorting).distinct()
 	count = {'total': found_entries.count()}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
