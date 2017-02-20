@@ -132,6 +132,12 @@ def match_filter(payload, filter_dict, org_key=''):
 				return False
 	return True
 
+
+# clem 20/02/2017
+# @login_required(login_url='/')
+def _is_authenticated(request):
+	return request.user.is_authenticated() if request and hasattr(request, 'user') else False
+
 ##############
 # COMMON VIEWS
 ##############
@@ -150,10 +156,9 @@ def handler404(_):
 # clem 20/02/2017
 # @login_required(login_url='/')
 def is_authenticated(request):
-	if request and hasattr(request, 'user'):
-		data = { 'auth': request.user.is_authenticated() }
-		return get_response(data=data)
-	raise default_suspicious(request)
+	auth = _is_authenticated(request)
+	data = { 'auth': auth}
+	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND if auth else HTTP_FORBIDDEN)
 
 
 # clem 20/02/2017
