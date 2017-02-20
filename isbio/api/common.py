@@ -158,7 +158,7 @@ def handler404(_):
 def is_authenticated(request):
 	auth = _is_authenticated(request)
 	data = { 'auth': auth}
-	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND if auth else HTTP_FORBIDDEN)
+	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
 
 
 # clem 20/02/2017
