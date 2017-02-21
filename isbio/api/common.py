@@ -151,7 +151,7 @@ def root(_):
 # clem 17/10/2016
 def handler404(request):
 	data = { 'requested_url': request.get_full_path(), 'request_get': json.dumps(request.GET) }
-	return get_response_opt(http_code=HTTP_NOT_FOUND)
+	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND)
 
 
 # clem 20/02/2017
