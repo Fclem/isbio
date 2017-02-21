@@ -161,8 +161,9 @@ class CheckUserProfile(object):
 		response.set_cookie('cookie_name', 'cookie_value')
 		if request.user.is_authenticated() and request.session.session_key:
 			import base64
-			response.set_cookie('enc_session_id',
-				base64.b64encode(xor_strings(request.session.session_key, settings.SHINY_SECRET)))
+			value = base64.b64encode(xor_strings(request.session.session_key, settings.SHINY_SECRET))
+			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
+				response.set_cookie('enc_session_id', value)
 		return response
 		
 
