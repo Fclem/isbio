@@ -150,8 +150,7 @@ def root(_):
 
 # clem 17/10/2016
 def handler404(request):
-	# rq = {'url' : request.path, 'get', 'post'}
-	data = { 'requested_url': request.get_full_path(), 'request_get': request.GET , 'request': request}
+	data = { 'request': { 'url': request.path, 'get': request.GET, 'post': request.POST }}
 	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND)
 
 
