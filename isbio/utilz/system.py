@@ -109,3 +109,21 @@ def file_content(file_path):
 			'')
 	except IOError: # HACK
 		return ''
+
+
+# Clem 21/02/2017 c.f. https://en.wikipedia.org/wiki/XOR_cipher
+def u_ord(c):
+	"""Adapt `ord(c)` for Python 2 or 3"""
+	return ord(str(c)[0:1])
+
+
+# Clem 21/02/2017 c.f. https://en.wikipedia.org/wiki/XOR_cipher
+def xor_strings(s, t):
+	"""xor two strings together"""
+	return "".join(chr(u_ord(a) ^ u_ord(b)) for a, b in zip(s, t))
+
+
+# clem 21/02/2017
+def compute_enc_session_id(session_id_clear_or_enc, shared_key):
+	import base64
+	return base64.b64encode(xor_strings(session_id_clear_or_enc, shared_key))

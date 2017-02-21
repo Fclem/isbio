@@ -165,3 +165,13 @@ def is_authenticated(request):
 @login_required(login_url='/')
 def has_auth(request):
 	return root(request)
+
+
+# clem 21/02/2017
+def shiny_auth(request):
+	from breeze.utils import check_session
+	enc_session_id = request.GET.get(settings.settings.ENC_SESSION_ID_COOKIE_NAME, '')
+	session_id = compute_enc_session_id(enc_session_id, settings.settings.SHINY_SECRET)
+	auth = check_session(session_id)
+	data = { 'auth': auth }
+	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
