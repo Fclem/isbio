@@ -173,7 +173,6 @@ def shiny_auth(request):
 	from breeze.utils import check_session
 	enc_session_id = request.GET.get(settings.settings.ENC_SESSION_ID_COOKIE_NAME, '')
 	session_id = compute_dec_session_id(enc_session_id, settings.settings.SHINY_SECRET)
-	print 'got enc:%s; sess:%s' % (enc_session_id, session_id)
 	auth = check_session(session_id)
 	data = { 'auth': auth }
 	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
