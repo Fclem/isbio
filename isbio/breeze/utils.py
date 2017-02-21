@@ -243,3 +243,25 @@ import logging
 logging.setLoggerClass(MyLogger)
 
 # get_logger = get_logger_bis
+
+from importlib import import_module
+# from django.utils.importlib import import_module
+from django.conf import settings
+from django.contrib.auth import get_user
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, load_backend
+
+
+def check_session(session_id):
+	engine = import_module(settings.SESSION_ENGINE)
+	session = engine.SessionStore(session_id)
+	
+	try:
+		user_id = session[SESSION_KEY]
+		backend_path = session[BACKEND_SESSION_KEY]
+		backend = load_backend(backend_path)
+		user = backend.get_user(user_id) or AnonymousUser()
+	except KeyError:
+		user = AnonymousUser()
+	
+	return user.is_authenticated()

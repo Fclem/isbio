@@ -73,18 +73,6 @@ def check_state():
 		update_state()
 		if new_state != old_state:
 			reload_urlconf()
-		
-
-# Clem 21/02/2017 c.f. https://en.wikipedia.org/wiki/XOR_cipher
-def u_ord(c):
-	"""Adapt `ord(c)` for Python 2 or 3"""
-	return ord(str(c)[0:1])
-
-
-# Clem 21/02/2017 c.f. https://en.wikipedia.org/wiki/XOR_cipher
-def xor_strings(s, t):
-	"""xor two strings together"""
-	return "".join(chr(u_ord(a) ^ u_ord(b)) for a, b in zip(s, t))
 # END
 
 
@@ -160,8 +148,8 @@ class CheckUserProfile(object):
 		""" set encrypted session_id cookie for shiny to check authentication """
 		response.set_cookie('cookie_name', 'cookie_value')
 		if request.user.is_authenticated() and request.session.session_key:
-			import base64
-			value = base64.b64encode(xor_strings(request.session.session_key, settings.SHINY_SECRET))
+			from utilz import compute_enc_session_id
+			value = compute_enc_session_id(request.session.session_key, settings.SHINY_SECRET)
 			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
 				response.set_cookie('enc_session_id', value)
 		return response

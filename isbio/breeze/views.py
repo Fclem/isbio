@@ -2831,7 +2831,6 @@ def report_search(request):
 	query_string = aux.make_http_query(request)
 	# paginator counter
 	count.update(aux.view_range(page_index, entries_nb, count['total']))
-
 	return render_to_response('reports-paginator.html', RequestContext(request, {
 		'reports': found_entries,
 		'pagination_number': paginator.num_pages,
