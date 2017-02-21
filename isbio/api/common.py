@@ -149,8 +149,9 @@ def root(_):
 
 
 # clem 17/10/2016
-def handler404(_):
-	return get_response_opt(http_code=HTTP_NOT_FOUND)
+def handler404(request):
+	data = { 'request': { 'url': request.path, 'get': request.GET, 'post': request.POST }}
+	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND)
 
 
 # clem 20/02/2017
@@ -165,3 +166,17 @@ def is_authenticated(request):
 @login_required(login_url='/')
 def has_auth(request):
 	return root(request)
+
+
+# clem 21/02/2017
+def shiny_auth(request):
+	from breeze.utils import check_session
+	auth = False
+	try:
+		enc_session_id = request.GET.get(settings.settings.ENC_SESSION_ID_COOKIE_NAME, '')
+		session_id = compute_dec_session_id(enc_session_id, settings.settings.SHINY_SECRET)
+		auth = check_session(session_id)
+	except Exception as e:
+		logger.warning(str(e))
+	data = { 'auth': auth }
+	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
