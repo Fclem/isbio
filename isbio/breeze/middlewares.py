@@ -160,7 +160,9 @@ class CheckUserProfile(object):
 		""" set encrypted session_id cookie for shiny to check authentication """
 		response.set_cookie('cookie_name', 'cookie_value')
 		if request.user.is_authenticated() and request.session.session_key:
-			response.set_cookie('enc_session_id', xor_strings(request.session.session_key, settings.SHINY_SECRET))
+			import base64
+			response.set_cookie('enc_session_id',
+				base64.b64encode(xor_strings(request.session.session_key, settings.SHINY_SECRET)))
 		return response
 		
 
