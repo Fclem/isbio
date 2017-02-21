@@ -3,6 +3,7 @@ import json
 import os
 import copy
 import abc
+import base64
 import subprocess as sp
 
 __version__ = '0.1.2'
@@ -124,6 +125,10 @@ def xor_strings(s, t):
 
 
 # clem 21/02/2017
-def compute_enc_session_id(session_id_clear_or_enc, shared_key):
-	import base64
-	return base64.b64encode(xor_strings(session_id_clear_or_enc, shared_key))
+def compute_enc_session_id(session_id_clear, shared_key):
+	return base64.b64encode(xor_strings(session_id_clear, shared_key))
+
+
+# clem 21/02/2017
+def compute_dec_session_id(session_id_encoded, shared_key):
+	return xor_strings(base64.b64decode(session_id_encoded), shared_key)
