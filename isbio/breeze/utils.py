@@ -244,7 +244,8 @@ logging.setLoggerClass(MyLogger)
 
 # get_logger = get_logger_bis
 
-from django.utils.importlib import import_module
+from importlib import import_module
+# from django.utils.importlib import import_module
 from django.conf import settings
 from django.contrib.auth import get_user
 from django.contrib.auth.models import AnonymousUser
