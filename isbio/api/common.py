@@ -65,7 +65,8 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 		{'version': version, },
 		'result'       : http_code,
 		'message'      : message,
-		'time'         : time.time()
+		'time'         : time.time(),
+		'data'         : data
 	}
 	result.update(data)
 	

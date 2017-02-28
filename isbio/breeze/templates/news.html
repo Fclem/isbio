@@ -128,6 +128,7 @@
 			console.log("Load was performed.");
 			return response.json();
 		}).then(function (data_) {
+			data_ = data_['data'];
 			if (data_.author.length > 0) {
 				'.nothing-message' && $(".nothing-message").remove();
 				
