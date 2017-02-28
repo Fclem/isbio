@@ -127,7 +127,7 @@
 		fetch(news_url).then(function (response) {
 			console.log("Load was performed.");
 			return response.json();
-		}).then(function (data) {
+		}).then(function (data_) {
 			if (data_.author.length > 0) {
 				'.nothing-message' && $(".nothing-message").remove();
 				
