@@ -3174,4 +3174,4 @@ def custom_list(request):
 # clem 28/02/2017
 @login_required(login_url='/')
 def news_page(request):
-	return render_to_response('news.html')
+	return render_to_response('news.html', RequestContext(request))
