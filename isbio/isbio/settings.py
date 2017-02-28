@@ -6,7 +6,7 @@ import socket
 import time
 from datetime import datetime
 from utilz import git, TermColoring, recur, recur_rec, get_key, import_env, file_content, is_host_online,  test_url, \
-	magic_const
+	magic_const, get_md5
 
 ENABLE_DATADOG = False
 ENABLE_ROLLBAR = False
@@ -379,8 +379,8 @@ SWAP_FN = 'swap/'
 SWAP_PATH = MEDIA_ROOT + SWAP_FN
 # 21/02/2017
 SHINY_SECRET_KEY_FN = 'shiny'
-SHINY_SECRET = get_key(SHINY_SECRET_KEY_FN)
-ENC_SESSION_ID_COOKIE_NAME = 'enc_session_id'
+SHINY_SECRET = get_key(SHINY_SECRET_KEY_FN) # Warning : shiny_secret must be at least 32 char long.
+ENC_SESSION_ID_COOKIE_NAME = get_md5('seed')
 
 
 ##

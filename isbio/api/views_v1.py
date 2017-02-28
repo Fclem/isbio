@@ -74,3 +74,10 @@ def show_cache(_):
 	from utilz.object_cache import ObjectCache
 	data = { 'cache': dict(ObjectCache.dump()) }
 	return code.get_response(data=data)
+
+
+# clem 28/02/2016
+def news(_):
+	from utilz.object_cache import ObjectCache
+	data = { 'cache': dict(ObjectCache.dump()) }
+	return code.get_response(data=data)
