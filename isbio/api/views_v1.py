@@ -78,6 +78,5 @@ def show_cache(_):
 
 # clem 28/02/2016
 def news(_):
-	from utilz.object_cache import ObjectCache
-	data = { 'cache': dict(ObjectCache.dump()) }
+	data = json.load(file(settings.DJANGO_ROOT + 'news.json'))
 	return code.get_response(data=data)
