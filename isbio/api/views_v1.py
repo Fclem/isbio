@@ -78,5 +78,5 @@ def show_cache(_):
 
 # clem 28/02/2016
 def news(_):
-	data = json.load(file(settings.DJANGO_ROOT + 'news.json'))
+	data = json.load(file(settings.settings.DJANGO_ROOT + 'news.json'))
 	return code.get_response(data=data)
