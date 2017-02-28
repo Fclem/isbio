@@ -3169,3 +3169,9 @@ def custom_list(request):
 		out += 'Count : %s\n' % ', '.join(counts)
 
 	return HttpResponse(out, content_type=c_t.PLAIN)
+
+
+# clem 28/02/2017
+@login_required(login_url='/')
+def news_page(request):
+	return render_to_response('news.html')
