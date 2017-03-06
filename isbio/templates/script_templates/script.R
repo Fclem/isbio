@@ -22,4 +22,4 @@ $body
 ###	/END SCRIPT $tag_name /
 #####################################
 breeze_then <- Sys.time() # time mesurement
-print(breeze_then - breeze_now)  # time mesurement
+breeze_then - breeze_now  # time mesurement
