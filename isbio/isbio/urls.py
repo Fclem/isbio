@@ -61,6 +61,7 @@ else:
 		url(r'^breeze/?$', breeze.views.breeze, name='breeze'),
 		# url(r'^logout/?$', django_cas_logout),  # breeze.views.logout, name='logout'),
 		url(r'^stat/?$', breeze.views.ajax_user_stat, name='ajax_user_stat'),
+		url(r'^news/?$', breeze.views.news_page, name='news_page'),
 		# Special system checks
 		# url(r'^resources/restart/?$', breeze.views.restart_breeze, name='restart_breeze'),
 		# url(r'^resources/restart-vm/?$', breeze.views.restart_vm, name='restart_vm'),
