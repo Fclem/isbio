@@ -1,4 +1,4 @@
-breeze_now <- Sys.time() # time mesurement
+Sys.time() # time mesurement
 #####################################
 ###	BREEZE SCRIPT: $tag_name
 #####################################
@@ -21,5 +21,4 @@ $body
 #####################################
 ###	/END SCRIPT $tag_name /
 #####################################
-breeze_then <- Sys.time() # time mesurement
-breeze_then - breeze_now  # time mesurement
+Sys.time() # time mesurement
