@@ -72,7 +72,7 @@
 			<!-- FILTERS Collapse -->
 			<div class="span8">
 				<div id="filter-form-box" class="collapse span12">
-					<div class="row-fluid">
+					<!--<div class="row-fluid">-->
 						<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
 						      onchange="submit_filter_form()">
 							{% csrf_token %}
@@ -102,9 +102,10 @@
 							<!--<button type="submit" class="btn">Search</button>-->
 							<button id="filt_clean" class="btn" type="reset">Clear</button>
 						</form>
-					</div>
+					<!--</div>-->
 				{% if show_author_filter %}
-					<div class="row-fluid" style="margin-top:5px;">
+					<br>
+					<!--<div class="row-fluid" style="margin-top:5px;">-->
 						<div class="span4 offset2">
 							<label class="radio">
 								<input type="radio" id="radio_owned" name="access_filter1" value="owned">
@@ -118,7 +119,7 @@
 								Show only the reports I can access<br/>
 							</label>
 						</div>
-					</div>
+					<!--</div>-->
 				{% endif %}
 				</div>
 			</div>
