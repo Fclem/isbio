@@ -100,11 +100,11 @@
 						       placeholder="Report name (type & press Enter)">
 						<!--<button type="submit" class="btn">Search</button>-->
 						<button id="filt_clean" class="btn" type="reset">Clear</button>
-					</form>
+						<!--</form>->
 				{% if show_author_filter %}
 					<br>
-					<form id="filter_form2" class="form-inline" method="post" onsubmit="return false;"
-					      onchange="submit_filter_form2()" style="text-align: center;">
+					<!--<form id="filter_form2" class="form-inline" method="post" onsubmit="return false;"
+					      onchange="submit_filter_form2()" style="text-align: center;">-->
 					<!--<div class="span4 offset2">-->
 						<label class="radio">
 							<input type="radio" id="radio_owned" name="access_filter1" value="owned">
@@ -118,8 +118,8 @@
 							Show only the reports I can access<br/>
 						</label>
 					<!--</div>-->
-					</form>
 				{% endif %}
+					</form>
 				</div>
 			</div>
 			<!-- FILTERS HIDE/SHOW button -->
@@ -335,22 +335,6 @@
 					$("#pagination-content").fadeTo(0, 1);
 					$("#pagination-content").html(response);
 					if(e !== undefined && isFunction(e)) e.call(); //call-back
-				},
-				error  : function (request, status, error) { console.log(error); }
-			});
-		}
-		function submit_filter_form2(e, sort) {
-			$("#pagination-content").fadeTo(0, 0.33);
-			var formData = $('#filter_form2').serialize();
-			if (sort != undefined) formData += '&sort=' + encodeURIComponent(sort);
-			$.ajax({
-				type   : 'POST',
-				url    : '/reports/search',
-				data   : formData,
-				success: function (response, textStatus, jqXHR) {
-					$("#pagination-content").fadeTo(0, 1);
-					$("#pagination-content").html(response);
-					if (e !== undefined && isFunction(e)) e.call(); //call-back
 				},
 				error  : function (request, status, error) { console.log(error); }
 			});
