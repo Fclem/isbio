@@ -71,10 +71,10 @@
 			</div>
 			<!-- FILTERS Collapse -->
 			<div class="span8">
-				<div id="filter-form-box" class="collapse span12">
+				<div id="filter-form-box" class="span12">
 					<!--<div class="row-fluid">-->
 						<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
-						      onchange="submit_filter_form()">
+						      onchange="submit_filter_form()" style="text-align: center;">
 							{% csrf_token %}
 							<select id="filt_type" name="filt_type" class="input-medium">
 								<option id="" value="">All Types</option>
@@ -125,10 +125,13 @@
 			</div>
 			<!-- FILTERS HIDE/SHOW button -->
 			<div class="span2">
+				&nbsp;
+				<!--
 				<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
 				   data-target="#filter-form-box">
 					<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
 				</a>
+				-->
 			</div>
 		</div>
 		
