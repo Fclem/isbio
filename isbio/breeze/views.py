@@ -434,7 +434,8 @@ def reports(request):
 		each.user_has_access = each.has_access(request.user)
 		if not settings.SET_SHOW_ALL_USERS:
 			if True: # not (settings.SU_ACCESS_OVERRIDE and request.user.is_superuser):
-				if not(each.user_is_owner or each.user_has_access):
+				if not(each.user_is_owner or each.is_in_share_list(request.user)): # no override
+				# if not(each.user_is_owner or each.user_has_access): # with admin override
 					all_reports.remove(each)
 	
 	count = {'total': all_reports.count()}
