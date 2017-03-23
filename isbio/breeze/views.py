@@ -401,6 +401,23 @@ def scripts(request, layout="list"):
 	}))
 
 
+def _report_filtering(all_reports, user, all=False):
+	if type(reports) is not list:
+		all_reports = list(reports)
+	for each in all_reports:
+		each.user_is_owner = each.is_owner(user)
+		each.user_has_access = each.has_access(user)
+		
+		if not settings.SET_SHOW_ALL_USERS:
+			#if all:
+			#	predicate = not (each.user_is_owner or each.user_has_access) # with admin override
+			#else:
+			#	predicate = not (each.user_is_owner or each.is_in_share_list(user)) # no override
+			if not (each.user_is_owner or (each.user_has_access and all) or each.is_in_share_list(user)):
+				all_reports.remove(each)
+	return all_reports
+
+
 @login_required(login_url='/')
 def reports(request):
 	page_index, entries_nb = aux.report_common(request)
@@ -410,7 +427,6 @@ def reports(request):
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
 	all_reports = list(Report.objects.filter(status="succeed", _institute=insti).order_by(sorting))
-	#	all_reports = Report.objects.filter(status="succeed",  _institute=insti).order_by(sorting)
 	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
@@ -429,14 +445,8 @@ def reports(request):
 	# all_projects = Project.objects.filter(institute=insti)
 	all_projects = Project.objects.all()
 	
-	for each in all_reports:
-		each.user_is_owner = each.is_owner(request.user)
-		each.user_has_access = each.has_access(request.user)
-		if not settings.SET_SHOW_ALL_USERS:
-			if True: # not (settings.SU_ACCESS_OVERRIDE and request.user.is_superuser):
-				if not(each.user_is_owner or each.is_in_share_list(request.user)): # no override
-				# if not(each.user_is_owner or each.user_has_access): # with admin override
-					all_reports.remove(each)
+	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
+	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST)
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
@@ -449,9 +459,9 @@ def reports(request):
 		page_index = 1
 		reports_list = paginator.page(page_index)
 		# access rights
-		for each in reports_list:
-			each.user_is_owner = each.is_owner(request.user)
-			each.user_has_access = each.has_access(request.user)
+		# for each in reports_list:
+		#	each.user_is_owner = each.is_owner(request.user)
+		#	each.user_has_access = each.has_access(request.user)
 		
 		user_profile = UserProfile.objects.get(user=request.user)
 		db_access = user_profile.db_agreement
@@ -2782,8 +2792,11 @@ def report_search(request):
 	
 	request = legacy_request(request)
 
+	# search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
+	# 	request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
+	# 	request.REQUEST.get('access_filter1', '')
 	search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
-		request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
+			 request.REQUEST.get('filt_project', '') + \
 		request.REQUEST.get('access_filter1', '')
 	entry_query = None
 	page_index, entries_nb = aux.report_common(request)
@@ -2804,7 +2817,7 @@ def report_search(request):
 		# filter by type
 		entry_query = query_concat(request, entry_query, 'filt_type', ['type_id'])
 		# filter by author name
-		entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
+		# entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
 		# filter by project name
 		entry_query = query_concat(request, entry_query, 'filt_project', ['project_id'])
 		# filter by owned reports
@@ -2829,7 +2842,11 @@ def report_search(request):
 	else:
 		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
 			sorting).distinct()
-	count = {'total': found_entries.count()}
+		
+	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
+	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST)
+	
+	count = {'total': len(found_entries)}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
 	found_entries = paginator.page(page_index)
