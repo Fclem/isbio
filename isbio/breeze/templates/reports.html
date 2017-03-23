@@ -102,21 +102,27 @@
 						<button id="filt_clean" class="btn" type="reset">Clear</button>
 						<!--</form>-->
 				{% if show_author_filter %}
-					<br>
+					<p> Show :
 					<!--<form id="filter_form2" class="form-inline" method="post" onsubmit="return false;"
 					      onchange="submit_filter_form2()" style="text-align: center;">-->
 					<!--<div class="span4 offset2">-->
 						<label class="radio">
 							<input type="radio" id="radio_owned" name="access_filter1" value="owned">
-							Show only my own reports
+							my own reports
 						</label>
 					<!--</div>-->
 					<!--<div class="span4">-->
 						<label class="radio">
 							<input type="radio" id="radio_accessible" name="access_filter1"
 							       value="accessible">
-							Show only the reports I can access<br/>
+							reports I can access<br/>
 						</label>
+						<label class="radio">
+							<input type="radio" id="radio_all" name="access_filter1"
+							       value="all" checked="checked">
+							allbr/>
+						</label>
+					</p>
 					<!--</div>-->
 				{% endif %}
 					</form>
@@ -424,18 +430,23 @@
 					}
 				});
 			});
-
+			
 			// FILTERING: Clean filter form
-			$('#filt_clean').click(function(){
+			function resetForm () {
 				$("#pagination-content").fadeTo("slow", 0.33);
 				$("#pagination-content").load('/reports/search', {
-					reset: 1,
+					reset              : 1,
 					csrfmiddlewaretoken: '{{ csrf_token }}'
 				}, function (response, status, xhr) {
 					$("#pagination-content").fadeTo(0, 1);
 				});
-
-			});
+				
+			}
+			
+			// FILTERING: Clean filter form
+			$('#filt_clean').click(resetForm);
+			$('#radio_all').click(resetForm);
+			
 		});
 	</script>
 {% endblock %}
