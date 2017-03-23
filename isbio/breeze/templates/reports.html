@@ -87,15 +87,13 @@
 								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
 							{% endfor %}
 						</select>
-						{% if True %}
-							<select id="filt_author" name="filt_author" class="input-medium">
-								<option id="" value="">All Authors</option>
-								{% for item in users %}
-									<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-										{{ item.the_full_name }}</option>
-								{% endfor %}
-							</select>
-						{% endif %}
+						<select id="filt_author" name="filt_author" class="input-medium">
+							<option id="" value="">All Authors</option>
+							{% for item in users %}
+								<option id="{{ item.user.id }}" value="{{ item.user.id }}">
+									{{ item.the_full_name }}</option>
+							{% endfor %}
+						</select>
 						<select id="filt_project" name="filt_project" class="input-medium">
 							<option id="" value="">All projects</option>
 							{% for item in projects %}
@@ -107,7 +105,7 @@
 						<!--<button type="submit" class="btn">Search</button>-->
 						<button id="filt_clean" class="btn" type="reset">Clear</button>
 						<!--</form>-->
-				{% if show_author_filter %}
+				{% if True %}
 					<p> Show :
 						<label class="radio">
 							<input type="radio" id="radio_all" name="access_filter1"

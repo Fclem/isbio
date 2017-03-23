@@ -461,14 +461,7 @@ def reports(request, _all=False):
 	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
 	all_users = UserProfile.objects.all().order_by('user__username')
 	# first find all the users from the same institute, then find their accessible report types
-	reptypelst = list()
-	for each in all_users:
-		rtypes = each.user.pipeline_access.all()
-		if rtypes:
-			for each_type in rtypes:
-				if each_type not in reptypelst:
-					reptypelst.append(each_type)
-
+	
 	# report_type_lst = ReportType.objects.filter(access=request.user)
 	# all_projects = Project.objects.filter(institute=insti)
 	all_projects = Project.objects.all()
@@ -476,6 +469,19 @@ def reports(request, _all=False):
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
+	
+	a_user_list = dict()
+	for each in all_reports:
+		a_user_list.update({each.author: ()})
+	all_users = a_user_list.keys()
+	
+	reptypelst = list()
+	for each in all_users:
+		rtypes = each.user.pipeline_access.all()
+		if rtypes:
+			for each_type in rtypes:
+				if each_type not in reptypelst:
+					reptypelst.append(each_type)
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
@@ -2818,11 +2824,8 @@ def report_search(request, all=False):
 	
 	request = legacy_request(request)
 
-	# search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
-	# 	request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
-	# 	request.REQUEST.get('access_filter1', '')
 	search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
-			 request.REQUEST.get('filt_project', '') + \
+		request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
 		request.REQUEST.get('access_filter1', '')
 	entry_query = None
 	page_index, entries_nb = aux.report_common(request)
@@ -2843,7 +2846,7 @@ def report_search(request, all=False):
 		# filter by type
 		entry_query = query_concat(request, entry_query, 'filt_type', ['type_id'])
 		# filter by author name
-		# entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
+		entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
 		# filter by project name
 		entry_query = query_concat(request, entry_query, 'filt_project', ['project_id'])
 		# filter by owned reports
