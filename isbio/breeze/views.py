@@ -438,7 +438,7 @@ def reports(request):
 				# if not(each.user_is_owner or each.user_has_access): # with admin override
 					all_reports.remove(each)
 	
-	count = {'total': all_reports.count()}
+	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
 
 	# If AJAX - use the search view
