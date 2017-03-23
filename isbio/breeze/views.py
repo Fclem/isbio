@@ -432,9 +432,10 @@ def reports(request):
 	for each in all_reports:
 		each.user_is_owner = each.is_owner(request.user)
 		each.user_has_access = each.has_access(request.user)
-		if not (settings.SET_SHOW_ALL_USERS or request.user.is_superuser):
-			if not(each.user_is_owner or each.user_has_access):
-				all_reports.remove(each)
+		if not settings.SET_SHOW_ALL_USERS:
+			if True: # not (settings.SU_ACCESS_OVERRIDE and request.user.is_superuser):
+				if not(each.user_is_owner or each.user_has_access):
+					all_reports.remove(each)
 	
 	count = {'total': all_reports.count()}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
