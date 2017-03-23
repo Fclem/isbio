@@ -402,6 +402,14 @@ def scripts(request, layout="list"):
 
 
 def _report_filtering(all_reports, user, all=False):
+	"""
+	
+	:param all_reports:
+	:type all_reports: list | managers.QuerySet
+	:type user: User
+	:type all: bool
+	:rtype: list
+	"""
 	if type(reports) is not list:
 		all_reports = list(all_reports)
 	for each in all_reports:
@@ -409,10 +417,6 @@ def _report_filtering(all_reports, user, all=False):
 		each.user_has_access = each.has_access(user)
 		
 		if not settings.SET_SHOW_ALL_USERS:
-			#if all:
-			#	predicate = not (each.user_is_owner or each.user_has_access) # with admin override
-			#else:
-			#	predicate = not (each.user_is_owner or each.is_in_share_list(user)) # no override
 			if not (each.user_is_owner or (each.user_has_access and all) or each.is_in_share_list(user)):
 				all_reports.remove(each)
 	return all_reports
@@ -420,14 +424,14 @@ def _report_filtering(all_reports, user, all=False):
 
 @login_required(login_url='/')
 def reports(request):
+
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
 	# get the user's institute
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
-	all_reports = list(Report.objects.filter(status="succeed", _institute=insti).order_by(sorting))
-	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
+	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
 	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
@@ -487,7 +491,8 @@ def reports(request):
 			'page': page_index,
 			'db_access': db_access,
 			'count': count,
-			'url_lst': url_lst
+			'url_lst': url_lst,
+			'show_author_filter': settings.SET_SHOW_ALL_USERS
 		}))
 
 
@@ -2869,7 +2874,8 @@ def report_search(request):
 		'search': query_string,
 		'count': count,
 		'sorting': sorting,
-		'owned_filter': owned_filter
+		'owned_filter': owned_filter #,
+		# 'show_author_filter': settings.SET_SHOW_ALL_USERS
 	}))
 
 
