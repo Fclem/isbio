@@ -401,13 +401,38 @@ def scripts(request, layout="list"):
 	}))
 
 
-def _report_filtering(all_reports, user, all=False):
+# clem 23/03/2017
+def _report_filtering_show_limited_predicate(user, _all):
+	"""
+
+	:type user: User
+	:type _all: bool
+	:rtype: bool
+	"""
+	return not settings.SET_SHOW_ALL_USERS and not (Report.objects.admin_override_param(user) and _all)
+
+
+# clem 23/03/2017
+def _report_filtering_each_predicate(each, user, _all):
+	"""
+	
+	:type each: Report.objects
+	:type user: User
+	:type _all: bool
+	:rtype: bool
+	"""
+	return _report_filtering_show_limited_predicate(user, _all) \
+		and not (each.user_is_owner or each.is_in_share_list(user))
+
+
+# clem 23/03/2017
+def _report_filtering(all_reports, user, _all=False):
 	"""
 	
 	:param all_reports:
 	:type all_reports: list | managers.QuerySet
 	:type user: User
-	:type all: bool
+	:type _all: bool
 	:rtype: list
 	"""
 	if type(reports) is not list:
@@ -416,14 +441,13 @@ def _report_filtering(all_reports, user, all=False):
 		each.user_is_owner = each.is_owner(user)
 		each.user_has_access = each.has_access(user)
 		
-		if not settings.SET_SHOW_ALL_USERS:
-			if not (each.user_is_owner or (each.user_has_access and all) or each.is_in_share_list(user)):
+		if _report_filtering_each_predicate(each, user, _all):
 				all_reports.remove(each)
 	return all_reports
 
 
 @login_required(login_url='/')
-def reports(request, all=False):
+def reports(request, _all=False):
 
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
@@ -451,7 +475,7 @@ def reports(request, all=False):
 	
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or all)
+	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
@@ -459,7 +483,7 @@ def reports(request, all=False):
 	# If AJAX - use the search view
 	# Otherwise return the first page
 	if request.is_ajax() and request.method == 'GET':
-		return report_search(request, all)
+		return report_search(request, _all)
 	else:
 		page_index = 1
 		reports_list = paginator.page(page_index)
@@ -488,7 +512,7 @@ def reports(request, all=False):
 			'db_access': db_access,
 			'count': count,
 			'url_lst': url_lst,
-			'show_author_filter': settings.SET_SHOW_ALL_USERS
+			'show_author_filter': _report_filtering_show_limited_predicate(request.user, _all)
 		}))
 
 

@@ -61,7 +61,7 @@
 		</div>
 	</div>
 	<!-- FILTER & CREATE BUTTONS ROW -->
-	<div class="row-fluid">
+	<div class="row-fluid" style="height: 60px;">
 		<div class="span10 offset1">
 			<!-- CREATE button -->
 			<div class="span2">
@@ -102,23 +102,23 @@
 							<!--<button type="submit" class="btn">Search</button>-->
 							<button id="filt_clean" class="btn" type="reset">Clear</button>
 						</div>
-						{% if show_author_filter %}
-							<div class="row-fluid" style="margin-top:5px;">
-								<div class="span3 offset2">
-									<label class="radio">
-										<input type="radio" id="radio_owned" name="access_filter1" value="owned">
-										Show only my own reports
-									</label>
-								</div>
-								<div class="span4">
-									<label class="radio">
-										<input type="radio" id="radio_accessible" name="access_filter1"
-										       value="accessible">
-										Show only the reports I can access<br/>
-									</label>
-								</div>
+					{% if show_author_filter %}
+						<div class="row-fluid" style="margin-top:5px;">
+							<div class="span3 offset2">
+								<label class="radio">
+									<input type="radio" id="radio_owned" name="access_filter1" value="owned">
+									Show only my own reports
+								</label>
 							</div>
-						{% endif %}
+							<div class="span4">
+								<label class="radio">
+									<input type="radio" id="radio_accessible" name="access_filter1"
+									       value="accessible">
+									Show only the reports I can access<br/>
+								</label>
+							</div>
+						</div>
+					{% endif %}
 					</form>
 				</div>
 			</div>
