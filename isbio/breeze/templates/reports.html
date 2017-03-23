@@ -71,39 +71,36 @@
 			</div>
 			<!-- FILTERS Collapse -->
 			<div class="span8">
-				<div id="filter-form" class="collapse span12">
+				<div id="filter-form-box" class="collapse span12">
 					<div class="row-fluid">
 						<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
 						      onchange="submit_filter_form()">
-							<div class="row-fluid">
-								{% csrf_token %}
-								<select id="filt_type" name="filt_type" class="input-medium">
-									<option id="" value="">All Types</option>
-									{% for item in rtypes %}
-										<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
+							{% csrf_token %}
+							<select id="filt_type" name="filt_type" class="input-medium">
+								<option id="" value="">All Types</option>
+								{% for item in rtypes %}
+									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
+								{% endfor %}
+							</select>
+							{% if show_author_filter %}
+								<select id="filt_author" name="filt_author" class="input-medium">
+									<option id="" value="">All Authors</option>
+									{% for item in users %}
+										<option id="{{ item.user.id }}" value="{{ item.user.id }}">
+											{{ item.the_full_name }}</option>
 									{% endfor %}
 								</select>
-								{% if show_author_filter %}
-									<select id="filt_author" name="filt_author" class="input-medium">
-										<option id="" value="">All Authors</option>
-										{% for item in users %}
-											<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-												{{ item.the_full_name }}</option>
-										{% endfor %}
-									</select>
-								{% endif %}
-								<select id="filt_project" name="filt_project" class="input-medium">
-									<option id="" value="">All projects</option>
-									{% for item in projects %}
-										<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
-									{% endfor %}
-								</select>
-								<input id="filt_name" name="filt_name" type="text" class="input"
-								       placeholder="Report name (type & press Enter)">
-								<!--<button type="submit" class="btn">Search</button>-->
-								<button id="filt_clean" class="btn" type="reset">Clear</button>
-							</div>
-						
+							{% endif %}
+							<select id="filt_project" name="filt_project" class="input-medium">
+								<option id="" value="">All projects</option>
+								{% for item in projects %}
+									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
+								{% endfor %}
+							</select>
+							<input id="filt_name" name="filt_name" type="text" class="input"
+							       placeholder="Report name (type & press Enter)">
+							<!--<button type="submit" class="btn">Search</button>-->
+							<button id="filt_clean" class="btn" type="reset">Clear</button>
 						</form>
 					</div>
 				{% if show_author_filter %}
@@ -128,7 +125,7 @@
 			<!-- FILTERS HIDE/SHOW button -->
 			<div class="span2">
 				<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
-				   data-target="#filter-form">
+				   data-target="#filter-form-box">
 					<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
 				</a>
 			</div>
