@@ -63,66 +63,67 @@
 	<!-- FILTER & CREATE BUTTONS ROW -->
 	<div class="row-fluid">
 		<!-- CREATE button -->
-		<a href="#" id="new_popover" class="btn btn-primary input-medium btn-left" rel="popover">
-			<strong><i class="icon-plus icon-white"></i> &nbsp;New Report </strong>
-		</a>
-		<!-- FILTERS HIDE/SHOW button -->
-		<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
-		   data-target="#demo">
-			<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
-		</a>
-		<!-- FILTERS -->
-		<div id="demo" class="row-fluid collapse in">
-			<div class="span10 offset1">
-				<!-- FILTERS Collapse -->
-				<div class="offset1">
-					<form id="filter_form" class="form-inline span8 offset2" method="post" onsubmit="return false;" onchange="submit_filter_form()">
-						<div class="row-fluid">
-							{% csrf_token %}
-							<select id="filt_type" name="filt_type" class="input-medium">
-								<option id="" value="">All Types</option>
-								{% for item in rtypes %}
-									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
-								{% endfor %}
-							</select>
-							{% if show_author_filter %}
-							<select id="filt_author" name="filt_author" class="input-medium">
-								<option id="" value="">All Authors</option>
-								{% for item in users %}
-									<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-										{{ item.the_full_name }}</option>
-								{% endfor %}
-							</select>
-							{% endif %}
-							<select id="filt_project" name="filt_project" class="input-medium">
-								<option id="" value="">All projects</option>
-								{% for item in projects %}
-									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
-								{% endfor %}
-							</select>
-							<input id="filt_name" name="filt_name" type="text" class="input" placeholder="Report name (type & press Enter)" >
-							<!--<button type="submit" class="btn">Search</button>-->
-							<button id="filt_clean" class="btn" type="reset">Clear</button>
-						</div>
-						{% if show_author_filter %}
-						<div class="row-fluid" style="margin-top:5px;">
-							<div class="span3 offset2">
-								<label class="radio">
-									<input type="radio" id="radio_owned" name="access_filter1" value="owned">
-									Show only my own reports
-								</label>
-							</div>
-							<div class="span4">
-								<label class="radio">
-									<input type="radio" id="radio_accessible"  name="access_filter1" value="accessible">
-									Show only the reports I can access<br />
-								</label>
-							</div>
-						</div>
-						{% endif %}
-					</form>
+		<div class="span2">
+			<a href="#" id="new_popover" class="btn btn-primary input-medium btn-left" rel="popover">
+				<strong><i class="icon-plus icon-white"></i> &nbsp;New Report </strong>
+			</a>
+		</div>
+		<!-- FILTERS Collapse -->
+		<div class="span8 collapse">
+			<form id="filter_form" class="form-inline span8 offset2" method="post" onsubmit="return false;"
+			      onchange="submit_filter_form()">
+				<div class="row-fluid">
+					{% csrf_token %}
+					<select id="filt_type" name="filt_type" class="input-medium">
+						<option id="" value="">All Types</option>
+						{% for item in rtypes %}
+							<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
+						{% endfor %}
+					</select>
+					{% if show_author_filter %}
+						<select id="filt_author" name="filt_author" class="input-medium">
+							<option id="" value="">All Authors</option>
+							{% for item in users %}
+								<option id="{{ item.user.id }}" value="{{ item.user.id }}">
+									{{ item.the_full_name }}</option>
+							{% endfor %}
+						</select>
+					{% endif %}
+					<select id="filt_project" name="filt_project" class="input-medium">
+						<option id="" value="">All projects</option>
+						{% for item in projects %}
+							<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
+						{% endfor %}
+					</select>
+					<input id="filt_name" name="filt_name" type="text" class="input"
+					       placeholder="Report name (type & press Enter)">
+					<!--<button type="submit" class="btn">Search</button>-->
+					<button id="filt_clean" class="btn" type="reset">Clear</button>
 				</div>
-			</div>
+				{% if show_author_filter %}
+					<div class="row-fluid" style="margin-top:5px;">
+						<div class="span3 offset2">
+							<label class="radio">
+								<input type="radio" id="radio_owned" name="access_filter1" value="owned">
+								Show only my own reports
+							</label>
+						</div>
+						<div class="span4">
+							<label class="radio">
+								<input type="radio" id="radio_accessible" name="access_filter1" value="accessible">
+								Show only the reports I can access<br/>
+							</label>
+						</div>
+					</div>
+				{% endif %}
+			</form>
+		</div>
+		<!-- FILTERS HIDE/SHOW button -->
+		<div class="span2">
+			<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
+			   data-target="#demo">
+				<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
+			</a>
 		</div>
 	</div>
 	<!-- LIST OF EXISTING REPORTS -->
