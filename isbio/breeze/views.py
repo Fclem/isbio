@@ -403,7 +403,7 @@ def scripts(request, layout="list"):
 
 def _report_filtering(all_reports, user, all=False):
 	if type(reports) is not list:
-		all_reports = list(reports)
+		all_reports = list(all_reports)
 	for each in all_reports:
 		each.user_is_owner = each.is_owner(user)
 		each.user_has_access = each.has_access(user)
