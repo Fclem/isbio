@@ -410,6 +410,7 @@ def reports(request):
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
 	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
+	#	all_reports = Report.objects.filter(status="succeed",  _institute=insti).order_by(sorting)
 	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
@@ -427,6 +428,14 @@ def reports(request):
 	# report_type_lst = ReportType.objects.filter(access=request.user)
 	# all_projects = Project.objects.filter(institute=insti)
 	all_projects = Project.objects.all()
+	
+	for each in all_reports:
+		each.user_is_owner = each.is_owner(request.user)
+		each.user_has_access = each.has_access(request.user)
+		if not (settings.SET_SHOW_ALL_USERS or request.user.is_superuser):
+			if not(each.user_is_owner or each.user_has_access):
+				all_reports.remove(each)
+	
 	count = {'total': all_reports.count()}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
 
@@ -441,6 +450,7 @@ def reports(request):
 		for each in reports_list:
 			each.user_is_owner = each.is_owner(request.user)
 			each.user_has_access = each.has_access(request.user)
+		
 		user_profile = UserProfile.objects.get(user=request.user)
 		db_access = user_profile.db_agreement
 		url_lst = {  # TODO remove static url mappings
