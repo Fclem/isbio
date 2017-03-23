@@ -472,7 +472,7 @@ def reports(request, _all=False):
 	
 	a_user_list = dict()
 	for each in all_reports:
-		a_user_list.update({each.author: ()})
+		a_user_list.update({each: ()})
 	all_users = a_user_list.keys()
 	
 	reptypelst = list()
