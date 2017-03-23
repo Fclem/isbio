@@ -445,6 +445,7 @@ def reports(request):
 	# all_projects = Project.objects.filter(institute=insti)
 	all_projects = Project.objects.all()
 	
+	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST)
 	
