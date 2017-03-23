@@ -423,7 +423,7 @@ def _report_filtering(all_reports, user, all=False):
 
 
 @login_required(login_url='/')
-def reports(request):
+def reports(request, all=False):
 
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
@@ -451,7 +451,7 @@ def reports(request):
 	
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST)
+	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or all)
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
@@ -459,14 +459,10 @@ def reports(request):
 	# If AJAX - use the search view
 	# Otherwise return the first page
 	if request.is_ajax() and request.method == 'GET':
-		return report_search(request)
+		return report_search(request, all)
 	else:
 		page_index = 1
 		reports_list = paginator.page(page_index)
-		# access rights
-		# for each in reports_list:
-		#	each.user_is_owner = each.is_owner(request.user)
-		#	each.user_has_access = each.has_access(request.user)
 		
 		user_profile = UserProfile.objects.get(user=request.user)
 		db_access = user_profile.db_agreement
@@ -2790,7 +2786,7 @@ def ajax_user_stat(request):
 
 
 @login_required(login_url='/')
-def report_search(request):
+def report_search(request, all=False):
 
 	if not request.is_ajax():
 		request.method = 'GET'
@@ -2850,18 +2846,12 @@ def report_search(request):
 			sorting).distinct()
 		
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST)
+	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST or all)
 	
 	count = {'total': len(found_entries)}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
 	found_entries = paginator.page(page_index)
-	# just a shortcut for the template
-	for each in found_entries:
-		each.user_is_owner = each.is_owner(request.user)
-		each.user_has_access = each.has_access(request.user)
-		# each.user_is_owner = each.author == request.user
-		# each.user_has_access = request.user in each.shared.all() or each.user_is_owner
 	# Copy the query for the paginator to work with filtering
 	query_string = aux.make_http_query(request)
 	# paginator counter
