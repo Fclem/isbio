@@ -1,0 +1,49 @@
+<h1 align="center" text-align="center"
+    style="margin:10px auto;font-size: 1.6em;font-weight: 600;color:#666;">The list of recent changes/updates related to breeze</h1>
+
+
+<section id="task-container">
+	<ul id="task-list">
+		<h3 class="nothing-message">No list yet</h3>
+	</ul>
+	<div id="controls">
+		<p>**Double Click to Hide message</p>
+		<br/>
+	</div>
+</section>
+<script>
+	$(document).ready(function () {
+		
+		var data_ = { //JSON.parse(...);
+			author    : ['empty'],
+			message   : ['Hi'],
+			important_: [!0]
+		};
+		
+		news_url = '/api/v1/project/news';
+		
+		fetch(news_url).then(function (response) {
+			console.log("Load was performed.");
+			return response.json();
+		}).then(function (data_) {
+			data_ = data_['data'];
+			if (data_.author.length > 0) {
+				'.nothing-message' && $(".nothing-message").remove();
+				
+				for (var i = 0; i < data_.author.length; i++) {
+					var newTask = data_.important_[i] ? '<li class = "important_"><b>' + data_.author[i] + ':</b><p>' + data_.message[i] + '</p></li>' : '<li><p>' + data_.message[i] + '</p></li>';
+					$('#task-list').append(newTask);
+				}
+			}
+			
+			$(document).on('dblclick', 'li', function () {
+				$(this).hide();
+			});
+		}).catch(function () {
+			console.log("Booo at " + full_url);
+			return [];
+		});
+		
+	});
+</script>
+
