@@ -104,6 +104,7 @@
 							<!--<button type="submit" class="btn">Search</button>-->
 							<button id="filt_clean" class="btn" type="reset">Clear</button>
 						</div>
+						{% if show_author_filter %}
 						<div class="row-fluid" style="margin-top:5px;">
 							<div class="span3 offset2">
 								<label class="radio">
@@ -118,6 +119,7 @@
 								</label>
 							</div>
 						</div>
+						{% endif %}
 					</form>
 				</div>
 			</div>
