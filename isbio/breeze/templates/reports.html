@@ -46,6 +46,12 @@
 		#demo {
 			z-index: 150;
 		}
+		label{
+			padding: 10px !important;
+		}
+		input[type="radio"]{
+			margin-right: 4px;
+		}
 	</style>
 
 {% endblock %}
@@ -103,27 +109,21 @@
 						<!--</form>-->
 				{% if show_author_filter %}
 					<p> Show :
-					<!--<form id="filter_form2" class="form-inline" method="post" onsubmit="return false;"
-					      onchange="submit_filter_form2()" style="text-align: center;">-->
-					<!--<div class="span4 offset2">-->
-						<label class="radio">
-							<input type="radio" id="radio_owned" name="access_filter1" value="owned">
-							my own reports
-						</label>
-					<!--</div>-->
-					<!--<div class="span4">-->
-						<label class="radio">
-							<input type="radio" id="radio_accessible" name="access_filter1"
-							       value="accessible">
-							reports I can access<br/>
-						</label>
 						<label class="radio">
 							<input type="radio" id="radio_all" name="access_filter1"
 							       value="all" checked="checked">
-							allbr/>
+							All
+						</label>
+						<label class="radio">
+							<input type="radio" id="radio_owned" name="access_filter1" value="owned">
+							Only mine
+						</label>
+						<label class="radio">
+							<input type="radio" id="radio_accessible" name="access_filter1"
+							       value="accessible">
+							mine and shared with me<br/>
 						</label>
 					</p>
-					<!--</div>-->
 				{% endif %}
 					</form>
 				</div>
