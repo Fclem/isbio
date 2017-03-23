@@ -46,6 +46,12 @@
 		#demo {
 			z-index: 150;
 		}
+		label{
+			padding: 10px !important;
+		}
+		input[type="radio"]{
+			margin-right: 4px;
+		}
 	</style>
 
 {% endblock %}
@@ -61,65 +67,77 @@
 		</div>
 	</div>
 	<!-- FILTER & CREATE BUTTONS ROW -->
-	<div class="row-fluid">
-		<!-- CREATE button -->
-		<a href="#" id="new_popover" class="btn btn-primary input-medium btn-left" rel="popover">
-			<strong><i class="icon-plus icon-white"></i> &nbsp;New Report </strong>
-		</a>
-		<!-- FILTERS HIDE/SHOW button -->
-		<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
-		   data-target="#demo">
-			<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
-		</a>
-		<!-- FILTERS -->
-		<div id="demo" class="row-fluid collapse in">
-			<div class="span10 offset1">
-				<!-- FILTERS Collapse -->
-				<div class="offset1">
-					<form id="filter_form" class="form-inline span8 offset2" method="post" onsubmit="return false;" onchange="submit_filter_form()">
-						<div class="row-fluid">
-							{% csrf_token %}
-							<select id="filt_type" name="filt_type" class="input-medium">
-								<option id="" value="">All Types</option>
-								{% for item in rtypes %}
-									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
-								{% endfor %}
-							</select>
-							<select id="filt_author" name="filt_author" class="input-medium">
-								<option id="" value="">All Authors</option>
-								{% for item in users %}
-									<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-										{{ item.the_full_name }}</option><!-- {% firstof item.user.get_full_name item.user.username %} -->
-								{% endfor %}
-							</select>
-							<select id="filt_project" name="filt_project" class="input-medium">
-								<option id="" value="">All projects</option>
-								{% for item in projects %}
-									<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
-								{% endfor %}
-							</select>
-							<input id="filt_name" name="filt_name" type="text" class="input" placeholder="Report name (type & press Enter)" >
-							<!--<button type="submit" class="btn">Search</button>-->
-							<button id="filt_clean" class="btn" type="reset">Clear</button>
-						</div>
-						<div class="row-fluid" style="margin-top:5px;">
-							<div class="span3 offset2">
-								<label class="radio">
-									<input type="radio" id="radio_owned" name="access_filter1" value="owned">
-									Show only my own reports
-								</label>
-							</div>
-							<div class="span4">
-								<label class="radio">
-									<input type="radio" id="radio_accessible"  name="access_filter1" value="accessible">
-									Show only the reports I can access<br />
-								</label>
-							</div>
-						</div>
+	<div class="row-fluid" style="height: 60px;">
+		<div class="span10 offset1">
+			<!-- CREATE button -->
+			<div class="span2">
+				<a href="#" id="new_popover" class="btn btn-primary input-medium btn-left" rel="popover">
+					<strong><i class="icon-plus icon-white"></i> &nbsp;New Report </strong>
+				</a>
+			</div>
+			<!-- FILTERS Collapse -->
+			<div class="span8">
+				<div id="filter-form-box" class="span12">
+					<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
+					      onchange="submit_filter_form()" style="text-align: center;">
+						{% csrf_token %}
+						<select id="filt_type" name="filt_type" class="input-medium">
+							<option id="" value="">All Types</option>
+							{% for item in rtypes %}
+								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
+							{% endfor %}
+						</select>
+						<select id="filt_author" name="filt_author" class="input-medium">
+							<option id="" value="">All Authors</option>
+							{% for item in users %}
+								<option id="{{ item.user.id }}" value="{{ item.user.id }}">
+									{{ item.the_full_name }}</option>
+							{% endfor %}
+						</select>
+						<select id="filt_project" name="filt_project" class="input-medium">
+							<option id="" value="">All projects</option>
+							{% for item in projects %}
+								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
+							{% endfor %}
+						</select>
+						<input id="filt_name" name="filt_name" type="text" class="input"
+						       placeholder="Report name (type & press Enter)">
+						<!--<button type="submit" class="btn">Search</button>-->
+						<button id="filt_clean" class="btn" type="reset">Clear</button>
+						<!--</form>-->
+				{% if True %}
+					<p> Show :
+						<label class="radio">
+							<input type="radio" id="radio_all" name="access_filter1"
+							       value="all" checked="checked">
+							All
+						</label>
+						<label class="radio">
+							<input type="radio" id="radio_owned" name="access_filter1" value="owned">
+							Only mine
+						</label>
+						<label class="radio">
+							<input type="radio" id="radio_accessible" name="access_filter1"
+							       value="accessible">
+							mine and shared with me<br/>
+						</label>
+					</p>
+				{% endif %}
 					</form>
 				</div>
 			</div>
+			<!-- FILTERS HIDE/SHOW button -->
+			<div class="span2">
+				&nbsp;
+				<!--
+				<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
+				   data-target="#filter-form-box">
+					<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
+				</a>
+				-->
+			</div>
 		</div>
+		
 	</div>
 	<!-- LIST OF EXISTING REPORTS -->
 	<div class="row-fluid" style="padding-top: 0pt;">
@@ -320,7 +338,7 @@
 				success: function (response, textStatus, jqXHR) {
 					$("#pagination-content").fadeTo(0, 1);
 					$("#pagination-content").html(response);
-					if(e!=undefined && isFunction(e)) e.call(); //call-back
+					if(e !== undefined && isFunction(e)) e.call(); //call-back
 				},
 				error  : function (request, status, error) { console.log(error); }
 			});
@@ -345,11 +363,11 @@
 					$('#pagination-content').html(data);
 				});
 			}
-		}
+		};
 		//registering events handlers / functions
 		$(document).ready(function() {
 			apply_pg(pagOptions);
-			$('.Glyph').tooltip()
+			$('.Glyph').tooltip();
 
 			var db_access = '#db_access';
 			if($(db_access).data('para')=="False"){
@@ -410,18 +428,23 @@
 					}
 				});
 			});
-
+			
 			// FILTERING: Clean filter form
-			$('#filt_clean').click(function(){
+			function resetForm () {
 				$("#pagination-content").fadeTo("slow", 0.33);
 				$("#pagination-content").load('/reports/search', {
-					reset: 1,
+					reset              : 1,
 					csrfmiddlewaretoken: '{{ csrf_token }}'
 				}, function (response, status, xhr) {
 					$("#pagination-content").fadeTo(0, 1);
 				});
-
-			});
+				
+			}
+			
+			// FILTERING: Clean filter form
+			$('#filt_clean').click(resetForm);
+			$('#radio_all').click(resetForm);
+			
 		});
 	</script>
 {% endblock %}

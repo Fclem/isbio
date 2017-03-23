@@ -401,8 +401,54 @@ def scripts(request, layout="list"):
 	}))
 
 
+# clem 23/03/2017
+def _report_filtering_show_limited_predicate(user, _all):
+	"""
+
+	:type user: User
+	:type _all: bool
+	:rtype: bool
+	"""
+	return not settings.SET_SHOW_ALL_USERS and not (Report.objects.admin_override_param(user) and _all)
+
+
+# clem 23/03/2017
+def _report_filtering_each_predicate(each, user, _all):
+	"""
+	
+	:type each: Report.objects
+	:type user: User
+	:type _all: bool
+	:rtype: bool
+	"""
+	return _report_filtering_show_limited_predicate(user, _all) \
+		and not (each.user_is_owner or each.is_in_share_list(user))
+
+
+# clem 23/03/2017
+def _report_filtering(all_reports, user, _all=False):
+	"""
+	
+	:param all_reports:
+	:type all_reports: list | managers.QuerySet
+	:type user: User
+	:type _all: bool
+	:rtype: list
+	"""
+	if type(reports) is not list:
+		all_reports = list(all_reports)
+	for each in all_reports:
+		each.user_is_owner = each.is_owner(user)
+		each.user_has_access = each.has_access(user)
+		
+		if _report_filtering_each_predicate(each, user, _all):
+				all_reports.remove(each)
+	return all_reports
+
+
 @login_required(login_url='/')
-def reports(request):
+def reports(request, _all=False):
+
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
@@ -410,37 +456,46 @@ def reports(request):
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
 	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
-	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
 	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
 	all_users = UserProfile.objects.all().order_by('user__username')
 	# first find all the users from the same institute, then find their accessible report types
+	
+	# report_type_lst = ReportType.objects.filter(access=request.user)
+	# all_projects = Project.objects.filter(institute=insti)
+	all_projects = Project.objects.all()
+	
+	request = legacy_request(request)
+	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
+	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
+	
+	a_user_list = dict()
+	for each in all_reports:
+		a_user_list.update({each.author: UserProfile.objects.get(user=each.author)})
+	all_users = a_user_list.values()
+	all_users.sort()
+	
 	reptypelst = list()
 	for each in all_users:
 		rtypes = each.user.pipeline_access.all()
+		# rtypes = each.pipeline_access.all()
 		if rtypes:
 			for each_type in rtypes:
 				if each_type not in reptypelst:
 					reptypelst.append(each_type)
-
-	# report_type_lst = ReportType.objects.filter(access=request.user)
-	# all_projects = Project.objects.filter(institute=insti)
-	all_projects = Project.objects.all()
-	count = {'total': all_reports.count()}
+	
+	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
 
 	# If AJAX - use the search view
 	# Otherwise return the first page
 	if request.is_ajax() and request.method == 'GET':
-		return report_search(request)
+		return report_search(request, _all)
 	else:
 		page_index = 1
 		reports_list = paginator.page(page_index)
-		# access rights
-		for each in reports_list:
-			each.user_is_owner = each.is_owner(request.user)
-			each.user_has_access = each.has_access(request.user)
+		
 		user_profile = UserProfile.objects.get(user=request.user)
 		db_access = user_profile.db_agreement
 		url_lst = {  # TODO remove static url mappings
@@ -464,7 +519,8 @@ def reports(request):
 			'page': page_index,
 			'db_access': db_access,
 			'count': count,
-			'url_lst': url_lst
+			'url_lst': url_lst,
+			'show_author_filter': not _report_filtering_show_limited_predicate(request.user, _all)
 		}))
 
 
@@ -2762,7 +2818,7 @@ def ajax_user_stat(request):
 
 
 @login_required(login_url='/')
-def report_search(request):
+def report_search(request, all=False):
 
 	if not request.is_ajax():
 		request.method = 'GET'
@@ -2817,16 +2873,14 @@ def report_search(request):
 	else:
 		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
 			sorting).distinct()
-	count = {'total': found_entries.count()}
+		
+	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
+	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST or all)
+	
+	count = {'total': len(found_entries)}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
 	found_entries = paginator.page(page_index)
-	# just a shortcut for the template
-	for each in found_entries:
-		each.user_is_owner = each.is_owner(request.user)
-		each.user_has_access = each.has_access(request.user)
-		# each.user_is_owner = each.author == request.user
-		# each.user_has_access = request.user in each.shared.all() or each.user_is_owner
 	# Copy the query for the paginator to work with filtering
 	query_string = aux.make_http_query(request)
 	# paginator counter
@@ -2839,7 +2893,8 @@ def report_search(request):
 		'search': query_string,
 		'count': count,
 		'sorting': sorting,
-		'owned_filter': owned_filter
+		'owned_filter': owned_filter #,
+		# 'show_author_filter': settings.SET_SHOW_ALL_USERS
 	}))
 
 

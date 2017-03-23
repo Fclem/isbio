@@ -26,3 +26,5 @@ STATICFILES_DIRS = (
 	# Don't forget to use absolute paths, not relative paths.
 	"/root/static_source",
 )
+
+SET_SHOW_ALL_USERS = False
