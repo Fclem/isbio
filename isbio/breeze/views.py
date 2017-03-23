@@ -512,7 +512,7 @@ def reports(request, _all=False):
 			'db_access': db_access,
 			'count': count,
 			'url_lst': url_lst,
-			'show_author_filter': _report_filtering_show_limited_predicate(request.user, _all)
+			'show_author_filter': not _report_filtering_show_limited_predicate(request.user, _all)
 		}))
 
 
