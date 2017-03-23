@@ -409,7 +409,7 @@ def reports(request):
 	# get the user's institute
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
-	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
+	all_reports = list(Report.objects.filter(status="succeed", _institute=insti).order_by(sorting))
 	#	all_reports = Report.objects.filter(status="succeed",  _institute=insti).order_by(sorting)
 	# all_reports = Report.objects.filter(status="succeed").order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
