@@ -472,13 +472,14 @@ def reports(request, _all=False):
 	
 	a_user_list = dict()
 	for each in all_reports:
-		a_user_list.update({each.author: ()})
-	all_users = a_user_list.keys()
+		a_user_list.update({each.author: UserProfile.objects.get(user=each.author)})
+	all_users = a_user_list.values()
+	all_users.sort()
 	
 	reptypelst = list()
 	for each in all_users:
-		# rtypes = each.user.pipeline_access.all()
-		rtypes = each.pipeline_access.all()
+		rtypes = each.user.pipeline_access.all()
+		# rtypes = each.pipeline_access.all()
 		if rtypes:
 			for each_type in rtypes:
 				if each_type not in reptypelst:
