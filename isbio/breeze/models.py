@@ -60,6 +60,7 @@ class CustomModel(CustomModelAbstract):
 	
 	class Meta:
 		abstract = True
+
 	
 from shiny.models import ShinyReport
 
@@ -90,7 +91,7 @@ class Post(CustomModelAbstract):
 		return self.title
 
 
-class Project(CustomModel):
+class Project(CustomModel, AutoJSON):
 	name = models.CharField(max_length=50, unique=True)
 	manager = models.CharField(max_length=50)
 	pi = models.CharField(max_length=50)
@@ -106,6 +107,9 @@ class Project(CustomModel):
 
 	def __unicode__(self):
 		return self.name
+	
+	# clem 24/03/2017
+	_serialize_keys = ['id', 'name', 'pi', 'author', 'collaborative', 'wbs', 'external_id', 'description']
 
 
 # TODO add an Institute db field
@@ -697,7 +701,7 @@ def report_type_fn_spe(self, filename):
 
 # TODO change from CustomModel to CustomModelAbstract
 # TODO change the institute field to a ManyToManyField
-class ReportType(FolderObj, CustomModel):
+class ReportType(FolderObj, CustomModel, AutoJSON):
 	BASE_FOLDER_NAME = settings.REPORT_TYPE_FN
 
 	# objects = managers.ReportTypeManager()
@@ -730,7 +734,14 @@ class ReportType(FolderObj, CustomModel):
 	def __init__(self, *args, **kwargs):
 		super(ReportType, self).__init__(*args, **kwargs)
 		self.__prev_shiny_report = self.shiny_report_id
-
+	
+	# clem 24/03/2017
+	_serialize_keys = ['id', ('type', 'name'), 'author', 'created']
+	
+	# clem 24/03/2017
+	# def to_json(self):
+	# 	return {'id': self.id, 'name': self.type, 'author': self.author.id, 'created': str(self.created)}
+	
 	@property
 	def folder_name(self):
 		return '%s_%s' % (self.id, slugify(self.type))
@@ -1094,10 +1105,23 @@ def user_prof_fn_spe(self, filename):
 	return 'profiles/%s/%s.%s' % (slug, slug, extension)
 
 
+# clem 27/03/2017
+class SpecialUser(User, AutoJSON):
+	_serialize_keys = ['username', 'full_name', 'id']
+	
+	@property
+	def full_name(self):
+		return self.get_full_name()
+
+	class Meta:
+		proxy = True
+
+
 # TODO fix naming of institute
-class UserProfile(CustomModelAbstract): # TODO move to a common base app
+class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base app
 	# user = models.ForeignKey(User, unique=True)
-	user = models.OneToOneField(User)
+	user = models.OneToOneField(SpecialUser)
+	# user = models.OneToOneField(CustomUser)
 
 	fimm_group = models.CharField(max_length=75, blank=True)
 	logo = models.FileField(upload_to=user_prof_fn_spe, blank=True)
@@ -1108,6 +1132,9 @@ class UserProfile(CustomModelAbstract): # TODO move to a common base app
 	last_active = models.DateTimeField(default=timezone.now)
 	
 	objects = managers.UserManager()
+	
+	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'), ('institute_info', 'institute')]
+	_serialize_recur = True
 	
 	# clem 19/01/2017
 	@property
@@ -2095,8 +2122,8 @@ class Jobs(Runnable):
 		abstract = False
 		db_table = 'breeze_jobs'
 
-
-class Report(Runnable):
+		
+class Report(Runnable, AutoJSON):
 	def __init__(self, *args, **kwargs):
 		super(Report, self).__init__(*args, **kwargs)
 		allowed_keys = Trans.translation.keys() + ['shared', 'title', 'project', 'rora_id']
@@ -2125,7 +2152,7 @@ class Report(Runnable):
 	_doc_ml = models.FileField(upload_to=generic_super_fn_spe, blank=True, db_column='dochtml')
 	email = ''
 	mailing = ''
-
+	
 	# Report specific
 	project = models.ForeignKey(Project, null=True, blank=True, default=None)
 	shared = models.ManyToManyField(User, blank=True, default=None, related_name='report_shares')
@@ -2428,6 +2455,17 @@ class Report(Runnable):
 			self.type.shiny_report.unlink_report(self)
 
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
+	
+	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']
+	_serialize_recur = False
+
+	# clem 24/03/2017
+	def _extra_json(self):
+		return {
+			'links': {
+				
+			}
+		}
 
 	class Meta(Runnable.Meta): # TODO check if inheritance is required here
 		abstract = False

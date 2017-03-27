@@ -5,6 +5,10 @@ urlpatterns = [
 	url(r'^$', v1.root, name='v1.root'),
 	
 	url(r'^project/news$', v1.news, name='v1.news'),
+	url(r'^reports/?$', v1.reports, name='v1.reports'),
+	url(r'^projects/?$', v1.projects, name='v1.projects'),
+	url(r'^rtypes/?$', v1.rtypes, name='v1.rtypes'),
+	url(r'^users/?$', v1.users, name='v1.users'),
 	url(r'^show/cache/?$', v1.show_cache, name='v1.show_cache'),
 	url(r'^hook/', include('webhooks.urls'))
 ]

@@ -12,6 +12,7 @@ settings.handler404 = handler404
 # settings.settings.DATABASES['default']['handler404'] = handler404
 
 API_VERSION = '1.0'
+API_SERVE_DEFAULT = 'api.urls_v1'
 
 GIT_HUB_IP_NETWORK = '192.30.252.0/22'
 GIT_COMMAND = 'git pull --verify-signatures'

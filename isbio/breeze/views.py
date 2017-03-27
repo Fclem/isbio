@@ -447,6 +447,12 @@ def _report_filtering(all_reports, user, _all=False):
 
 
 @login_required(login_url='/')
+def reports2(request, _all=False):
+	return render_to_response('reports2.html', RequestContext(request, {
+	}))
+	
+
+@login_required(login_url='/')
 def reports(request, _all=False):
 
 	page_index, entries_nb = aux.report_common(request)

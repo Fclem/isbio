@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 import time
 import json
+from json import JSONEncoder
 
 CT_JSON = 'application/json'
 CT_TEXT = 'text/plain'
@@ -24,6 +25,36 @@ CUSTOM_MSG = {
 	HTTP_NOT_IMPLEMENTED: 'NOT IMPLEMENTED YET',
 	HTTP_FORBIDDEN: 'ACCESS DENIED'
 }
+
+
+def _default(self, obj):
+	return getattr(obj.__class__, "to_json", _default.default)(obj)
+
+
+_default.default = JSONEncoder().default  # Save unmodified default.
+JSONEncoder.default = _default # replacement
+
+
+# clem 24/03/2017
+def json_convert(an_object):
+	""" JSON conversion with error management
+	
+	:type an_object: object
+	:rtype: str
+	"""
+	def get_addr(txt):
+		a_list = str(txt).split(' ')
+		for each in a_list:
+			if each.startswith('0x'):
+				return hex(int(each[:-1], 16))
+	
+	result = '[]'
+	# try:
+	result = json.dumps(an_object)
+		
+	#except TypeError as e:
+	#	print('TypeError: %s ::\n(%s)' % (e, an_object))
+	return result
 
 
 # clem 18/10/2016
@@ -70,7 +101,7 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 	}
 	result.update(data)
 	
-	return HttpResponse(json.dumps(result), content_type=CT_JSON, status=http_code)
+	return HttpResponse(json_convert(result), content_type=CT_JSON, status=http_code)
 
 
 # clem 28/02/2016
@@ -89,7 +120,7 @@ def get_response_raw(data=empty_dict, http_code=HTTP_SUCCESS):
 	"""
 	assert isinstance(data, dict)
 		
-	return HttpResponse(json.dumps(data), content_type=CT_JSON, status=http_code)
+	return HttpResponse(json_convert(data), content_type=CT_JSON, status=http_code)
 
 
 # clem 18/10/2016

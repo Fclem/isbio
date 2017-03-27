@@ -100,6 +100,7 @@ else:
 		url(r'^showdetails/(?P<sid>\d+)$', breeze.views.showdetails, name='showdetails'),
 		url(r'^deletecart/(?P<sid>\d+)$', breeze.views.deletecart, name='deletecart'),
 		url(r'^reports/?$', breeze.views.reports, name='reports'),
+		url(r'^reports2/?$', breeze.views.reports2, name='reports2'),
 		url(r'^reports/all/?$', breeze.views.reports, name='reports', kwargs={'_all': True}),
 		url(r'^reports/search$', breeze.views.report_search, name='report_search'),
 		url(r'^reports/view/\d+/Results/HTMLreport/(?P<a_dir>[^/]+)/(?P<a_path>.+)$', breeze.views.report_statics,

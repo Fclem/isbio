@@ -1,5 +1,6 @@
 from django.conf.urls import url, include
 from . import views as api_views
+from . import settings
 
 urlpatterns = [
 	url(r'^$', api_views.api_home, name='api.home'),
@@ -8,5 +9,6 @@ urlpatterns = [
 	url(r'^auth/shiny/?.*$', api_views.shiny_auth, name='api.shiny_auth'),
 	url(r'^legacy/', include('api.urls_legacy')),
 	url(r'^v1/', include('api.urls_v1')),
+	url(r'^', include(settings.API_SERVE_DEFAULT)),
 	url(r'^.*/?', api_views.handler404, name='api.not_found'),
 ]

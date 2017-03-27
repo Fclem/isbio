@@ -1292,15 +1292,119 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 		abstract = True
 
 
+# clem 24/03/2017
+class AutoJSON(object):
+	""" Provides an automated JSON serializer for listed attributes only.
+	
+	Define attributes to serialize using a list :
+		cls._serialize_keys = ['attr1', 'attr2', ('attr3', 'json_custom_name'), ...]
+		
+		Attributes names may also be path to level+1 attributes, like in 'user.id'
+	Define if attributes should be recursively serialized to json if they are AutoJSON subclasses
+		cls._serialize_recur = True | False
+	
+	Attributes values are
+		attr.to_json(), if cls._serialize_recur and attr is an AutoJSON object
+		
+		or attr.id, if attr as an id attribute
+		
+		or true | false, Json's value if type(attr) is bool
+		
+		or null, if attr is None or attr == 'None'
+		
+		or int(attr), if attribute name is 'id'
+		
+		or unicode(attr), else
+	"""
+	
+	def __init__(self, *args, **kwargs):
+		# super(AutoJSONserialize, self).__init__(*args, **kwargs)
+		if not hasattr(self, '_serialize_keys'):
+			raise AttributeError('_serialize_keys attribute is required for auto JSON serialization')
+	
+	# clem 27/03/2017
+	@staticmethod
+	def __base_name_parser(base_name):
+		return (base_name[1], base_name[0]) if type(base_name) is tuple else (base_name, base_name)
+	
+	# clem 27/03/2017
+	def __internal_attr_name(self, base_name):
+		json_name, name = self.__base_name_parser(base_name)
+		if '.' in name:
+			split = name.split('.', 1)
+			return json_name, split[0], split[1]
+		else:
+			return json_name, ('_' + name if not hasattr(self, name) and hasattr(self, '_' + name) else name), ''
+		
+	# clem 27/03/2017
+	def __attr_parser(self, attr_path):
+		json_name, root, sub = self.__internal_attr_name(attr_path)
+		if sub:
+			attr_name = sub
+			parent_object = self.__getattribute__(root)
+		else:
+			attr_name = root
+			parent_object = self
+		return parent_object.__getattribute__(attr_name), json_name
+	
+	# clem 27/03/2017
+	def __recur_predicate(self, attribute):
+		return hasattr(attribute, 'to_json') and callable(attribute.to_json) \
+			and (not hasattr(self, '_serialize_recur') or self._serialize_recur)
+	
+	def to_json(self):
+		assert hasattr(self, '_serialize_keys')
+		a_dict = dict()
+		for each in self._serialize_keys:
+			attribute, json_name = self.__attr_parser(each)
+
+			if self.__recur_predicate(attribute):
+				value = attribute.to_json()
+			elif hasattr(attribute, 'id'):
+				value = int(attribute.id)
+			else:
+				if type(attribute) in (bool, type(None)):
+					value = attribute
+				else:
+					value = unicode(attribute) if json_name != 'id' else int(attribute)
+				if value == 'None':
+					value = None
+			a_dict.update({json_name: value})
+		
+		if hasattr(self, '_extra_json') and callable(self._extra_json):
+			a_dict.update(self._extra_json())
+		
+		return a_dict
+	
+	# clem 27/03/2017
+	@classmethod
+	def json_key_list(cls):
+		a_list = list()
+		for each in cls._serialize_keys:
+			json_name, _ = cls.__base_name_parser(each)
+			a_list.append(json_name)
+		return a_list
+	
+	@classmethod
+	def json_dump(cls, query=None):
+		if not query:
+			query = cls.objects.all()
+		return {
+			# '_keys': cls._serialize_keys,
+			'_keys': cls.json_key_list(),
+			'list': list(query)
+		}
+
+
 # 23/11/2015 # FIXME
-class CustomUser(User):
+class CustomUser(User, AutoJSON):
 	objects = managers.CustomUserManager()
 	
 	class Meta:
 		ordering = ["username"]
-		proxy = False
+		# proxy = True
 		auto_created = True # FIXME Hack
 	# db_table = 'auth_user'
-
-# broken
-# OrderedUser = CustomUser
+	
+	# broken
+	# OrderedUser = CustomUser
