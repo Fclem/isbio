@@ -100,7 +100,8 @@ def projects(request):
 	from breeze.models import Project, UserProfile
 	
 	institute = UserProfile.get_institute(request.user)
-	all_projects = Project.objects.filter(institute=institute)
+	# all_projects = Project.objects.filter(institute=institute)
+	all_projects = Project.objects.all()
 	
 	data = {'data': Project.json_dump(all_projects)}
 	return code.get_response(data=data)
@@ -112,7 +113,8 @@ def rtypes(request):
 	from breeze.models import ReportType, UserProfile
 	
 	institute = UserProfile.get_institute(request.user)
-	all_rtypes = ReportType.objects.filter(institute=institute)
+	# all_rtypes = ReportType.objects.filter(institute=institute)
+	all_rtypes = ReportType.objects.all()
 	
 	data = {'data': ReportType.json_dump(all_rtypes)}
 	return code.get_response(data=data)
@@ -124,7 +126,8 @@ def users(request):
 	from breeze.models import User, UserProfile
 	
 	institute = UserProfile.get_institute(request.user)
-	all_users = UserProfile.objects.filter(institute_info=institute)
+	# all_users = UserProfile.objects.filter(institute_info=institute)
+	all_users = UserProfile.objects.all()
 	
 	data = {'data': UserProfile.json_dump(all_users)}
 	return code.get_response(data=data)

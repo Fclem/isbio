@@ -547,10 +547,19 @@
 			}
 		}
 		
+		function dictGetter(dict, value, sub){
+			try{
+				return dict[value][sub];
+			}catch (e){
+				console.error('Key', value, '.', sub, 'not found in ', dict);
+				return value;
+			}
+		}
+		
 		var myHelpers = {
 			project: function (val) { return projectDict[val].name; },
 			type: function (val) { return reportTypeDict[val].name; },
-			user: function (val) { return userDict[val].full_name; }
+			user: function (val) { return dictGetter(userDict, val, 'full_name'); }
 		};
 		
 		function fillTable(list){
@@ -564,19 +573,12 @@
 		}
 		
 		$(document).ready(function () {
-			var ready = false;
+			//var ready = false;
 			console.log("ready!");
 			// apiClient(userUrl, populateUser);
-			apiClient(userUrl, populateWrapper(userDict), function () {
-				ready = true;
-			});
+			apiClient(userUrl, populateWrapper(userDict));
 			apiClient(reportTypeUrl, populateWrapper(reportTypeDict));
 			apiClient(projectUrl, populateWrapper(projectDict));
-			
-			var i = 0;
-			while(!ready && i<10000){
-				i++;
-			}
 			
 			apiClient(reportUrl, fillTable);
 		});
