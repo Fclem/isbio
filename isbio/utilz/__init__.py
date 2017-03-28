@@ -207,3 +207,7 @@ def is_admin(request):
 	if not (request.user.is_superuser or request.user.is_staff):
 		raise PermissionDenied
 	return True
+
+
+# clem 28/03/2017
+context = dict()

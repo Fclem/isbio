@@ -87,3 +87,11 @@ def do_r_source_git_pull():
 		logger.exception(str(e))
 	return False
 
+
+# clem 28/03/2017
+def default_object_json_dump(the_object, query=None):
+	if not query:
+		query = the_object.objects.all()
+	
+	data = {'data': the_object.json_dump(query)}
+	return get_response(data=data)

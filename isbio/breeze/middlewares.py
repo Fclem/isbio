@@ -154,7 +154,15 @@ class CheckUserProfile(object):
 			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
 				response.set_cookie(settings.ENC_SESSION_ID_COOKIE_NAME, value)
 		return response
-		
+
+
+# clem 28/03/2017
+class ContextualRequest(object):
+	@staticmethod
+	def process_request(request):
+		import utilz
+		utilz.context = {'request': request}
+	
 
 class RemoteFW(object):
 	@staticmethod

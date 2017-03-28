@@ -97,9 +97,10 @@ def reports(request):
 # clem 24/03/2017
 @login_required
 def projects(request):
-	from breeze.models import Project, UserProfile
+	# from breeze.models import Project, UserProfile
+	from breeze.models import Project
 	
-	institute = UserProfile.get_institute(request.user)
+	# institute = UserProfile.get_institute(request.user)
 	# all_projects = Project.objects.filter(institute=institute)
 	all_projects = Project.objects.all()
 	
@@ -110,9 +111,10 @@ def projects(request):
 # clem 24/03/2017
 @login_required
 def rtypes(request):
-	from breeze.models import ReportType, UserProfile
+	# from breeze.models import ReportType, UserProfile
+	from breeze.models import ReportType
 	
-	institute = UserProfile.get_institute(request.user)
+	# institute = UserProfile.get_institute(request.user)
 	# all_rtypes = ReportType.objects.filter(institute=institute)
 	all_rtypes = ReportType.objects.all()
 	
@@ -123,9 +125,10 @@ def rtypes(request):
 # clem 27/03/2017
 @login_required
 def users(request):
-	from breeze.models import User, UserProfile
+	# from breeze.models import User, UserProfile
+	from breeze.models import UserProfile
 	
-	institute = UserProfile.get_institute(request.user)
+	# institute = UserProfile.get_institute(request.user)
 	# all_users = UserProfile.objects.filter(institute_info=institute)
 	all_users = UserProfile.objects.all()
 	

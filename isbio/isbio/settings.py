@@ -199,6 +199,7 @@ MIDDLEWARE_CLASSES = [
 	# 'django.middleware.doc.XViewMiddleware',
 	'breeze.middlewares.JobKeeper',
 	'breeze.middlewares.CheckUserProfile',
+	'breeze.middlewares.ContextualRequest',
 	'django_requestlogging.middleware.LogSetupMiddleware',
 	'breeze.middlewares.DataDog' if ENABLE_DATADOG else 'breeze.middlewares.Empty',
 	'breeze.middlewares.RemoteFW' if ENABLE_REMOTE_FW else 'breeze.middlewares.Empty',

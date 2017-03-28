@@ -58,7 +58,7 @@ def json_convert(an_object):
 
 
 # clem 18/10/2016
-def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw=False):
+def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw=False, request=None):
 	"""
 	
 	:param result: optional bool to return HTTP200 or HTTP400
@@ -71,12 +71,12 @@ def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw
 	:type raw: bool
 	:rtype: HttpResponse
 	"""
-	return get_response_opt(data, make_http_code(result), version, make_message(result)) if not raw else \
+	return get_response_opt(data, make_http_code(result), version, make_message(result), request) if not raw else \
 		get_response_raw(data, make_http_code(result))
 
 
 # clem 17/10/2016
-def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.API_VERSION, message=''):
+def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.API_VERSION, message='', request=None):
 	"""
 	
 	:param data: optional dict, containing json-serializable data
@@ -99,6 +99,11 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 		'time'         : time.time(),
 		'data'         : data
 	}
+	if not request:
+		import utilz
+		request = utilz.context['request']
+	from breeze.models import UserProfile
+	result.update({'auth': UserProfile.objects.get(pk=request.user.id)})
 	result.update(data)
 	
 	return HttpResponse(json_convert(result), content_type=CT_JSON, status=http_code)
@@ -198,7 +203,7 @@ def _is_authenticated(request):
 
 
 # clem 17/10/2016
-def root(_):
+def root(_=None):
 	return get_response()
 
 
@@ -219,7 +224,7 @@ def is_authenticated(request):
 # clem 20/02/2017
 @login_required(login_url='/')
 def has_auth(request):
-	return root(request)
+	return root()
 
 
 # clem 21/02/2017
