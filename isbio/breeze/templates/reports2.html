@@ -82,25 +82,9 @@
 					<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
 					      onchange="submit_filter_form()" style="text-align: center;">
 						{% csrf_token %}
-						<select id="filt_type" name="filt_type" class="input-medium">
-							<option id="" value="">All Types</option>
-							{% for item in rtypes %}
-								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
-							{% endfor %}
-						</select>
-						<select id="filt_author" name="filt_author" class="input-medium">
-							<option id="" value="">All Authors</option>
-							{% for item in users %}
-								<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-									{{ item.the_full_name }}</option>
-							{% endfor %}
-						</select>
-						<select id="filt_project" name="filt_project" class="input-medium">
-							<option id="" value="">All projects</option>
-							{% for item in projects %}
-								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
-							{% endfor %}
-						</select>
+						<select id="filt_type" name="filt_type" class="input-medium"></select>
+						<select id="filt_author" name="filt_author" class="input-medium"></select>
+						<select id="filt_project" name="filt_project" class="input-medium"></select>
 						<input id="filt_name" name="filt_name" type="text" class="input"
 						       placeholder="Report name (type & press Enter)">
 						<!--<button type="submit" class="btn">Search</button>-->
@@ -129,13 +113,6 @@
 			</div>
 			<!-- FILTERS HIDE/SHOW button -->
 			<div class="span2">
-				&nbsp;
-				<!--
-				<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
-				   data-target="#filter-form-box">
-					<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
-				</a>
-				-->
 			</div>
 		</div>
 		
@@ -470,6 +447,7 @@
 					<i class="icon-download-alt"></i>
 				</a>
 			</td>
+			{{if ~isOwn(author) }}
 			<!-- Send (to off-site users) button -->
 			<td>
 				&nbsp;
@@ -487,6 +465,9 @@
 					<i class="icon-trash"></i>
 				</a>
 			</td>
+			{{else}}
+			<td colspan="3">&nbsp;</td>
+			{{/if}}
 		</tr>
         {{/for}}
 		
@@ -501,27 +482,41 @@
 			</h4>
 		</small>
 	</script>
+
+	<script id="optionTemplate" type="text/x-jsrender">
+		<option id="" value="">All {{:cat}}</option>
+		{{for list}}
+		<option id="{{:id }}" value="{{:id }}">{{:name }}</option>
+		{{/for}}
+	</script>
 {% endverbatim %}
 
 	<script type="text/javascript">
-		var reportUrl = '/api/reports';
-		var reportTypeUrl = '/api/rtypes';
-		var projectUrl = '/api/projects';
-		var userUrl = '/api/users';
+		var reportUrl = '/api/reports',
+			reportTypeUrl = '/api/rtypes',
+			projectUrl = '/api/projects',
+			userUrl = '/api/users';
+			myInfoUrl = '/api/auth/me';
 		
-		var userDict = {};
-		var projectDict = {};
-		var reportTypeDict = {};
+		if(!window.hasOwnProperty("userDict"))
+			window.userDict = {};
+		if (!window.hasOwnProperty("projectDict"))
+			window.projectDict = {};
+		if (!window.hasOwnProperty("reportTypeDict"))
+			window.reportTypeDict = {};
+		if (!window.hasOwnProperty("myInfoDict"))
+			window.myInfoDict = {};
+		if (!window.hasOwnProperty("reportList"))
+			window.reportList = {};
 		
-		var rowTemplate = $.templates("#lineTemplate");
-		var countTemplate = $.templates("#countTemplate");
+		var rowTemplate = $.templates("#lineTemplate"),
+			countTemplate = $.templates("#countTemplate"),
+		    optionTemplate = $.templates("#optionTemplate");
 		
 		function apiClient(url, callback1, callback2){
 			$.get(url, function (data) {
 				if(data.result === 200){
-					// var keys = data.data.keys;
-					var list = data.data.list;
-					callback1(list);
+					callback1(data.data);
 				}else{
 					console.error('Api at ' + url + ' returned code ' + data.result);
 				}
@@ -529,9 +524,18 @@
 			})
 		}
 		
-		var tableId = '#reportList';
-		var reportCountId = '#reportCount';
-		var empty =
+		function apiListClient(url, callback1, callback2){
+			apiClient(url, function (data) {
+				callback1(data.list);
+			}, callback2);
+		}
+		
+		var tableId = '#reportList',
+			reportCountId = '#reportCount',
+			reportFiltTypeId = '#filt_type',
+			reportFiltAuthId = '#filt_author',
+			reportFiltProjectId = '#filt_project',
+			empty =
 		  '<tr> <td colspan="7">There is no report in the database matching your search criteria... </td> </tr>';
 		
 		function populateDict(list, dict){
@@ -547,6 +551,29 @@
 			}
 		}
 		
+		function callApiListIfNeeded(url, dict){
+			if (!Object.keys(dict).length) {
+				apiListClient(url, populateWrapper(dict));
+			}
+		}
+		
+		function getMyInfo(){
+			if (!Object.keys(myInfoDict).length) {
+				apiClient(myInfoUrl, function (data) {
+					myInfoDict = data.auth;
+				});
+			}
+		}
+		
+		function getReportList(){
+			if (!Object.keys(reportList).length) {
+				apiListClient(reportUrl, function (data) {
+					reportList = data;
+					fillTable(reportList);
+				});
+			}
+		}
+		
 		function dictGetter(dict, value, sub){
 			try{
 				return dict[value][sub];
@@ -559,7 +586,13 @@
 		var myHelpers = {
 			project: function (val) { return projectDict[val].name; },
 			type: function (val) { return reportTypeDict[val].name; },
-			user: function (val) { return dictGetter(userDict, val, 'full_name'); }
+			user: function (val) { return dictGetter(userDict, val, 'full_name'); },
+			isOwn: function (val) { return val === myInfoDict.id; }
+		};
+		
+		var helper2 = {
+			id: function (val) { return projectDict[val].name; },
+			name: function (val) { return projectDict[val].name; }
 		};
 		
 		function fillTable(list){
@@ -568,19 +601,25 @@
 				$(tableId).html(rowTemplate.render({'reports': list}, myHelpers));
 				$(reportCountId).html(countTemplate.render({'first': 1, 'last': size, 'total': size}));
 			}else{
-				$('#' + tableId).html(empty);
+				$(tableId).html(empty);
 			}
 		}
 		
+		function fillOption(list, target) {
+			$(target).html(optionTemplate.render({'list': list, 'cat': target}, helper2));
+		}
+		
 		$(document).ready(function () {
-			//var ready = false;
-			console.log("ready!");
-			// apiClient(userUrl, populateUser);
-			apiClient(userUrl, populateWrapper(userDict));
-			apiClient(reportTypeUrl, populateWrapper(reportTypeDict));
-			apiClient(projectUrl, populateWrapper(projectDict));
+			callApiListIfNeeded(userUrl, userDict);
+			callApiListIfNeeded(reportTypeUrl, reportTypeDict);
+			callApiListIfNeeded(projectUrl, projectDict);
+			getMyInfo();
 			
-			apiClient(reportUrl, fillTable);
+			getReportList();
+			
+			fillOption(reportTypeDict, reportFiltTypeId);
+			fillOption(userDict, reportFiltAuthId);
+			fillOption(projectDict, reportFiltProjectId);
 		});
 	</script>
 {% endblock %}
