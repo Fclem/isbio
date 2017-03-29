@@ -1395,16 +1395,80 @@ class AutoJSON(object):
 			'list': query if type(query) is list else list(query)
 		}
 
+	# clem 29/03/2017
+	@classmethod
+	def add_keys(cls, keys_list):
+		if type(keys_list) in [tuple, basestring]:
+			cls._serialize_keys.append(keys_list)
+		elif type(keys_list) is list:
+			cls._serialize_keys += keys_list
 
+
+# clem 27/03/2017
+class SpecialUser(User, AutoJSON):
+	_serialize_keys = ['username', 'full_name', 'id']
+	
+	@property
+	def full_name(self):
+		return self.get_full_name()
+	
+	# clem 29/03/2017
+	@property
+	def is_guest(self):
+		return self.username.startswith('guest')
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		from breeze.models import Report, Jobs, Group, Project, OffsiteUser, Post
+		content = [
+			(Report, '_author'),
+			(Jobs, '_author'),
+			(Group, 'author'),
+			(Project, 'author'),
+			(OffsiteUser, 'added_by'),
+			(Post, 'author')
+		]
+		try:
+			for obj, key in content:
+				for each in obj.objects.filter(**{key: self.id}):
+					each.delete()
+			
+			super(SpecialUser, self).delete(using, keep_parents)
+			return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
+	
+	class Meta:
+		proxy = True
+
+
+# 04/06/2015
+class OrderedUser(SpecialUser):
+	# objects = managers.CustomUserManager()
+	
+	# clem 29/03/2017
+	@classmethod
+	def getter(cls, request):
+		""" Code type competition helper, writting shortcut
+
+		:type request: django.http.HttpRequest
+		:rtype: OrderedUser
+		"""
+		return cls.objects.get(id=request.user.id)
+	
+	class Meta:
+		ordering = ["username"]
+		proxy = True
+		auto_created = True # FIXEME Hack
+		
+		
 # 23/11/2015 # FIXME
-class CustomUser(User, AutoJSON):
+class CustomUser(OrderedUser, AutoJSON):
 	objects = managers.CustomUserManager()
 	
 	class Meta:
 		ordering = ["username"]
-		# proxy = True
+		proxy = True
 		auto_created = True # FIXME Hack
-	# db_table = 'auth_user'
-	
-	# broken
-	# OrderedUser = CustomUser
+		# db_table = 'auth_user'

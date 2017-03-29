@@ -169,6 +169,20 @@
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
     </style>
     <![endif]-->
+	
+	<script src="https://cdn.auth0.com/js/lock/10.2.2/lock.min.js"></script>
+	<!-- AUTH0 init -->
+	<script type="text/javascript">
+		var lock = new Auth0Lock('gIN83mLS4qcQqE99Bi5MqzRzU38KruR6', 'breeze.eu.auth0.com', {
+			auth: {
+				redirectUrl : 'https://breeze-dev.cloudapp.net/login/',
+				responseType: 'code',
+				params      : {
+					scope: 'openid profile'
+				}
+			}
+		});
+	</script>
 			{% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -192,13 +206,6 @@
 				<a class="brand" href="/breeze/">{{ site_title }}</a>
 				<div class="navbar-content" id="navbar-content">
 					{% if user.is_authenticated %}
-
-						<!--
-					<ul class="nav pull-right">
-						<li>
-							<a class=" " href="/logout/">logout <i class="icon-white icon-share"></i></a>
-						</li>
-					</ul>-->
 					<ul class="nav pull-right">
 						<li>
 							<div class="btn-group pull-right">
@@ -207,7 +214,12 @@
 								  class="caret"> </span>
 								</a>
 								<ul class="dropdown-menu">
+									{% if user.is_guest %}
+									<li><a onclick="lock.show();"> Log in <i class="icon-share"></i></a></li>
+									<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
+									{% else %}
 									<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
+									{% endif %}
 								</ul>
 							</div>
 						</li>

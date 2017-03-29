@@ -18,7 +18,7 @@ def __make_guest_user(request, force=False):
 	# create a unique guest user, and proceed to login him in
 	if force or settings.AUTH_ALLOW_GUEST:
 		from django.contrib.auth import get_user_model
-		from breeze.models import UserProfile, Institute
+		from breeze.models import UserProfile, Institute, OrderedUser
 		from utilz import get_sha2
 		import binascii
 		import os
@@ -37,11 +37,14 @@ def __make_guest_user(request, force=False):
 		})
 
 		user = get_user_model().objects.create(**kwargs)
+		user = OrderedUser.objects.get(id=user.id)
 		
 		user_details = UserProfile()
 		user_details.user = user
 		user_details.institute_info = Institute.objects.get(pk=settings.GUEST_INSTITUTE_ID)
 		user_details.save()
+		
+		logger.info('AUTH created guest user %s' % user.username)
 		
 		return process_login(request, user)
 	else:
@@ -152,14 +155,24 @@ def trigger_logout(request):
 	:param request: HttpRequest
 	"""
 	if request.user.is_authenticated():
-		user = request.user
+		from breeze.models import OrderedUser, UserProfile
+		user = OrderedUser.getter(request)
 		auth.logout(request)
 		logger.info('LOGOUT %s (%s)' % (user.username, user.email))
 		url = settings.AUTH0_LOGOUT_URL
+		
 		try:
 			url = user.userprofile.institute_info.url or settings.AUTH0_LOGOUT_REDIRECT
 		except Exception as e:
 			logger.exception(str(e))
+		
+		if user.is_guest:
+			username = user.username
+			try:
+				if UserProfile.getter(request).delete():
+					logger.info('AUTH deleted guest user %s' % username)
+			except Exception as e:
+				logger.error('while deleting %s : %s' % (username, e))
 		return redirect('%s?returnTo=%s' % (settings.AUTH0_LOGOUT_URL, url))
 		# return redirect('https://www.fimm.fi')
 	else:

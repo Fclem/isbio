@@ -180,7 +180,6 @@ def match_filter(payload, filter_dict, org_key=''):
 
 
 # clem 20/02/2017
-# @login_required(login_url='/')
 def _is_authenticated(request):
 	return request.user.is_authenticated() if request and hasattr(request, 'user') else False
 
@@ -201,7 +200,6 @@ def handler404(request):
 
 
 # clem 20/02/2017
-# @login_required(login_url='/')
 def is_authenticated(request):
 	auth = _is_authenticated(request)
 	data = {'auth': auth}
@@ -211,15 +209,14 @@ def is_authenticated(request):
 # clem 20/02/2017
 @login_required(login_url='/')
 def has_auth(request):
-	from breeze.models import UserProfile
-	return get_response(data={'auth': UserProfile.objects.get(pk=request.user.id)})
+	return who(request)
 
 
 # clem 28/03/2017
 def who(request):
 	from breeze.models import UserProfile
-	UserProfile._serialize_keys.append(('user.email', 'email'))
-	data = {'auth': UserProfile.objects.get(pk=request.user.id)}
+	UserProfile.add_keys(('user.email', 'email'))
+	data = {'auth': UserProfile.getter(request)}
 	return get_response(data={'data': data})
 
 

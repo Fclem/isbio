@@ -65,41 +65,6 @@ class CustomModel(CustomModelAbstract):
 from shiny.models import ShinyReport
 
 
-# clem 27/03/2017
-class SpecialUser(User, AutoJSON):
-	_serialize_keys = ['username', 'full_name', 'id']
-	
-	@property
-	def full_name(self):
-		return self.get_full_name()
-	
-	# clem 29/03/2017
-	@property
-	def is_guest(self):
-		return self.username.startswith('guest')
-	
-	class Meta:
-		proxy = True
-
-
-# 04/06/2015
-class OrderedUser(SpecialUser):
-	# objects = managers.CustomUserManager()
-	
-	# clem 29/03/2017
-	@classmethod
-	def getter(cls, request):
-		""" Code type competition helper, writting shortcut
-		
-		:type request: django.http.HttpRequest
-		:rtype: OrderedUser
-		"""
-		return cls.objects.get(id=request.user.id)
-	
-	class Meta:
-		ordering = ["username"]
-		proxy = True
-		auto_created = True # FIXEME Hack
 
 
 # User = OrderedUser
@@ -1159,6 +1124,29 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 	@classmethod
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
+	
+	# clem 29/03/2017
+	@classmethod
+	def getter(cls, request):
+		""" Helper
+		
+		:type request: django.http.HttpRequest
+		:rtype: UserProfile
+		"""
+		return cls.objects.get(user=request.user.id)
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		from copy import copy
+		try:
+			user_copy = copy(self.user)
+			if super(CustomModelAbstract, self).delete(using, keep_parents):
+				user_copy.delete()
+				del user_copy
+				return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
 	
 	def __unicode__(self):
 		return self.the_full_name  # return self.user.username
@@ -2467,7 +2455,7 @@ class Report(Runnable, AutoJSON):
 	def delete(self, using=None):
 		if self.type.shiny_report_id > 0:
 			self.type.shiny_report.unlink_report(self)
-
+		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	
 	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']

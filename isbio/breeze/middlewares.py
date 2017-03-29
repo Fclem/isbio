@@ -108,6 +108,9 @@ class BreezeAwake:
 	@staticmethod
 	def process_request(_):
 		check_state()
+		from django.contrib.auth.models import User
+		from breeze.models import SpecialUser
+		User.is_guest = SpecialUser.is_guest
 
 if settings.ENABLE_DATADOG:
 	from datadog import statsd
