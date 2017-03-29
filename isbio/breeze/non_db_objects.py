@@ -1387,12 +1387,12 @@ class AutoJSON(object):
 	
 	@classmethod
 	def json_dump(cls, query=None):
-		if not query:
+		if query is None:
 			query = cls.objects.all()
 		return {
 			# '_keys': cls._serialize_keys,
 			'_keys': cls.json_key_list(),
-			'list': list(query)
+			'list': query if type(query) is list else list(query)
 		}
 
 

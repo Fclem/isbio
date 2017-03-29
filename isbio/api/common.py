@@ -42,19 +42,8 @@ def json_convert(an_object):
 	:type an_object: object
 	:rtype: str
 	"""
-	def get_addr(txt):
-		a_list = str(txt).split(' ')
-		for each in a_list:
-			if each.startswith('0x'):
-				return hex(int(each[:-1], 16))
 	
-	result = '[]'
-	# try:
-	result = json.dumps(an_object)
-		
-	#except TypeError as e:
-	#	print('TypeError: %s ::\n(%s)' % (e, an_object))
-	return result
+	return json.dumps(an_object)
 
 
 # clem 18/10/2016
@@ -71,7 +60,7 @@ def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw
 	:type raw: bool
 	:rtype: HttpResponse
 	"""
-	return get_response_opt(data, make_http_code(result), version, make_message(result), request) if not raw else \
+	return get_response_opt(data, make_http_code(result), version, make_message(result), request=request) if not raw else \
 		get_response_raw(data, make_http_code(result))
 
 
@@ -92,18 +81,16 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 	assert isinstance(data, dict)
 	if not message:
 		message = make_message(http_code=http_code)
-	result = { 'api':
+	result = {'api':
 		{'version': version, },
 		'result'       : http_code,
 		'message'      : message,
 		'time'         : time.time(),
 		'data'         : data
 	}
-	if not request:
-		import utilz
-		request = utilz.context['request']
-	from breeze.models import UserProfile
-	result.update({'auth': UserProfile.objects.get(pk=request.user.id)})
+	if request is not None:
+		from breeze.models import UserProfile
+		result.update({'auth': UserProfile.objects.get(pk=request.user.id)})
 	result.update(data)
 	
 	return HttpResponse(json_convert(result), content_type=CT_JSON, status=http_code)
@@ -159,7 +146,7 @@ def match_filter(payload, filter_dict, org_key=''):
 	if check_type not in [(dict, dict)]:
 		logger.error('cannot match with %s, %s' % check_type)
 		return False
-	for key, equal_value in filter_dict.iteritems():
+	for key, equal_value in filter_dict.items():
 		tail = None
 		if '.' in key :
 			# if the key is a dotted path
@@ -209,7 +196,7 @@ def root(_=None):
 
 # clem 17/10/2016
 def handler404(request):
-	data = { 'request': { 'url': request.path, 'get': request.GET, 'post': request.POST }}
+	data = {'request': {'url': request.path, 'get': request.GET, 'post': request.POST}}
 	return get_response_opt(data=data, http_code=HTTP_NOT_FOUND)
 
 
@@ -217,14 +204,23 @@ def handler404(request):
 # @login_required(login_url='/')
 def is_authenticated(request):
 	auth = _is_authenticated(request)
-	data = { 'auth': auth}
+	data = {'auth': auth}
 	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)
 
 
 # clem 20/02/2017
 @login_required(login_url='/')
 def has_auth(request):
-	return root()
+	from breeze.models import UserProfile
+	return get_response(data={'auth': UserProfile.objects.get(pk=request.user.id)})
+
+
+# clem 28/03/2017
+def who(request):
+	from breeze.models import UserProfile
+	UserProfile._serialize_keys.append(('user.email', 'email'))
+	data = {'auth': UserProfile.objects.get(pk=request.user.id)}
+	return get_response(data={'data': data})
 
 
 # clem 21/02/2017
@@ -237,5 +233,5 @@ def shiny_auth(request):
 		auth = check_session(session_id)
 	except Exception as e:
 		logger.warning(str(e))
-	data = { 'auth': auth }
+	data = {'auth': auth}
 	return get_response_opt(data=data, http_code=HTTP_SUCCESS if auth else HTTP_FORBIDDEN)

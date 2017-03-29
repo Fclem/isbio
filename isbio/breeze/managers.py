@@ -232,9 +232,9 @@ class QuerySet(original_QS):
 		args, kwargs = translate(args, kwargs)
 		return super(QuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
 
-	def filter(self, *args, **kwargs):
+	def __filter(self, *args, **kwargs):
 		args, kwargs = translate(args, kwargs)
-		return super(QuerySet, self).filter(*args, **kwargs)
+		return self.filter(*args, **kwargs)
 
 	def annotate(self, *args, **kwargs):
 		args, kwargs = translate(args, kwargs)
@@ -259,7 +259,7 @@ class QuerySet(original_QS):
 		"""
 		Returns ALL the jobs that ARE scheduled
 		"""
-		return self.filter(_author__exact=user)
+		return self.__filter(_author__exact=user)
 
 	def get_scheduled(self):
 		"""
@@ -525,6 +525,53 @@ class WorkersManager(ObjectsWithAuth):
 
 	def all(self):
 		return self.get_query_set()
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def _report_filtering_show_limited_predicate(self, user, _all):
+		"""
+
+		:type user: User
+		:type _all: bool
+		:rtype: bool
+		"""
+		return not settings.SET_SHOW_ALL_USERS and not (self.admin_override_param(user) and _all)
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def _report_filtering_each_predicate(self, each, user, _all):
+		"""
+
+		:type each: Report.objects
+		:type user: User
+		:type _all: bool
+		:rtype: bool
+		"""
+		return self._report_filtering_show_limited_predicate(user, _all) \
+			and not (each.is_owner(user) or each.is_in_share_list(user))
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def get_accessible(self, user, _all=False, query=None):
+		"""
+
+		:type user: User
+		:type _all: bool
+		:rtype: list
+		"""
+		a_list = list()
+		from models import UserProfile
+		insti = UserProfile.get_institute(user)
+		if query is None:
+			query = self.f.get_done(False, False).filter(_institute=insti)
+		# FIXME : turn that into an SQL query rather than a programmatic filtering
+		for each in query:
+			each.user_is_owner = each.is_owner(user)
+			each.user_has_access = each.has_access(user)
+			
+			if not self._report_filtering_each_predicate(each, user, _all):
+				a_list.append(each)
+		return a_list
 
 	@property
 	def f(self):

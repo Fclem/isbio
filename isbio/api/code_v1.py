@@ -1,4 +1,4 @@
-from .common import *
+from common import *
 from webhooks import hooker
 
 
@@ -90,8 +90,10 @@ def do_r_source_git_pull():
 
 # clem 28/03/2017
 def default_object_json_dump(the_object, query=None):
-	if not query:
+	if query is None:
 		query = the_object.objects.all()
 	
-	data = {'data': the_object.json_dump(query)}
-	return get_response(data=data)
+	content = the_object.json_dump(query) if hasattr(the_object, 'json_dump') else list(query) if type(query) is not \
+																								  list else query
+	
+	return get_response(data={'data': content})

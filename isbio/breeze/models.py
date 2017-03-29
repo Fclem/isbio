@@ -65,15 +65,41 @@ class CustomModel(CustomModelAbstract):
 from shiny.models import ShinyReport
 
 
+# clem 27/03/2017
+class SpecialUser(User, AutoJSON):
+	_serialize_keys = ['username', 'full_name', 'id']
+	
+	@property
+	def full_name(self):
+		return self.get_full_name()
+	
+	# clem 29/03/2017
+	@property
+	def is_guest(self):
+		return self.username.startswith('guest')
+	
+	class Meta:
+		proxy = True
+
+
 # 04/06/2015
-class OrderedUser(User):
+class OrderedUser(SpecialUser):
 	# objects = managers.CustomUserManager()
+	
+	# clem 29/03/2017
+	@classmethod
+	def getter(cls, request):
+		""" Code type competition helper, writting shortcut
+		
+		:type request: django.http.HttpRequest
+		:rtype: OrderedUser
+		"""
+		return cls.objects.get(id=request.user.id)
 	
 	class Meta:
 		ordering = ["username"]
 		proxy = True
 		auto_created = True # FIXEME Hack
-		# db_table = 'auth_user'
 
 
 # User = OrderedUser
@@ -1103,18 +1129,6 @@ def user_prof_fn_spe(self, filename):
 	fname, dot, extension = filename.rpartition('.')
 	slug = slugify(self.user.username)
 	return 'profiles/%s/%s.%s' % (slug, slug, extension)
-
-
-# clem 27/03/2017
-class SpecialUser(User, AutoJSON):
-	_serialize_keys = ['username', 'full_name', 'id']
-	
-	@property
-	def full_name(self):
-		return self.get_full_name()
-
-	class Meta:
-		proxy = True
 
 
 # TODO fix naming of institute

@@ -1,5 +1,5 @@
-from . import code_v1 as code
-from .common import *
+import code_v1 as code
+from common import *
 
 # import json # included in common
 # import time # included in common
@@ -71,7 +71,7 @@ def git_hook(request):
 
 # clem 22/10/2016
 @login_required
-def show_cache(_):
+def show_cache(request):
 	from utilz.object_cache import ObjectCache
 	# data = { 'cache': dict(ObjectCache.dump()) }
 	data = {'cache': ObjectCache.dump_list()}
@@ -85,59 +85,39 @@ def reports(request):
 	from breeze import auxiliary as aux
 	
 	# Manage sorting
-	sorting = aux.get_argument(request, 'sort') or '-created'
+	# sorting = aux.get_argument(request, 'sort') or '-created' # FIXME legacy
 	# get the user's institute
-	institute = UserProfile.get_institute(request.user)
-	all_reports = Report.objects.filter(status="succeed", _institute=institute).order_by(sorting)
+	# institute = UserProfile.get_institute(request.user)
+	# all_reports = Report.objects.filter(status="succeed", _institute=institute).order_by(sorting)
+	all_reports = Report.objects.get_accessible(request.user)
+	print 'api report len : ', len(all_reports)
 	
-	data = {'data': Report.json_dump(all_reports)}
-	return code.get_response(data=data)
+	return code.default_object_json_dump(Report, all_reports)
 
 
 # clem 24/03/2017
 @login_required
 def projects(request):
-	# from breeze.models import Project, UserProfile
 	from breeze.models import Project
-	
-	# institute = UserProfile.get_institute(request.user)
-	# all_projects = Project.objects.filter(institute=institute)
-	all_projects = Project.objects.all()
-	
-	data = {'data': Project.json_dump(all_projects)}
-	return code.get_response(data=data)
+	return code.default_object_json_dump(Project)
 
 
 # clem 24/03/2017
 @login_required
 def rtypes(request):
-	# from breeze.models import ReportType, UserProfile
 	from breeze.models import ReportType
-	
-	# institute = UserProfile.get_institute(request.user)
-	# all_rtypes = ReportType.objects.filter(institute=institute)
-	all_rtypes = ReportType.objects.all()
-	
-	data = {'data': ReportType.json_dump(all_rtypes)}
-	return code.get_response(data=data)
+	return code.default_object_json_dump(ReportType)
 
 
 # clem 27/03/2017
 @login_required
 def users(request):
-	# from breeze.models import User, UserProfile
 	from breeze.models import UserProfile
-	
-	# institute = UserProfile.get_institute(request.user)
-	# all_users = UserProfile.objects.filter(institute_info=institute)
-	all_users = UserProfile.objects.all()
-	
-	data = {'data': UserProfile.json_dump(all_users)}
-	return code.get_response(data=data)
+	return code.default_object_json_dump(UserProfile)
 
 
 # clem 28/02/2016
-def news(_):
-	data = json.load(file(settings.settings.DJANGO_ROOT + 'news.json'))
+def news(request):
+	data = json.load(open(settings.settings.DJANGO_ROOT + 'news.json'))
 	# return code.get_response(data=data, raw=True)
 	return code.get_response(data=data)
