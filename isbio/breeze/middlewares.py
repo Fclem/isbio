@@ -6,7 +6,7 @@ import datetime
 import sys
 from breeze.models import UserProfile
 from breeze import views
-from breeze.utils import TermColoring
+from breeze.utils import TermColoring, context
 from django.conf import settings
 
 if settings.DEBUG:
@@ -76,7 +76,7 @@ def check_state():
 # END
 
 
-class JobKeeper:
+class JobKeeper(object):
 	# p = Process(target=runner)
 	p = Thread(target=runner)
 	log = None
@@ -160,8 +160,8 @@ class CheckUserProfile(object):
 class ContextualRequest(object):
 	@staticmethod
 	def process_request(request):
-		import utilz
-		utilz.context = {'request': request}
+		# from utilz import context
+		context = {'request': request}
 	
 
 class RemoteFW(object):

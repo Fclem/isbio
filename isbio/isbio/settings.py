@@ -224,6 +224,10 @@ WSGI_APPLICATION = 'isbio.wsgi.application'
 # provide our profile model
 AUTH_PROFILE_MODULE = 'breeze.UserProfile'
 
+# allow on the fly creation of guest user accounts
+AUTH_ALLOW_GUEST = False
+GUEST_INSTITUTE_ID = 3
+
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.

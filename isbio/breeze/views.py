@@ -86,6 +86,7 @@ def logout(request):
 	return HttpResponseRedirect('/')  # FIXME hardcoded url
 
 
+# FIXME not used
 def register_user(request):
 	if request.user.is_authenticated():
 		return HttpResponseRedirect('/home/')  # FIXME hardcoded url
@@ -109,6 +110,7 @@ def register_user(request):
 		return render_to_response('forms/register.html', RequestContext(request, {'form': form}))
 
 
+# FIXME not used
 def base(request):
 	return render_to_response('base.html')
 
@@ -260,13 +262,6 @@ def home(request, state="feed"):
 		'server_status': server,
 		'db_access': db_access
 	}))
-
-
-def update_server(request):
-	server, server_info = aux.update_server_routine()
-
-	return HttpResponse(simplejson.dumps({'server_status': server, 'server_info': server_info}),
-		content_type=c_t.JSON)
 
 
 @login_required(login_url='/')
@@ -449,6 +444,12 @@ def _report_filtering(all_reports, user, _all=False):
 @login_required(login_url='/')
 def reports2(request, _all=False):
 	return render_to_response('reports2.html', RequestContext(request, {
+		'url_lst': {
+			# TODO remove static url mappings
+			'Edit': '/reports/edit_access/',
+			'Add' : '/off_user/add/',
+			'Send': '/reports/send/'
+		}
 	}))
 	
 
@@ -461,11 +462,11 @@ def reports(request, _all=False):
 	# get the user's institute
 	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
-	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
+	# all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
 	# later all_users will be changed to all users from the same institute
 	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
-	all_users = UserProfile.objects.all().order_by('user__username')
+	# all_users = UserProfile.objects.all().order_by('user__username')
 	# first find all the users from the same institute, then find their accessible report types
 	
 	# report_type_lst = ReportType.objects.filter(access=request.user)
@@ -474,7 +475,9 @@ def reports(request, _all=False):
 	
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
+	# all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
+	all_reports = Report.objects.f.get_done(False, False).order_by(sorting)
+	all_reports = Report.objects.get_accessible(request.user, _all, all_reports)
 	
 	a_user_list = dict()
 	for each in all_reports:
@@ -2058,6 +2061,7 @@ def save(request):
 		return HttpResponseRedirect(reverse(scripts))
 
 
+@login_required(login_url='/')
 def show_rcode(request, jid):
 	job = Jobs.objects.get(id=jid)
 	# docxml = xml.parse(str(settings.MEDIA_ROOT) + str(job._doc_ml))
@@ -2083,6 +2087,7 @@ def show_rcode(request, jid):
 	}))
 
 
+@login_required(login_url='/')
 def veiw_project(request, pid):
 	project = Project.objects.get(id=pid)
 	context = {'project': project}
@@ -2090,6 +2095,7 @@ def veiw_project(request, pid):
 	return render_to_response('forms/project_info.html', RequestContext(request, context))
 
 
+@login_required(login_url='/')
 def view_group(request, gid):
 	group = Group.objects.get(id=gid)
 	context = {'group': group, 'user_list': group.user_list}
@@ -2750,10 +2756,9 @@ def edit_group_dialog(request, gid):
 @login_required(login_url='/')
 def update_user_info_dialog(request):
 	__self__ = this_function_name()  # instance to self
-	# user_info = User.objects.get(username=request.user)
-	user_info = OrderedUser.objects.get(id=request.user.id)
-
-	if request.method == 'POST':
+	user_info = OrderedUser.getter(request)
+	
+	if request.method == 'POST' and not user_info.is_guest:
 		personal_form = breezeForms.PersonalInfo(request.POST)
 		if personal_form.is_valid():
 			user_info.first_name = personal_form.cleaned_data.get('first_name', None)
@@ -2871,17 +2876,20 @@ def report_search(request, all=False):
 	else:
 		sorting = '-_created'
 	
-	insti = UserProfile.get_institute(request.user)
+	# insti = UserProfile.get_institute(request.user)
 	# Process the query
-	if entry_query is None:
-		found_entries = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)  #
-	# .distinct()
-	else:
-		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
-			sorting).distinct()
+	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+	# if entry_query is None:
+	#	# found_entries = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)  #
+	#	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+	## .distinct()
+	#else:
+	if not entry_query:
+		found_entries = found_entries.filter(entry_query).distinct()
 		
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST or all)
+	# found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST or all)
+	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or all, query=found_entries)
 	
 	count = {'total': len(found_entries)}
 	# apply pagination

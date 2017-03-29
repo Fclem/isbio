@@ -13,6 +13,7 @@ class CASBackend(org_CASBackend):
 		note : duplicated code from django.contrib.auth.backends.ModelBackend
 			since "user_can_authenticate = ModelBackend.user_can_authenticate" was not working
 		"""
+		print 'HelloAuth'
 		is_active = getattr(user, 'is_active', None)
 		return is_active or is_active is None
 
