@@ -5,8 +5,11 @@ from django.core.exceptions import ObjectDoesNotExist
 import django.db.models.query_utils
 from django.conf import settings
 from django.http import Http404
+from django.contrib.auth.models import UserManager
 from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied
 from comp import translate
+from utilz import logger, time
+from utils import timezone
 
 org_Q = django.db.models.query_utils.Q
 
@@ -645,7 +648,14 @@ class CompTargetsManager(CustomManager):
 
 
 # clem 26/10/2016
-class CustomUserManager(Manager):
+class BreezeUserManager(UserManager):
+	# clem 30/03/20117
+	def all(self):
+		return super(BreezeUserManager, self).exclude(first_name=settings.GUEST_FIRST_NAME)
+	
+	def guests(self):
+		return super(BreezeUserManager, self).filter(first_name=settings.GUEST_FIRST_NAME)
+	
 	def __send_mail(self, user):
 		from django.core.mail import EmailMessage
 
@@ -655,7 +665,6 @@ class CustomUserManager(Manager):
 		result = msg.send()
 	
 	def create(self, **kwargs):
-		print 'custom_user_create'
 		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se']
 		email = kwargs.get('email', '')
 		pass_on = kwargs
@@ -674,10 +683,9 @@ class CustomUserManager(Manager):
 				from breeze.models import Institute
 				user_institute = Institute.objects.get(domain=domain)
 			except Exception as e:
-				from utilz import logger
 				logger.exception(str(e))
 			
-		user = super(CustomUserManager, self).create(**pass_on)
+		user = super(BreezeUserManager, self).create(**pass_on)
 		
 		# TODO alert admin about new user
 		if user_institute:
@@ -686,15 +694,47 @@ class CustomUserManager(Manager):
 			user.save()
 		self.__send_mail(user)
 		return user
+	
+	# clem 30/03/2017
+	def ___create_guest(self, force=False):
+		if settings.AUTH_ALLOW_GUEST or force:
+			from breeze.models import UserProfile, Institute, OrderedUser
+			from utilz import get_sha2
+			import binascii
+			import os
+			
+			kwargs = {
+				'first_name': settings.GUEST_FIRST_NAME,
+				'last_name'	: binascii.hexlify(os.urandom(3)).decode(),
+			}
+			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
+			email = '%s@%s' % (username, settings.DOMAIN[0])
+			kwargs.update({
+				'username'	: username,
+				'email'		: email,
+				'password'	: get_sha2([username, email, str(time()), str(os.urandom(1000))])
+			})
+			
+			user = super(BreezeUserManager, self).create(**kwargs)
+			user = OrderedUser.objects.get(id=user.id)
+			
+			user_details = UserProfile()
+			user_details.user = user
+			user_details.institute_info = Institute.objects.get(pk=settings.GUEST_INSTITUTE_ID)
+			user_details.save()
+			
+			return user
+		from breeze.b_exceptions import DisabledByCurrentSettings
+		raise DisabledByCurrentSettings
 
 
 # clem 19/01/2016
-class UserManager(Manager):
+class UserProfileManager(Manager):
 	def dump(self):
-		return super(UserManager, self)
+		return super(UserProfileManager, self)
 	
 	def all(self):
-		return super(UserManager, self).filter(user_id__is_active=True)
+		return super(UserProfileManager, self).filter(user_id__is_active=True)
 	
 	def filter(self, *args, **kwargs):
 		return self.all().filter(*args, **kwargs)
@@ -704,3 +744,16 @@ class UserManager(Manager):
 	
 	def get(self, *args, **kwargs):
 		return self.all().get(*args, **kwargs)
+
+	# clem 30/03/2017
+	def get_expired_guests(self):
+		limit = timezone.now() - timezone.timedelta(minutes=settings.GUEST_EXPIRATION_TIME)
+		return super(UserProfileManager, self).filter(user__first_name=settings.GUEST_FIRST_NAME, last_active__lt=limit)
+	
+	# clem 30/03/2017
+	def clear_expired_guests(self):
+		try:
+			for each in self.get_expired_guests():
+				each.delete()
+		except Exception as e:
+			logger.exception(e)

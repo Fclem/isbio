@@ -51,15 +51,21 @@ MANAGERS = ADMINS
 
 MYSQL_SECRET_FILE = 'mysql_root'
 
+# Local time zone for this installation. Choices can be found here:
+# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# although not all choices may be available on all operating systems.
+# In a Windows environment this must be set to your system time zone.
+TIME_ZONE = 'Europe/Helsinki'
+
 DATABASES = {
 	'default': {
-		'ENGINE'  : 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-		'NAME'    : 'breezedb', # Or path to database file if using sqlite3.
-		'USER'    : 'root', # Not used with sqlite3.
-		'PASSWORD': get_key(MYSQL_SECRET_FILE), # Not used with sqlite3.
-		'HOST'    : 'breeze-sql', # Set to empty string for localhost. Not used with sqlite3.
-		'PORT'    : '3306', # Set to empty string for default. Not used with sqlite3.
-		'OPTIONS' : {
+		'ENGINE'	: 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+		'NAME'		: 'breezedb', # Or path to database file if using sqlite3.
+		'USER'		: 'root', # Not used with sqlite3.
+		'PASSWORD'	: get_key(MYSQL_SECRET_FILE), # Not used with sqlite3.
+		'HOST'		: 'breeze-sql', # Set to empty string for localhost. Not used with sqlite3.
+		'PORT'		: '3306', # Set to empty string for default. Not used with sqlite3.
+		'OPTIONS'	: {
 			"init_command": "SET default_storage_engine=INNODB; SET SESSION TRANSACTION ISOLATION LEVEL READ "
 							"COMMITTED",
 		}
@@ -91,13 +97,6 @@ TEMPLATES = [
 		},
 	},
 ]
-
-
-# Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-# although not all choices may be available on all operating systems.
-# In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'Europe/Helsinki'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -225,8 +224,10 @@ WSGI_APPLICATION = 'isbio.wsgi.application'
 AUTH_PROFILE_MODULE = 'breeze.UserProfile'
 
 # allow on the fly creation of guest user accounts
-AUTH_ALLOW_GUEST = False
-GUEST_INSTITUTE_ID = 3
+AUTH_ALLOW_GUEST = False		# allow anonymous visitor to login as disposable guests
+GUEST_INSTITUTE_ID = 3			# guest institute
+GUEST_EXPIRATION_TIME = 24 * 60	# expiration time of inactive guests in minutes
+GUEST_FIRST_NAME = 'guest'
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -298,6 +299,8 @@ ADMINS = (
 SOURCE_ROOT = recur(3, os.path.dirname, os.path.realpath(__file__)) + '/'
 DJANGO_ROOT = recur(2, os.path.dirname, os.path.realpath(__file__)) + '/'
 TEMPLATE_FOLDER = DJANGO_ROOT + 'templates/' # source templates (not HTML ones)
+
+DJANGO_AUTH_MODEL_BACKEND_PY_PATH = 'django.contrib.auth.backends.ModelBackend'
 
 os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 

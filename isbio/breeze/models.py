@@ -1099,7 +1099,7 @@ def user_prof_fn_spe(self, filename):
 # TODO fix naming of institute
 class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base app
 	# user = models.ForeignKey(User, unique=True)
-	user = models.OneToOneField(SpecialUser)
+	user = models.OneToOneField(BreezeUser)
 	# user = models.OneToOneField(CustomUser)
 
 	fimm_group = models.CharField(max_length=75, blank=True)
@@ -1108,11 +1108,12 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 	# institute = institute_info
 	# if user accepts the agreement or not
 	db_agreement = models.BooleanField(default=False)
-	last_active = models.DateTimeField(default=timezone.now)
+	last_active = models.DateTimeField(auto_now=True)
 	
-	objects = managers.UserManager()
+	objects = managers.UserProfileManager()
 	
-	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'), ('institute_info', 'institute')]
+	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'),
+		('institute_info', 'institute')]
 	_serialize_recur = True
 	
 	# clem 19/01/2017
@@ -1133,16 +1134,63 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 		:type request: django.http.HttpRequest
 		:rtype: UserProfile
 		"""
-		return cls.objects.get(user=request.user.id)
+		return cls.objects.get(user=OrderedUser.get(request).id)
+	
+	get = getter
+	
+	# clem 30/03/2017
+	@classmethod
+	def __create_guest(cls, force=False):
+		if settings.AUTH_ALLOW_GUEST or force:
+			from utilz import get_sha2
+			import binascii
+			import os
+			
+			kwargs = {
+				'first_name': settings.GUEST_FIRST_NAME,
+				'last_name' : binascii.hexlify(os.urandom(3)).decode(),
+			}
+			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
+			email = '%s@%s' % (username, settings.DOMAIN[0])
+			kwargs.update({
+				'username': username,
+				'email'   : email,
+				'password': get_sha2([username, email, str(time.time()), str(os.urandom(1000))])
+			})
+			
+			# user = BreezeUser.get(User.objects.create(**kwargs))
+			user = BreezeUser.get(User.original_objects.create(**kwargs))
+			
+			user_profile = cls()
+			user_profile.user = user
+			# FIXME broken due to DB constrains
+			user_profile.institute_info = Institute.objects.get_or_create(
+				institute=settings.GUEST_FIRST_NAME, defaults={ 'institute': settings.GUEST_FIRST_NAME })
+			user_profile.save()
+			
+			return user
+		raise DisabledByCurrentSettings
+	
+	# clem 30/03/2017
+	@classmethod
+	def new_guest(cls, force=False):
+		""" make a new guest user
+
+		:rtype: bool
+		"""
+		# return OrderedUser.objects.create_guest(force)
+		try:
+			user = cls.__create_guest(force=force)
+			logger.info('created guest user %s' % user.username)
+			return user
+		except DisabledByCurrentSettings as e:
+			logger.error('While creating guest user : %s' % str(e))
+		return None
 	
 	# clem 29/03/2017
 	def delete(self, using=None, keep_parents=False):
-		from copy import copy
 		try:
-			user_copy = copy(self.user)
-			if super(CustomModelAbstract, self).delete(using, keep_parents):
-				user_copy.delete()
-				del user_copy
+			if self.user.delete():
 				return True
 		except Exception as e:
 			logger.error(str(e))

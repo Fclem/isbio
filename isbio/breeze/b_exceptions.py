@@ -189,3 +189,7 @@ class PermissionDenied(PermissionDenied_org):
 			final_text += message
 		logger.warning(final_text)
 
+
+# clem 30/03/2017
+class DisabledByCurrentSettings(RuntimeError):
+	pass

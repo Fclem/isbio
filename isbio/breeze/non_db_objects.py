@@ -5,8 +5,9 @@ from utils import *
 from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
+from django.http import HttpRequest
 
-__version__ = '0.1.1'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -1405,8 +1406,60 @@ class AutoJSON(object):
 
 
 # clem 27/03/2017
-class SpecialUser(User, AutoJSON):
+class BreezeUser(User, AutoJSON):
+	objects = managers.BreezeUserManager()
 	_serialize_keys = ['username', 'full_name', 'id']
+	
+	# clem 30/03/2017
+	def guest_auto_remove(self):
+		""" Delete self if self is a guest user
+		
+		:rtype: bool
+		"""
+		if self.is_guest:
+			username = self.username
+			try:
+				if self.delete():
+					logger.info('deleted guest user %s' % username)
+					return True
+			except Exception as e:
+				logger.error('while deleting %s : %s' % (username, e))
+		return False
+	
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+		
+		:type user_or_request: User | HttpRequest
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(id=request.user.id)
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(id=user.id)
 	
 	@property
 	def full_name(self):
@@ -1415,7 +1468,7 @@ class SpecialUser(User, AutoJSON):
 	# clem 29/03/2017
 	@property
 	def is_guest(self):
-		return self.username.startswith('guest')
+		return self.username.startswith(settings.GUEST_FIRST_NAME)
 	
 	# clem 29/03/2017
 	def delete(self, using=None, keep_parents=False):
@@ -1433,7 +1486,7 @@ class SpecialUser(User, AutoJSON):
 				for each in obj.objects.filter(**{key: self.id}):
 					each.delete()
 			
-			super(SpecialUser, self).delete(using, keep_parents)
+			super(BreezeUser, self).delete(using, keep_parents)
 			return True
 		except Exception as e:
 			logger.error(str(e))
@@ -1444,29 +1497,16 @@ class SpecialUser(User, AutoJSON):
 
 
 # 04/06/2015
-class OrderedUser(SpecialUser):
-	# objects = managers.CustomUserManager()
-	
-	# clem 29/03/2017
-	@classmethod
-	def getter(cls, request):
-		""" Code type competition helper, writting shortcut
-
-		:type request: django.http.HttpRequest
-		:rtype: OrderedUser
-		"""
-		return cls.objects.get(id=request.user.id)
-	
+class OrderedUser(BreezeUser):
 	class Meta:
 		ordering = ["username"]
 		proxy = True
 		auto_created = True # FIXEME Hack
-		
-		
+
+
 # 23/11/2015 # FIXME
-class CustomUser(OrderedUser, AutoJSON):
-	objects = managers.CustomUserManager()
-	
+# class CustomUser(OrderedUser, AutoJSON):
+class CustomUser(BreezeUser):
 	class Meta:
 		ordering = ["username"]
 		proxy = True

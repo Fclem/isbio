@@ -1,10 +1,12 @@
 from utilz import get_key
-from isbio.settings import INSTALLED_APPS, TEMPLATES
+from isbio.settings import INSTALLED_APPS, TEMPLATES, DJANGO_AUTH_MODEL_BACKEND_PY_PATH
 from isbio.config import ConfigAuthMethods
 
+AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
+
 AUTHENTICATION_BACKENDS = (
-	'django.contrib.auth.backends.ModelBackend',
-	'django_auth0.auth_backend.Auth0Backend',
+	DJANGO_AUTH_MODEL_BACKEND_PY_PATH,
+	AUTH0_BACKEND_PY_PATH,
 )
 
 AUTH0_IP_LIST = ['52.169.124.164', '52.164.211.188', '52.28.56.226', '52.28.45.240', '52.16.224.164', '52.16.193.66']

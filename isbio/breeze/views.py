@@ -2756,7 +2756,7 @@ def edit_group_dialog(request, gid):
 @login_required(login_url='/')
 def update_user_info_dialog(request):
 	__self__ = this_function_name()  # instance to self
-	user_info = OrderedUser.getter(request)
+	user_info = OrderedUser.get(request)
 	
 	if request.method == 'POST' and not user_info.is_guest:
 		personal_form = breezeForms.PersonalInfo(request.POST)
