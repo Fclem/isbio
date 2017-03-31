@@ -1,10 +1,10 @@
 from . import settings
 from utilz import *
+from breeze.decorators import allow_guest, login_required
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotModified
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.exceptions import SuspiciousOperation
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
 import time
 import json
 from json import JSONEncoder
@@ -207,8 +207,14 @@ def is_authenticated(request):
 
 
 # clem 20/02/2017
-@login_required(login_url='/')
+@allow_guest
 def has_auth(request):
+	return who(request)
+
+
+# clem 31/03/2017
+@login_required
+def no_guest(request):
 	return who(request)
 
 
@@ -216,7 +222,7 @@ def has_auth(request):
 def who(request):
 	from breeze.models import UserProfile
 	UserProfile.add_keys(('user.email', 'email'))
-	data = {'auth': UserProfile.getter(request)}
+	data = {'auth': UserProfile.rq_getter(request)}
 	return get_response(data={'data': data})
 
 

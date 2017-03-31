@@ -1,8 +1,6 @@
 from utilz import get_key
-from isbio.settings import INSTALLED_APPS, TEMPLATES, DJANGO_AUTH_MODEL_BACKEND_PY_PATH
+from isbio.settings import INSTALLED_APPS, TEMPLATES, DJANGO_AUTH_MODEL_BACKEND_PY_PATH, AUTH0_BACKEND_PY_PATH
 from isbio.config import ConfigAuthMethods
-
-AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
 
 AUTHENTICATION_BACKENDS = (
 	DJANGO_AUTH_MODEL_BACKEND_PY_PATH,

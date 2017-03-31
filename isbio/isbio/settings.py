@@ -205,7 +205,6 @@ MIDDLEWARE_CLASSES = [
 	'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' if ENABLE_ROLLBAR else 'breeze.middlewares.Empty',
 ]
 
-
 # ** AUTHENTICATION_BACKENDS moved to specific auth config files (config/env/auth/*)
 
 # ** AUTH0_* moved to config/env/auth/auth0.py
@@ -228,6 +227,9 @@ AUTH_ALLOW_GUEST = False		# allow anonymous visitor to login as disposable guest
 GUEST_INSTITUTE_ID = 3			# guest institute
 GUEST_EXPIRATION_TIME = 24 * 60	# expiration time of inactive guests in minutes
 GUEST_FIRST_NAME = 'guest'
+RESTRICT_GUEST_TO_SPECIFIC_VIEWS = True
+DEFAULT_LOGIN_URL = '/login_page'
+FORCE_DEFAULT_LOGIN_URL = True
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -301,6 +303,10 @@ DJANGO_ROOT = recur(2, os.path.dirname, os.path.realpath(__file__)) + '/'
 TEMPLATE_FOLDER = DJANGO_ROOT + 'templates/' # source templates (not HTML ones)
 
 DJANGO_AUTH_MODEL_BACKEND_PY_PATH = 'django.contrib.auth.backends.ModelBackend'
+CAS_NG_BACKEND_PY_PATH = 'my_django.cas_ng_custom.CASBackend'
+AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
+
+
 
 os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 

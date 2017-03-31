@@ -1403,12 +1403,71 @@ class AutoJSON(object):
 			cls._serialize_keys.append(keys_list)
 		elif type(keys_list) is list:
 			cls._serialize_keys += keys_list
+		
+import breeze.models
+
+
+# clem 31/03/2017
+class MagicGetter(object):
+	""" Provides subclasses with a get method that returns a User subclass object from
+		a base User object, or a request object.
+		Must be inherited from a User subclass, or UserProfile class
+	
+	"""
+	
+	# clem 31/03/2017
+	@classproperty
+	def __get_key(cls):
+		# determines the key to query db with : id for User subclasses, user for UserProfile
+		return 'id' if issubclass(cls, User) else 'user'
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(**{cls.__get_key: request.user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(**{cls.__get_key: user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		:rtype: BreezeUser | breeze.models.UserProfile
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
 
 
 # clem 27/03/2017
-class BreezeUser(User, AutoJSON):
+class BreezeUser(User, AutoJSON, MagicGetter):
 	objects = managers.BreezeUserManager()
 	_serialize_keys = ['username', 'full_name', 'id']
+	
+	# clem 31/03/2017
+	@property
+	def user_profile(self):
+		from breeze.models import UserProfile
+		return UserProfile.get(self)
 	
 	# clem 30/03/2017
 	def guest_auto_remove(self):
@@ -1425,41 +1484,6 @@ class BreezeUser(User, AutoJSON):
 			except Exception as e:
 				logger.error('while deleting %s : %s' % (username, e))
 		return False
-	
-	# clem 30/03/2017
-	@classmethod
-	def magic(cls, user_or_request):
-		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
-		
-		:type user_or_request: User | HttpRequest
-		"""
-		if isinstance(user_or_request, User):
-			return cls.user_getter(user_or_request)
-		elif isinstance(user_or_request, HttpRequest):
-			return cls.rq_getter(user_or_request)
-		return cls()
-	
-	get = magic
-	
-	# clem 29/03/2017
-	@classmethod
-	def rq_getter(cls, request):
-		""" Code type competition helper, writing shortcut
-
-		:type request: HttpRequest
-		"""
-		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
-		return cls.objects.get(id=request.user.id)
-	
-	# clem 30/03/2017
-	@classmethod
-	def user_getter(cls, user):
-		""" Code type competition helper, writing shortcut
-
-		:type user: User
-		"""
-		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
-		return cls.objects.get(id=user.id)
 	
 	@property
 	def full_name(self):
@@ -1496,12 +1520,12 @@ class BreezeUser(User, AutoJSON):
 		proxy = True
 
 
-# 04/06/2015
+# 04/06/2015 {% if user.is_guest %} disabled{% endif %}
 class OrderedUser(BreezeUser):
 	class Meta:
 		ordering = ["username"]
 		proxy = True
-		auto_created = True # FIXEME Hack
+		auto_created = True # FIXME Hack
 
 
 # 23/11/2015 # FIXME
@@ -1512,3 +1536,40 @@ class CustomUser(BreezeUser):
 		proxy = True
 		auto_created = True # FIXME Hack
 		# db_table = 'auth_user'
+
+
+class TrashClass(object):
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(id=request.user.id)
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(id=user.id)

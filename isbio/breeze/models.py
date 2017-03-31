@@ -1097,10 +1097,9 @@ def user_prof_fn_spe(self, filename):
 
 
 # TODO fix naming of institute
-class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base app
-	# user = models.ForeignKey(User, unique=True)
-	user = models.OneToOneField(BreezeUser)
-	# user = models.OneToOneField(CustomUser)
+class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a common base app
+	__custom_user_model = BreezeUser
+	user = models.OneToOneField(__custom_user_model)
 
 	fimm_group = models.CharField(max_length=75, blank=True)
 	logo = models.FileField(upload_to=user_prof_fn_spe, blank=True)
@@ -1126,18 +1125,6 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
 	
-	# clem 29/03/2017
-	@classmethod
-	def getter(cls, request):
-		""" Helper
-		
-		:type request: django.http.HttpRequest
-		:rtype: UserProfile
-		"""
-		return cls.objects.get(user=OrderedUser.get(request).id)
-	
-	get = getter
-	
 	# clem 30/03/2017
 	@classmethod
 	def __create_guest(cls, force=False):
@@ -1157,16 +1144,21 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 				'email'   : email,
 				'password': get_sha2([username, email, str(time.time()), str(os.urandom(1000))])
 			})
-			
-			# user = BreezeUser.get(User.objects.create(**kwargs))
-			user = BreezeUser.get(User.original_objects.create(**kwargs))
-			
+			# *** create BreezeUser instance (django User subclass)
+			user = cls.__custom_user_model(**kwargs)
+			user.save()
+			# *** create UserInfo
 			user_profile = cls()
 			user_profile.user = user
 			# FIXME broken due to DB constrains
-			user_profile.institute_info = Institute.objects.get_or_create(
-				institute=settings.GUEST_FIRST_NAME, defaults={ 'institute': settings.GUEST_FIRST_NAME })
+			user_profile.institute_info, created = Institute.objects.get_or_create(
+				institute=settings.GUEST_FIRST_NAME)
 			user_profile.save()
+			
+			# *** allow access to DSRT pipeline
+			report_type = ReportType.objects.get(type__contains="DSRT")
+			report_type.access.add(user)
+			report_type.save()
 			
 			return user
 		raise DisabledByCurrentSettings

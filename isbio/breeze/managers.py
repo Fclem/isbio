@@ -695,38 +695,6 @@ class BreezeUserManager(UserManager):
 		self.__send_mail(user)
 		return user
 	
-	# clem 30/03/2017
-	def ___create_guest(self, force=False):
-		if settings.AUTH_ALLOW_GUEST or force:
-			from breeze.models import UserProfile, Institute, OrderedUser
-			from utilz import get_sha2
-			import binascii
-			import os
-			
-			kwargs = {
-				'first_name': settings.GUEST_FIRST_NAME,
-				'last_name'	: binascii.hexlify(os.urandom(3)).decode(),
-			}
-			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
-			email = '%s@%s' % (username, settings.DOMAIN[0])
-			kwargs.update({
-				'username'	: username,
-				'email'		: email,
-				'password'	: get_sha2([username, email, str(time()), str(os.urandom(1000))])
-			})
-			
-			user = super(BreezeUserManager, self).create(**kwargs)
-			user = OrderedUser.objects.get(id=user.id)
-			
-			user_details = UserProfile()
-			user_details.user = user
-			user_details.institute_info = Institute.objects.get(pk=settings.GUEST_INSTITUTE_ID)
-			user_details.save()
-			
-			return user
-		from breeze.b_exceptions import DisabledByCurrentSettings
-		raise DisabledByCurrentSettings
-
 
 # clem 19/01/2016
 class UserProfileManager(Manager):

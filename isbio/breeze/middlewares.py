@@ -10,6 +10,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from breeze import views
 from breeze.utils import TermColoring # , context
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
 if settings.DEBUG:
 	# quick fix to solve PyCharm Django console environment issue
@@ -158,10 +159,12 @@ class CheckUserProfile(object):
 	def process_exception(request, exception):
 		request, user = CheckUserProfile.__get_user_safe(request)
 		logger.exception('middle process ex: %s' % exception)
-		if isinstance(exception, UserProfile.DoesNotExist):
+		
+		if isinstance(exception, UserProfile.DoesNotExist) and not user.is_anonymous:
 			return views.home(request)
-		from hello_auth.views import show_login_page
-		return show_login_page(request)
+		raise exception
+		# from hello_auth.views import show_login_page
+		# return show_login_page(request)
 	
 	# clem 21/02/2017
 	@staticmethod
@@ -187,7 +190,6 @@ class CheckUserProfile(object):
 		from breeze.models import OrderedUser, UserProfile
 		# hacking base User model to add some methods to it
 		User.is_guest = OrderedUser.is_guest
-		User.original_objects = User.objects
 		User.objects = OrderedUser.objects
 		
 		# noinspection PyTypeChecker
@@ -195,7 +197,8 @@ class CheckUserProfile(object):
 		if not isinstance(user, AnonymousUser):
 			# update the last_active field of UserProfile (as this field is set to auto_now)
 			# this is useful mostly to track inactive guest user
-			UserProfile.getter(request).save()
+			profile = UserProfile.get(request)
+			profile.save()
 			
 		UserProfile.objects.clear_expired_guests()
 

@@ -62,28 +62,28 @@ def show_cache(_):
 
 
 # clem 24/03/2017
-@login_required
+@allow_guest
 def reports(request):
 	from breeze.models import Report
 	return code.default_object_json_dump(Report, Report.objects.get_accessible(request.user))
 
 
 # clem 24/03/2017
-@login_required
+@allow_guest
 def projects(_):
 	from breeze.models import Project
 	return code.default_object_json_dump(Project)
 
 
 # clem 24/03/2017
-@login_required
+@allow_guest
 def report_types(_):
 	from breeze.models import ReportType
 	return code.default_object_json_dump(ReportType)
 
 
 # clem 27/03/2017
-@login_required
+@allow_guest
 def users(_):
 	from breeze.models import UserProfile
 	return code.default_object_json_dump(UserProfile)

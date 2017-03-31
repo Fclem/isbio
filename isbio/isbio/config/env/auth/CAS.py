@@ -1,5 +1,5 @@
 from utilz import is_host_online, test_url
-from isbio.settings import INSTALLED_APPS
+from isbio.settings import INSTALLED_APPS, DJANGO_AUTH_MODEL_BACKEND_PY_PATH, CAS_NG_BACKEND_PY_PATH
 from isbio.config import ConfigAuthMethods
 
 
@@ -16,8 +16,8 @@ def check_cas(server_ip, server_url):
 	return False
 
 AUTHENTICATION_BACKENDS = (
-	'django.contrib.auth.backends.ModelBackend',
-	'my_django.cas_ng_custom.CASBackend',
+	DJANGO_AUTH_MODEL_BACKEND_PY_PATH,
+	CAS_NG_BACKEND_PY_PATH,
 )
 
 HOME_PAGE = '/jobs/'
