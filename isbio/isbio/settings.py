@@ -227,6 +227,7 @@ AUTH_ALLOW_GUEST = False		# allow anonymous visitor to login as disposable guest
 GUEST_INSTITUTE_ID = 3			# guest institute
 GUEST_EXPIRATION_TIME = 24 * 60	# expiration time of inactive guests in minutes
 GUEST_FIRST_NAME = 'guest'
+GUEST_GROUP_NAME = GUEST_FIRST_NAME.capitalize() + 's'
 RESTRICT_GUEST_TO_SPECIFIC_VIEWS = True
 DEFAULT_LOGIN_URL = '/login_page'
 FORCE_DEFAULT_LOGIN_URL = True

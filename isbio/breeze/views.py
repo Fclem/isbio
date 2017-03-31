@@ -2818,11 +2818,11 @@ def ajax_user_stat(request):
 
 
 @allow_guest
-def report_search(request, all=False):
+def report_search(request, _all=False):
 
 	if not request.is_ajax():
 		request.method = 'GET'
-		return reports(request)  # Redirects to the default view (internally : no new HTTP request)
+		return reports(request, _all)  # Redirects to the default view (internally : no new HTTP request)
 	
 	request = legacy_request(request)
 
@@ -2872,7 +2872,7 @@ def report_search(request, all=False):
 		found_entries = found_entries.filter(entry_query).distinct()
 		
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or all, query=found_entries)
+	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries)
 	
 	count = {'total': len(found_entries)}
 	# apply pagination

@@ -1152,13 +1152,20 @@ class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a 
 			user_profile.user = user
 			# FIXME broken due to DB constrains
 			user_profile.institute_info, created = Institute.objects.get_or_create(
-				institute=settings.GUEST_FIRST_NAME)
+				institute=settings.GUEST_FIRST_NAME) # FIXME with a proper design
 			user_profile.save()
 			
-			# *** allow access to DSRT pipeline
-			report_type = ReportType.objects.get(type__contains="DSRT")
+			# *** allow access to DSRT pipeline ONLY
+			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
 			report_type.access.add(user)
 			report_type.save()
+			
+			# *** add user to Guest group
+			# FIXME with a proper design
+			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
+			if created:
+				guest_group.save()
+			guest_group.team.add(user)
 			
 			return user
 		raise DisabledByCurrentSettings
@@ -2213,7 +2220,13 @@ class Report(Runnable, AutoJSON):
 	# 25/06/15
 	@property
 	def folder_name(self):
-		return slugify('%s_%s_%s' % (self.id, self._name, self._author.username))
+		slug = slugify('%s_%s' % (self.id, self._type))
+		from os.path import dirname, basename
+		try:
+			slug = basename(dirname(self._rexec.path))
+		except ValueError:
+			pass
+		return slug
 
 	# 26/06/15
 	@property

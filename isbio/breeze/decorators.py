@@ -25,7 +25,7 @@ def decorator_tester(function=None, redirect_field_name=REDIRECT_FIELD_NAME, log
 
 
 def __users_all_authenticated(user):
-	return user.is_authenticated
+	return user.is_authenticated # and not user.is_anonymous
 
 
 def __users_authenticated_not_guest(user):
@@ -54,7 +54,7 @@ def allow_guest(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_ur
 	Decorator for views that checks that the user is logged in, redirecting
 	to the log-in page if necessary.
 	"""
-	return decorator_tester(function, redirect_field_name, settings.DEFAULT_LOGIN_URL,
+	return decorator_tester(function, redirect_field_name, login_url,
 		__users_all_authenticated)
 
 
