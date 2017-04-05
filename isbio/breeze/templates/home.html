@@ -79,6 +79,7 @@
 		<div class="span7">
 			<div class="tab-content" id="accordion">
 				<!-- FEED -->
+				<!-- old one
 				<div class="tab-pane {{ show_feed }}" id="feed_menu">
 					<div class="row-fluid">
 						<div class="span 12">
@@ -101,6 +102,14 @@
 									</ul>
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+				-->
+				<div class="tab-pane {{ show_feed }}" id="feed_menu">
+					<div class="row-fluid">
+						<div class="span 12">
+							{% include "news-integrated.html" %}
 						</div>
 					</div>
 				</div>

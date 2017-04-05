@@ -61,6 +61,7 @@ else:
 		url(r'^breeze/?$', breeze.views.breeze, name='breeze'),
 		# url(r'^logout/?$', django_cas_logout),  # breeze.views.logout, name='logout'),
 		url(r'^stat/?$', breeze.views.ajax_user_stat, name='ajax_user_stat'),
+		url(r'^news/?$', breeze.views.news_page, name='news_page'),
 		# Special system checks
 		# url(r'^resources/restart/?$', breeze.views.restart_breeze, name='restart_breeze'),
 		# url(r'^resources/restart-vm/?$', breeze.views.restart_vm, name='restart_vm'),
@@ -99,6 +100,7 @@ else:
 		url(r'^showdetails/(?P<sid>\d+)$', breeze.views.showdetails, name='showdetails'),
 		url(r'^deletecart/(?P<sid>\d+)$', breeze.views.deletecart, name='deletecart'),
 		url(r'^reports/?$', breeze.views.reports, name='reports'),
+		url(r'^reports/all/?$', breeze.views.reports, name='reports', kwargs={'_all': True}),
 		url(r'^reports/search$', breeze.views.report_search, name='report_search'),
 		url(r'^reports/view/\d+/Results/HTMLreport/(?P<a_dir>[^/]+)/(?P<a_path>.+)$', breeze.views.report_statics,
 			name='report.statics'), # FIXME deprecated

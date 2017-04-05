@@ -145,13 +145,14 @@ class CheckUserProfile(object):
 	# clem 21/02/2017
 	@staticmethod
 	def process_response(request, response):
-		""" set encrypted session_id cookie for shiny to check authentication """
-		response.set_cookie('cookie_name', 'cookie_value')
+		""" set encrypted session_id cookie for shiny to check authentication
+		Warning : shiny_secret must be at least 32 char long.
+		"""
 		if hasattr(request, 'user') and request.user.is_authenticated() and request.session.session_key:
 			from utilz import compute_enc_session_id
 			value = compute_enc_session_id(request.session.session_key, settings.SHINY_SECRET)
 			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
-				response.set_cookie('enc_session_id', value)
+				response.set_cookie(settings.ENC_SESSION_ID_COOKIE_NAME, value)
 		return response
 		
 

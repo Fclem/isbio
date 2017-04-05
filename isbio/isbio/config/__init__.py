@@ -103,6 +103,9 @@ AUTH_BACKEND = ConfigAuthMethods.undefined
 PROJECT_FOLDER_NAME = 'projects'
 BREEZE_PROD_FOLDER = 'breeze'
 
+# Settings
+SET_SHOW_ALL_USERS = True
+
 # checks
 assert_filled('TEMPLATE_FOLDER', 'SOURCE_ROOT')
 

@@ -27,7 +27,7 @@ CUSTOM_MSG = {
 
 
 # clem 18/10/2016
-def get_response(result=True, data=empty_dict, version=settings.API_VERSION):
+def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw=False):
 	"""
 	
 	:param result: optional bool to return HTTP200 or HTTP400
@@ -36,10 +36,13 @@ def get_response(result=True, data=empty_dict, version=settings.API_VERSION):
 	:type data: dict | None
 	:param version: optionally specify the version number to return or default
 	:type version: str | None
+	:param raw: optionally specify if data should be dumped directly as an output
+	:type raw: bool
 	:rtype: HttpResponse
 	"""
-	return get_response_opt(data, make_http_code(result), version, make_message(result))
-	
+	return get_response_opt(data, make_http_code(result), version, make_message(result)) if not raw else \
+		get_response_raw(data, make_http_code(result))
+
 
 # clem 17/10/2016
 def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.API_VERSION, message=''):
@@ -62,11 +65,31 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 		{'version': version, },
 		'result'       : http_code,
 		'message'      : message,
-		'time'         : time.time()
+		'time'         : time.time(),
+		'data'         : data
 	}
 	result.update(data)
 	
 	return HttpResponse(json.dumps(result), content_type=CT_JSON, status=http_code)
+
+
+# clem 28/02/2016
+def get_response_raw(data=empty_dict, http_code=HTTP_SUCCESS):
+	"""
+
+	:param data: optional dict, containing json-serializable data
+	:type data: dict | None
+	:param http_code: optional HTTP code to return (default is 200)
+	:type http_code: int | None
+	:param version: optionally specify the version number to return or default
+	:type version: str | None
+	:param message: if no message is provided, one will be generated from the HTTP code
+	:type message: str | None
+	:rtype: HttpResponse
+	"""
+	assert isinstance(data, dict)
+		
+	return HttpResponse(json.dumps(data), content_type=CT_JSON, status=http_code)
 
 
 # clem 18/10/2016
