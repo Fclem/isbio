@@ -1,5 +1,7 @@
 import code_v1 as code
 from common import *
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseNotModified
 
 #########
 # VIEWS #
@@ -19,11 +21,11 @@ def reload_sys(request):
 		raise default_suspicious(request)
 	
 	allow_filter = {
-		'ref'                 : settings.GIT_AUTO_REF,
-		'repository.id'       : "70237993",
+		'ref':                  settings.GIT_AUTO_REF,
+		'repository.id':        "70237993",
 		'repository.full_name': 'Fclem/isbio2',
-		'pusher.name'         : 'Fclem',
-		'sender.id'           : "6617239",
+		'pusher.name':          'Fclem',
+		'sender.id':            "6617239",
 	}
 	if rq.event_name == 'push' and match_filter(payload, allow_filter):
 		logger.info(
@@ -40,10 +42,10 @@ def git_hook(request):
 	payload, rq = code.get_git_hub_json(request)
 	if not (payload and rq.is_json_post):
 		raise default_suspicious(request)
-
+	
 	allow_filter = {
-		'ref'                 : "refs/heads/master",
-		'repository.id'       : "70131764", # "DSRT-v2"
+		'ref':           "refs/heads/master",
+		'repository.id': "70131764", # "DSRT-v2"
 	}
 	if rq.event_name == 'push' and match_filter(payload, allow_filter):
 		logger.info('Received git push event for R code')

@@ -1,10 +1,9 @@
 from . import settings
 from utilz import *
 from breeze.decorators import allow_guest, login_required
-from django.http import HttpResponse, HttpRequest # , HttpResponseBadRequest, HttpResponseNotModified
-# from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, HttpRequest # , HttpResponseNotModified , HttpResponseBadRequest
 from django.core.exceptions import SuspiciousOperation
-# from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt # !!useful for sub-modules
 import time
 import json
 from json import JSONEncoder
