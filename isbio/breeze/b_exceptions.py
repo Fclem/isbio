@@ -191,5 +191,5 @@ class PermissionDenied(PermissionDenied_org):
 
 
 # clem 30/03/2017
-class DisabledByCurrentSettings(RuntimeError):
+class DisabledByCurrentSettings(PermissionDenied):
 	pass

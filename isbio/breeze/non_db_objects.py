@@ -1493,6 +1493,38 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	@property
 	def is_guest(self):
 		return self.username.startswith(settings.GUEST_FIRST_NAME)
+		
+	# clem 30/03/2017
+	@classmethod
+	def new_guest(cls, force=False):
+		""" make a new guest user
+
+		:rtype: BreezeUser
+		"""
+		# return OrderedUser.objects.create_guest(force)
+		try:
+			# create the Django BreezeUser object
+			user = cls.objects.create_guest(force)
+			# *** create UserProfile
+			from breeze.models import UserProfile, ReportType, Group
+			UserProfile.make_guest(user)
+			
+			# *** allow access to DSRT pipeline ONLY
+			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
+			report_type.access.add(user)
+			report_type.save()
+			
+			# *** add user to Guest group
+			# FIXME with a proper design
+			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
+			if created:
+				guest_group.save()
+			guest_group.team.add(user)
+			logger.info('created guest user %s' % user.username)
+			return user
+		except DisabledByCurrentSettings:
+			logger.warning('Guest users are disabled')
+		return None
 	
 	# clem 29/03/2017
 	def delete(self, using=None, keep_parents=False):
@@ -1518,6 +1550,7 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	
 	class Meta:
 		proxy = True
+		# pass
 
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}

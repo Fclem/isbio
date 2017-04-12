@@ -178,15 +178,22 @@
 	<script src="https://cdn.auth0.com/js/lock/10.2.2/lock.min.js"></script>
 	<!-- AUTH0 init -->
 	<script type="text/javascript">
-		var lock = new Auth0Lock('gIN83mLS4qcQqE99Bi5MqzRzU38KruR6', 'breeze.eu.auth0.com', {
+		var lock = new Auth0Lock('{{ AUTH0_CLIENT_ID }}', '{{ AUTH0_DOMAIN }}', {
 			auth: {
-				redirectUrl : 'https://breeze-dev.cloudapp.net/login/',
+				redirectUrl : '{{ AUTH0_CALLBACK_URL }}',
 				responseType: 'code',
 				params      : {
 					scope: 'openid profile'
 				}
 			}
 		});
+		function logout_login(){
+			$.get('/logout/login', function(){
+				lock.show();
+			});
+			
+			return event.preventDefault();
+		}
 	</script>
 			{% block extra_head %}{% endblock %}
 </head>
@@ -220,7 +227,7 @@
 								</a>
 								<ul class="dropdown-menu">
 									{% if user.is_guest %}
-									<li><a onclick="lock.show();"> Log in <i class="icon-share"></i></a></li>
+									<li><a href="#" onclick="logout_login();"> Log in <i class="icon-share"></i></a></li>
 									<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
 									{% else %}
 									<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>

@@ -155,19 +155,8 @@ class CheckUserProfile(object):
 		request.user = user
 		return request, user
 	
-	@staticmethod
-	def process_exception(request, exception):
-		request, user = CheckUserProfile.__get_user_safe(request)
-		logger.exception('middle process ex: %s' % exception)
-		
-		if isinstance(exception, UserProfile.DoesNotExist) and not user.is_anonymous:
-			return views.home(request)
-		raise exception
-		# from hello_auth.views import show_login_page
-		# return show_login_page(request)
-	
 	# clem 21/02/2017
-	@staticmethod
+	@staticmethod # FIXME should be somewhere else, like during log-on (excluding guest) or login signal
 	def process_response(request, response):
 		""" set encrypted session_id cookie for shiny to check authentication
 		Warning : shiny_secret must be at least 32 char long.
@@ -194,13 +183,13 @@ class CheckUserProfile(object):
 		
 		# noinspection PyTypeChecker
 		request, user = CheckUserProfile.__get_user_safe(request)
-		if not isinstance(user, AnonymousUser):
+		if not isinstance(user, AnonymousUser): # TODO move to backend
 			# update the last_active field of UserProfile (as this field is set to auto_now)
 			# this is useful mostly to track inactive guest user
 			profile = UserProfile.get(request)
 			profile.save()
 			
-		UserProfile.objects.clear_expired_guests()
+		UserProfile.objects.clear_expired_guests() # FIXME put in a separate guest middleware
 
 
 # clem 28/03/2017
@@ -220,3 +209,66 @@ class RemoteFW(object):
 
 class Empty(object):
 	pass
+
+
+class _DeprecatedCheckUserProfile(object):
+	# clem 30/03/2017
+	@staticmethod
+	def __get_user_safe(request):
+		user = AnonymousUser()
+		try:
+			if hasattr(request, 'user') and isinstance(request.user, User):
+				user = request.user
+				repr(user)
+		except Exception as e:
+			logger.exception(str(e))
+		request.user = user
+		return request, user
+	
+	@classmethod
+	def process_exception(cls, request, exception):
+		request, user = cls.__get_user_safe(request)
+		logger.exception('middle process ex: %s' % exception)
+		
+		if isinstance(exception, UserProfile.DoesNotExist) and not user.is_anonymous:
+			return views.home(request)
+		raise exception
+	
+	# from hello_auth.views import show_login_page
+	# return show_login_page(request)
+	
+	# clem 21/02/2017
+	@staticmethod
+	def process_response(request, response):
+		""" set encrypted session_id cookie for shiny to check authentication
+		Warning : shiny_secret must be at least 32 char long.
+		"""
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if request.user.is_authenticated() and request.session.session_key:
+			from utilz import compute_enc_session_id
+			value = compute_enc_session_id(request.session.session_key, settings.SHINY_SECRET)
+			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
+				response.set_cookie(settings.ENC_SESSION_ID_COOKIE_NAME, value)
+		return response
+	
+	@staticmethod
+	def process_request(request):
+		""" Insert useful method into User base class and update UserProfile.last_active for current user
+
+		:type request: django.http.HttpRequest
+		"""
+		from django.contrib.auth.models import User
+		from breeze.models import OrderedUser, UserProfile
+		# hacking base User model to add some methods to it
+		User.is_guest = OrderedUser.is_guest
+		User.objects = OrderedUser.objects
+		
+		# noinspection PyTypeChecker
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if not isinstance(user, AnonymousUser): # TODO move to backend
+			# update the last_active field of UserProfile (as this field is set to auto_now)
+			# this is useful mostly to track inactive guest user
+			profile = UserProfile.get(request)
+			profile.save()
+		
+		UserProfile.objects.clear_expired_guests()

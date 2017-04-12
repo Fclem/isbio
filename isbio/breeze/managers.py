@@ -6,7 +6,7 @@ import django.db.models.query_utils
 from django.conf import settings
 from django.http import Http404
 from django.contrib.auth.models import UserManager
-from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied
+from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied, DisabledByCurrentSettings
 from comp import translate
 from utilz import logger, time
 from utils import timezone
@@ -656,7 +656,8 @@ class BreezeUserManager(UserManager):
 	def guests(self):
 		return super(BreezeUserManager, self).filter(first_name=settings.GUEST_FIRST_NAME)
 	
-	def __send_mail(self, user):
+	@staticmethod
+	def __send_mail(user):
 		from django.core.mail import EmailMessage
 
 		msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
@@ -664,7 +665,8 @@ class BreezeUserManager(UserManager):
 		msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS', [settings.ADMINS[1]])
 		result = msg.send()
 	
-	def create(self, **kwargs):
+	@classmethod
+	def create_user(self, **kwargs):
 		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se']
 		email = kwargs.get('email', '')
 		pass_on = kwargs
@@ -685,7 +687,8 @@ class BreezeUserManager(UserManager):
 			except Exception as e:
 				logger.exception(str(e))
 			
-		user = super(BreezeUserManager, self).create(**pass_on)
+		# user = super(BreezeUserManager, self).create(**pass_on)
+		user = self.create(**pass_on)
 		
 		# TODO alert admin about new user
 		if user_institute:
@@ -695,6 +698,31 @@ class BreezeUserManager(UserManager):
 		self.__send_mail(user)
 		return user
 	
+	# clem 30/03/2017
+	def create_guest(self, force=False):
+		if settings.AUTH_ALLOW_GUEST or force:
+			from utilz import get_sha2
+			import binascii
+			import os
+			
+			kwargs = {
+				'first_name': settings.GUEST_FIRST_NAME,
+				'last_name':  binascii.hexlify(os.urandom(3)).decode(),
+			}
+			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
+			email = '%s@%s' % (username, settings.DOMAIN[0])
+			kwargs.update({
+				'username': username,
+				'email'	: email,
+				'password'	: get_sha2([username, email, str(time.time()), str(os.urandom(1000))])
+			})
+			# *** create BreezeUser instance (django User subclass)
+			user = self.create(**kwargs)
+			# user.save()
+			
+			return user
+		raise DisabledByCurrentSettings
+
 
 # clem 19/01/2016
 class UserProfileManager(Manager):

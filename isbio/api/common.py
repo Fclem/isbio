@@ -1,10 +1,10 @@
 from . import settings
 from utilz import *
 from breeze.decorators import allow_guest, login_required
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotModified
-from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, HttpRequest # , HttpResponseBadRequest, HttpResponseNotModified
+# from django.core.handlers.wsgi import WSGIRequest
 from django.core.exceptions import SuspiciousOperation
-from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 import time
 import json
 from json import JSONEncoder
@@ -18,16 +18,20 @@ HTTP_FAILED = 400
 HTTP_NOT_FOUND = 404
 HTTP_NOT_IMPLEMENTED = 501
 HTTP_FORBIDDEN = 403
+HTTP_MOVE_PERM = 302
+HTTP_MOVED_TEMP = 301
 CUSTOM_MSG = {
 	HTTP_SUCCESS: 'ok',
 	HTTP_FAILED: 'error',
 	HTTP_NOT_FOUND: 'NOT FOUND',
 	HTTP_NOT_IMPLEMENTED: 'NOT IMPLEMENTED YET',
-	HTTP_FORBIDDEN: 'ACCESS DENIED'
+	HTTP_FORBIDDEN: 'ACCESS DENIED',
+	HTTP_MOVE_PERM: 'MOVED PERMANENTLY',
+	HTTP_MOVED_TEMP: 'MOVED TEMPORARILY'
 }
 
 
-def _default(self, obj):
+def _default(_, obj):
 	return getattr(obj.__class__, "to_json", _default.default)(obj)
 
 
@@ -58,6 +62,7 @@ def get_response(result=True, data=empty_dict, version=settings.API_VERSION, raw
 	:type version: str | None
 	:param raw: optionally specify if data should be dumped directly as an output
 	:type raw: bool
+	:type request: HttpRequest
 	:rtype: HttpResponse
 	"""
 	return get_response_opt(data, make_http_code(result), version, make_message(result), request=request) if not raw else \
@@ -76,17 +81,18 @@ def get_response_opt(data=empty_dict, http_code=HTTP_SUCCESS, version=settings.A
 	:type version: str | None
 	:param message: if no message is provided, one will be generated from the HTTP code
 	:type message: str | None
+	:type request: HttpRequest
 	:rtype: HttpResponse
 	"""
 	assert isinstance(data, dict)
 	if not message:
 		message = make_message(http_code=http_code)
-	result = {'api':
-		{'version': version, },
-		'result'       : http_code,
-		'message'      : message,
-		'time'         : time.time(),
-		'data'         : data
+	result = {
+		'api':     {'version': version, },
+		'result':  http_code,
+		'message': message,
+		'time':    time.time(),
+		'data':    data
 	}
 	if request is not None:
 		from breeze.models import UserProfile
@@ -104,10 +110,6 @@ def get_response_raw(data=empty_dict, http_code=HTTP_SUCCESS):
 	:type data: dict | None
 	:param http_code: optional HTTP code to return (default is 200)
 	:type http_code: int | None
-	:param version: optionally specify the version number to return or default
-	:type version: str | None
-	:param message: if no message is provided, one will be generated from the HTTP code
-	:type message: str | None
 	:rtype: HttpResponse
 	"""
 	assert isinstance(data, dict)
@@ -148,7 +150,7 @@ def match_filter(payload, filter_dict, org_key=''):
 		return False
 	for key, equal_value in filter_dict.items():
 		tail = None
-		if '.' in key :
+		if '.' in key:
 			# if the key is a dotted path
 			split = key.split('.')
 			# get the first key and rest of path
@@ -164,7 +166,7 @@ def match_filter(payload, filter_dict, org_key=''):
 				return False
 			else:
 				# payload_value is a dict and tail as some more path component
-				if not match_filter(payload_value, {tail: equal_value }, org_key):
+				if not match_filter(payload_value, {tail: equal_value}, org_key):
 					# if the sub-payload doesn't match
 					return False # this cannot be a prime failure source
 		else:

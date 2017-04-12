@@ -25,13 +25,13 @@ def decorator_tester(function=None, redirect_field_name=REDIRECT_FIELD_NAME, log
 
 
 def __users_all_authenticated(user):
-	return user.is_authenticated # and not user.is_anonymous
+	return user.is_authenticated() # and not user.is_anonymous
 
 
 def __users_authenticated_not_guest(user):
 	if user.is_guest:
 		raise PermissionDenied
-	return user.is_authenticated
+	return user.is_authenticated()
 
 
 def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):

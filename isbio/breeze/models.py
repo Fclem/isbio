@@ -1125,66 +1125,16 @@ class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a 
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
 	
-	# clem 30/03/2017
 	@classmethod
-	def __create_guest(cls, force=False):
-		if settings.AUTH_ALLOW_GUEST or force:
-			from utilz import get_sha2
-			import binascii
-			import os
-			
-			kwargs = {
-				'first_name': settings.GUEST_FIRST_NAME,
-				'last_name' : binascii.hexlify(os.urandom(3)).decode(),
-			}
-			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
-			email = '%s@%s' % (username, settings.DOMAIN[0])
-			kwargs.update({
-				'username': username,
-				'email'   : email,
-				'password': get_sha2([username, email, str(time.time()), str(os.urandom(1000))])
-			})
-			# *** create BreezeUser instance (django User subclass)
-			user = cls.__custom_user_model(**kwargs)
-			user.save()
-			# *** create UserInfo
-			user_profile = cls()
-			user_profile.user = user
-			# FIXME broken due to DB constrains
-			user_profile.institute_info, created = Institute.objects.get_or_create(
-				institute=settings.GUEST_FIRST_NAME) # FIXME with a proper design
-			user_profile.save()
-			
-			# *** allow access to DSRT pipeline ONLY
-			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
-			report_type.access.add(user)
-			report_type.save()
-			
-			# *** add user to Guest group
-			# FIXME with a proper design
-			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
-			if created:
-				guest_group.save()
-			guest_group.team.add(user)
-			
-			return user
-		raise DisabledByCurrentSettings
-	
-	# clem 30/03/2017
-	@classmethod
-	def new_guest(cls, force=False):
-		""" make a new guest user
-
-		:rtype: bool
-		"""
-		# return OrderedUser.objects.create_guest(force)
-		try:
-			user = cls.__create_guest(force=force)
-			logger.info('created guest user %s' % user.username)
-			return user
-		except DisabledByCurrentSettings as e:
-			logger.error('While creating guest user : %s' % str(e))
-		return None
+	def make_guest(cls, user):
+		user_profile = cls()
+		user_profile.user = user
+		# FIXME broken due to DB constrains
+		# FIXME should be part of Breeze installation not runtime
+		user_profile.institute_info, created = Institute.objects.get_or_create(
+			institute=settings.GUEST_FIRST_NAME.capitalize())
+		user_profile.save()
+		return user_profile
 	
 	# clem 29/03/2017
 	def delete(self, using=None, keep_parents=False):
