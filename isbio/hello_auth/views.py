@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from django.http import HttpResponse
 from django.contrib import messages
-from utilz import logger, is_http_client_in_fimm_network # , this_function_name
+from utilz import logger # , is_http_client_in_fimm_network # , this_function_name
 from breeze.models import BreezeUser # FIXME breaks modularity of the app concept
 import json
 import requests
@@ -16,9 +16,14 @@ UserModel = BreezeUser
 
 
 def show_login_page(request):
-	context = {'from_fimm': is_http_client_in_fimm_network(request)}
+	# context = {'from_fimm': is_http_client_in_fimm_network(request)}
 	context = {'from_fimm': False}
 	return render(request, 'hello_auth/base.html', context=context)
+
+
+# 13/04/2017
+def show_landing_page(request):
+	return render(request, 'hello_auth/landing.html')
 
 
 # clem 12/04/2017
@@ -114,7 +119,7 @@ def trigger_logout(request):
 	return login_page_redirect()
 	
 
-def index(request):
+def index(request, landing=True):
 	if not request.user.is_authenticated(): # !! DO NOT REPLACE BY login_required or allow_guest decorator !!
 		error = request.GET.get('error', '')
 		if error: # get the error sent by Auth0
@@ -125,8 +130,9 @@ def index(request):
 				logger.info('AUTH FAILED %s, %s' % (error, error_description))
 				messages.add_message(request, messages.ERROR, '%s : %s' % (error, error_description))
 				# redirect to self, stripping down the QS and sending the message as cookie
-				return login_page_redirect()
+				return login_page_redirect() if not landing else redirect(reverse('login_page'))
 
+		# return show_login_page(request) if not landing else show_landing_page(request)
 		return show_login_page(request)
 
 		# return __guest_handler(request) # disabled as this is meant for auto-guest creation
@@ -135,7 +141,7 @@ def index(request):
 
 
 # has to be enclosed otherwise reverse would fail at import time as urls are not resolved
-def login_page_redirect(): return redirect(reverse('login_page'))
+def login_page_redirect(): return redirect(reverse('old_login_page'))
 
 
 success_redirect = redirect(settings.AUTH0_SUCCESS_URL)

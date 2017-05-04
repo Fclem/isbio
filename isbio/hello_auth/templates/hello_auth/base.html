@@ -4,19 +4,8 @@
     <meta charset="UTF-8">
     <title>Welcome to Cloud Breeze</title>
 
-    <script src="https://cdn.auth0.com/js/lock/10.2.2/lock.min.js"></script>
-	<!-- AUTH0 init -->
-    <script type="text/javascript">
-		var lock = new Auth0Lock('{{ AUTH0_CLIENT_ID }}', '{{ AUTH0_DOMAIN }}', {
-		auth: {
-		  redirectUrl: '{{ AUTH0_CALLBACK_URL }}',
-		  responseType: 'code',
-		  params: {
-		    scope: 'openid profile'
-		  }
-		}
-		});
-	</script>
+	<!-- AUTH0 include & init -->
+	{% include "hello_auth/auth0.html" %}
 	<!-- general style -->
 	<style>
 		.error{
@@ -107,7 +96,7 @@
 	<div class="page_content">
 		<h6>Breeze (empty) home page</h6>
 		<h1>This is "Cloud Breeze" !</h1>
-		Login as <a href="#" onclick="lock.show();return false;">Breeze user</a> or
+		Login as <a href="#" onclick="showLock();">Breeze user</a> or
 		<a href="/guest_login">Login as guest</a>
 	</div>
 	{% if messages %}
@@ -183,7 +172,8 @@
 				
 				if('show' in urlParams){
 					window.onload = function () {
-						lock.show();
+						//lock.show();
+						showLock();
 					};
 				}
 			</script>

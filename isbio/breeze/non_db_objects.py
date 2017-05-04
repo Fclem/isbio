@@ -523,7 +523,7 @@ class FolderObj(object):
 		:rtype:
 		"""
 		folder_to_archive = self.home_folder_full_path # writing shortcut
-		if cat.endswith('-result'): # returning only the Results sub-folder for result switch
+		if cat.endswith('-result') and os.path.isdir(folder_to_archive + '/Results'): # returning only the Results sub-folder for result switch
 			folder_to_archive += '/Results'
 		
 		# get the ignore and filtering list
