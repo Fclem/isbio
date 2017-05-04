@@ -163,12 +163,31 @@
 		th[onclick] {
 			cursor: pointer;
 		}
+		
+		.navbar-inverse .nav > li.disabled > a:hover,
+		.navbar-inverse .nav > li.disabled > a:focus{
+			color: #999999; !important;
+		}
 	</style>
 	<!--[if lt IE 7]>
     <style type="text/css">
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
     </style>
     <![endif]-->
+	
+	<!-- AUTH0 include & init -->
+	{% include "hello_auth/auth0.html" %}
+	<script type="text/javascript">
+		function logout_login() {
+			$.get('/logout/login', function () {
+				//lock.show();
+				// showLock();
+				location.href = '/login_page?show_login';
+			});
+			
+			return event.preventDefault();
+		}
+	</script>
 			{% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -192,13 +211,6 @@
 				<a class="brand" href="/breeze/">{{ site_title }}</a>
 				<div class="navbar-content" id="navbar-content">
 					{% if user.is_authenticated %}
-
-						<!--
-					<ul class="nav pull-right">
-						<li>
-							<a class=" " href="/logout/">logout <i class="icon-white icon-share"></i></a>
-						</li>
-					</ul>-->
 					<ul class="nav pull-right">
 						<li>
 							<div class="btn-group pull-right">
@@ -207,38 +219,59 @@
 								  class="caret"> </span>
 								</a>
 								<ul class="dropdown-menu">
+									{% if user.is_guest %}
+									<li><a href="#" onclick="logout_login();"> Log in <i class="icon-share"></i></a></li>
+									<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
+									{% else %}
 									<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
+									{% endif %}
 								</ul>
 							</div>
 						</li>
 					</ul>
 
 					<ul class="nav" >
-						<li class="{{ home_status }}">
-							<a href="/home/"> <i class="icon-home"></i> Home</a>
+						<li class="{{ home_status }}{% if user.is_guest %} disabled{% endif %}">
+							<a {% if not user.is_guest %} href="/home/"{% endif %}>
+								<i class="icon-home"></i>
+								Home</a>
 						</li>
 						<li class="{{ jobs_status }}">
-							<a href="/jobs/" id="dash"> <i class="icon-tasks"></i> Dash</a>
+							<a href="/jobs/" id="dash">
+								<i class="icon-tasks"></i>
+								Dash</a>
 						</li>
-						<li class="{{ scripts_status }}">
-							<a href="/scripts/" id="scripts"> <i class="icon-list-alt"></i> Scripts</a>
+						<li class="{{ scripts_status }}{% if user.is_guest %} disabled{% endif %}">
+							<a {% if not user.is_guest %} href="/scripts/"{% endif %} id="scripts">
+								<i class="icon-list-alt"></i>
+								Scripts</a>
 						</li>
 						<li class="{{ reports_status }}">
-							<a href="/reports/" id="reports"> <i class="icon-th"></i> Reports</a>
+							<a href="/reports/" id="reports">
+								<i class="icon-th"></i>
+								Reports</a>
 						</li>
-						<li class="{{ dbviewer_status }}">
-							<a href="/dbviewer/" id="db"> <i class="icon-briefcase"></i> DB Viewer</a>
+						<li class="{{ dbviewer_status }} disabled">
+							<a href="#" id="db" disabled="disabled">
+								<i class="icon-briefcase"></i>
+								DB Viewer</a>
 						</li>
 						{% if is_local_admin %}
-							<li class="{{ resources_status }}">
-								<a href="/resources/" id="resources"> <i class="icon-wrench"></i> Manage Resources</a>
-							</li>
+						<li class="{{ resources_status }}">
+							<a href="/resources/" id="resources">
+								<i class="icon-wrench"></i>
+								Manage Resources</a>
+						</li>
 						{% endif %}
-						<li class="{{ store_status }}">
-							<a href="/store/" id="store"> <i class=" icon-cog"></i>Markets </a>
+						<li class="{{ store_status }}{% if user.is_guest %} disabled{% endif %}">
+							<a {% if not user.is_guest %} href="/store/" {% endif %} id="store">
+								<i class=" icon-cog"></i>
+								Markets </a>
 						</li>
 						<li class="{{ help_status }}">
-							<a href="/help/" id="help"> <i class="icon-question-sign"></i> Help</a>
+							<a href="/help/" id="help">
+								<i class="icon-question-sign"></i>
+								Help</a>
 						</li>
 						<li>
 
@@ -273,6 +306,15 @@
 			    href="https://breeze-oldph.fimm.fi"
 			  rel="noreferrer">old breeze-pharma</a>, and further on from our backup upon request.
 			</div>
+		</div>
+		{% endif %}
+		{% if user.is_guest %}
+		<div class="row-fluid">
+			<div class="span10 offset1 alert alert-warning" style="padding-bottom: 12px;padding-top: 12px;">
+				<h4 style="text-decoration: underline;padding-bottom: 8px;">Guest user warning :</h4>
+				You are currently using Breeze as a guest, which means that your session, and any associated data will be destroyed after {{guest_expiry}} of inactivity.
+			</div>
+		</div>
 		{% endif %}
 		{% block content %}
 
@@ -293,11 +335,13 @@
 	</div>
 	<!-- /footer container -->
 	<!-- template : {{db_access}} -->
+	<!--
 	<div id="db_access" data-para="{{db_access}}">
 		<div class="modal hide fade" id="db_policy"  role="dialog" aria-hidden="true" style="background: url('/static/nail.png');">
 			{% include "db_policy.html" %}
 		</div>
 	</div>
+	-->
 </div>
 {% if not disable_zopim %}
 	{% block zopim %}

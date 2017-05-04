@@ -4,19 +4,8 @@
     <meta charset="UTF-8">
     <title>Welcome to Cloud Breeze</title>
 
-    <script src="https://cdn.auth0.com/js/lock/10.2.2/lock.min.js"></script>
-	<!-- AUTH0 init -->
-    <script type="text/javascript">
-		var lock = new Auth0Lock('{{ AUTH0_CLIENT_ID }}', '{{ AUTH0_DOMAIN }}', {
-		auth: {
-		  redirectUrl: '{{ AUTH0_CALLBACK_URL }}',
-		  responseType: 'code',
-		  params: {
-		    scope: 'openid profile'
-		  }
-		}
-		});
-	</script>
+	<!-- AUTH0 include & init -->
+	{% include "hello_auth/auth0.html" %}
 	<!-- general style -->
 	<style>
 		.error{
@@ -107,12 +96,13 @@
 	<div class="page_content">
 		<h6>Breeze (empty) home page</h6>
 		<h1>This is "Cloud Breeze" !</h1>
-		<button onclick="lock.show();">Breeze Login</button>
+		Login as <a href="#" onclick="showLock();">Breeze user</a> or
+		<a href="/guest_login">Login as guest</a>
 	</div>
 	{% if messages %}
 		<div class="messages">
 			{% for message in messages %}
-				<h3{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+				<h3 {% if message.tags %}class="{{ message.tags }}"{% endif %}>
 					{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Error: {% endif %}
 					{{ message }}
 				</h3>
@@ -167,9 +157,25 @@
 		{% else %}
 			<!-- Auto show AUTH0 login/reg popup -->
 			<script type="text/javascript">
-				window.onload = function () {
-					lock.show();
-				};
+				var urlParams;
+				(window.onpopstate = function () {
+					var match,
+					  pl = /\+/g,  // Regex for replacing addition symbol with a space
+					  search = /([^&=]+)=?([^&]*)/g,
+					  decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+					  query = window.location.search.substring(1);
+					
+					urlParams = {};
+					while (match = search.exec(query))
+						urlParams[decode(match[1])] = decode(match[2]);
+				})();
+				
+				if('show' in urlParams){
+					window.onload = function () {
+						//lock.show();
+						showLock();
+					};
+				}
 			</script>
 		{% endif %}
 	{% endif %}

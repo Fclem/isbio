@@ -65,15 +65,6 @@ class CustomModel(CustomModelAbstract):
 from shiny.models import ShinyReport
 
 
-# 04/06/2015
-class OrderedUser(User):
-	# objects = managers.CustomUserManager()
-	
-	class Meta:
-		ordering = ["username"]
-		proxy = True
-		auto_created = True # FIXEME Hack
-		# db_table = 'auth_user'
 
 
 # User = OrderedUser
@@ -1105,23 +1096,10 @@ def user_prof_fn_spe(self, filename):
 	return 'profiles/%s/%s.%s' % (slug, slug, extension)
 
 
-# clem 27/03/2017
-class SpecialUser(User, AutoJSON):
-	_serialize_keys = ['username', 'full_name', 'id']
-	
-	@property
-	def full_name(self):
-		return self.get_full_name()
-
-	class Meta:
-		proxy = True
-
-
 # TODO fix naming of institute
-class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base app
-	# user = models.ForeignKey(User, unique=True)
-	user = models.OneToOneField(SpecialUser)
-	# user = models.OneToOneField(CustomUser)
+class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a common base app
+	__custom_user_model = BreezeUser
+	user = models.OneToOneField(__custom_user_model)
 
 	fimm_group = models.CharField(max_length=75, blank=True)
 	logo = models.FileField(upload_to=user_prof_fn_spe, blank=True)
@@ -1129,11 +1107,12 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 	# institute = institute_info
 	# if user accepts the agreement or not
 	db_agreement = models.BooleanField(default=False)
-	last_active = models.DateTimeField(default=timezone.now)
+	last_active = models.DateTimeField(auto_now=True)
 	
-	objects = managers.UserManager()
+	objects = managers.UserProfileManager()
 	
-	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'), ('institute_info', 'institute')]
+	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'),
+		('institute_info', 'institute')]
 	_serialize_recur = True
 	
 	# clem 19/01/2017
@@ -1145,6 +1124,26 @@ class UserProfile(CustomModelAbstract, AutoJSON): # TODO move to a common base a
 	@classmethod
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
+	
+	@classmethod
+	def make_guest(cls, user):
+		user_profile = cls()
+		user_profile.user = user
+		# FIXME broken due to DB constrains
+		# FIXME should be part of Breeze installation not runtime
+		user_profile.institute_info, created = Institute.objects.get_or_create(
+			institute=settings.GUEST_FIRST_NAME.capitalize())
+		user_profile.save()
+		return user_profile
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		try:
+			if self.user.delete():
+				return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
 	
 	def __unicode__(self):
 		return self.the_full_name  # return self.user.username
@@ -2171,7 +2170,13 @@ class Report(Runnable, AutoJSON):
 	# 25/06/15
 	@property
 	def folder_name(self):
-		return slugify('%s_%s_%s' % (self.id, self._name, self._author.username))
+		slug = slugify('%s_%s' % (self.id, self._type))
+		from os.path import dirname, basename
+		try:
+			slug = basename(dirname(self._rexec.path))
+		except ValueError:
+			pass
+		return slug
 
 	# 26/06/15
 	@property
@@ -2453,7 +2458,7 @@ class Report(Runnable, AutoJSON):
 	def delete(self, using=None):
 		if self.type.shiny_report_id > 0:
 			self.type.shiny_report.unlink_report(self)
-
+		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	
 	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']

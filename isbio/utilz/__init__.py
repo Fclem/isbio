@@ -176,12 +176,12 @@ def get_key(name='', caching=True):
 	return ''
 
 
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required as login_rq, user_passes_test as user_p_test
 from django.core.exceptions import PermissionDenied
 
 
 # clem 01/06/2016 # FIXME not working
-@login_required(login_url='/')
+@login_rq(login_url='/')
 def admin_only(function):
 	""" Wrapper to check that user has admin rights
 
@@ -189,7 +189,7 @@ def admin_only(function):
 	:rtype:
 	"""
 
-	actual_decorator = user_passes_test(
+	actual_decorator = user_p_test(
 		lambda u: u.is_superuser or u.is_staff,
 		login_url='/'
 	)
@@ -207,3 +207,7 @@ def is_admin(request):
 	if not (request.user.is_superuser or request.user.is_staff):
 		raise PermissionDenied
 	return True
+
+
+# clem 28/03/2017
+context = dict()

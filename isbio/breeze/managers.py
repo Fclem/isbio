@@ -5,8 +5,11 @@ from django.core.exceptions import ObjectDoesNotExist
 import django.db.models.query_utils
 from django.conf import settings
 from django.http import Http404
-from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied
+from django.contrib.auth.models import UserManager
+from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied, DisabledByCurrentSettings
 from comp import translate
+from utilz import logger, time
+from utils import timezone
 
 org_Q = django.db.models.query_utils.Q
 
@@ -232,9 +235,9 @@ class QuerySet(original_QS):
 		args, kwargs = translate(args, kwargs)
 		return super(QuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
 
-	def filter(self, *args, **kwargs):
+	def __filter(self, *args, **kwargs):
 		args, kwargs = translate(args, kwargs)
-		return super(QuerySet, self).filter(*args, **kwargs)
+		return self.filter(*args, **kwargs)
 
 	def annotate(self, *args, **kwargs):
 		args, kwargs = translate(args, kwargs)
@@ -259,7 +262,7 @@ class QuerySet(original_QS):
 		"""
 		Returns ALL the jobs that ARE scheduled
 		"""
-		return self.filter(_author__exact=user)
+		return self.__filter(_author__exact=user)
 
 	def get_scheduled(self):
 		"""
@@ -525,6 +528,53 @@ class WorkersManager(ObjectsWithAuth):
 
 	def all(self):
 		return self.get_query_set()
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def _report_filtering_show_limited_predicate(self, user, _all):
+		"""
+
+		:type user: User
+		:type _all: bool
+		:rtype: bool
+		"""
+		return not settings.SET_SHOW_ALL_USERS and not (self.admin_override_param(user) and _all)
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def _report_filtering_each_predicate(self, each, user, _all):
+		"""
+
+		:type each: Report.objects
+		:type user: User
+		:type _all: bool
+		:rtype: bool
+		"""
+		return self._report_filtering_show_limited_predicate(user, _all) \
+			and not (each.is_owner(user) or each.is_in_share_list(user))
+	
+	# FIXME should probably go into the object directly ?
+	# clem 23/03/2017 29/03/2017
+	def get_accessible(self, user, _all=False, query=None):
+		"""
+
+		:type user: User
+		:type _all: bool
+		:rtype: list
+		"""
+		a_list = list()
+		from models import UserProfile
+		insti = UserProfile.get_institute(user)
+		if query is None:
+			query = self.f.get_done(False, False).filter(_institute=insti)
+		# FIXME : turn that into an SQL query rather than a programmatic filtering
+		for each in query:
+			each.user_is_owner = each.is_owner(user)
+			each.user_has_access = each.has_access(user)
+			
+			if not self._report_filtering_each_predicate(each, user, _all):
+				a_list.append(each)
+		return a_list
 
 	@property
 	def f(self):
@@ -598,8 +648,16 @@ class CompTargetsManager(CustomManager):
 
 
 # clem 26/10/2016
-class CustomUserManager(Manager):
-	def __send_mail(self, user):
+class BreezeUserManager(UserManager):
+	# clem 30/03/20117
+	def all(self):
+		return super(BreezeUserManager, self).exclude(first_name=settings.GUEST_FIRST_NAME)
+	
+	def guests(self):
+		return super(BreezeUserManager, self).filter(first_name=settings.GUEST_FIRST_NAME)
+	
+	@staticmethod
+	def __send_mail(user):
 		from django.core.mail import EmailMessage
 
 		msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
@@ -607,8 +665,8 @@ class CustomUserManager(Manager):
 		msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS', [settings.ADMINS[1]])
 		result = msg.send()
 	
-	def create(self, **kwargs):
-		print 'custom_user_create'
+	@classmethod
+	def create_user(self, **kwargs):
 		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se']
 		email = kwargs.get('email', '')
 		pass_on = kwargs
@@ -627,10 +685,10 @@ class CustomUserManager(Manager):
 				from breeze.models import Institute
 				user_institute = Institute.objects.get(domain=domain)
 			except Exception as e:
-				from utilz import logger
 				logger.exception(str(e))
 			
-		user = super(CustomUserManager, self).create(**pass_on)
+		# user = super(BreezeUserManager, self).create(**pass_on)
+		user = self.create(**pass_on)
 		
 		# TODO alert admin about new user
 		if user_institute:
@@ -639,15 +697,40 @@ class CustomUserManager(Manager):
 			user.save()
 		self.__send_mail(user)
 		return user
+	
+	# clem 30/03/2017
+	def create_guest(self, force=False):
+		if settings.AUTH_ALLOW_GUEST or force:
+			from utilz import get_sha2
+			import binascii
+			import os
+			
+			kwargs = {
+				'first_name': settings.GUEST_FIRST_NAME,
+				'last_name':  binascii.hexlify(os.urandom(3)).decode(),
+			}
+			username = '%s_%s' % (kwargs['first_name'], kwargs['last_name'])
+			email = '%s@%s' % (username, settings.DOMAIN[0])
+			kwargs.update({
+				'username': username,
+				'email'	: email,
+				'password'	: get_sha2([username, email, str(time.time()), str(os.urandom(1000))])
+			})
+			# *** create BreezeUser instance (django User subclass)
+			user = self.create(**kwargs)
+			# user.save()
+			
+			return user
+		raise DisabledByCurrentSettings
 
 
 # clem 19/01/2016
-class UserManager(Manager):
+class UserProfileManager(Manager):
 	def dump(self):
-		return super(UserManager, self)
+		return super(UserProfileManager, self)
 	
 	def all(self):
-		return super(UserManager, self).filter(user_id__is_active=True)
+		return super(UserProfileManager, self).filter(user_id__is_active=True)
 	
 	def filter(self, *args, **kwargs):
 		return self.all().filter(*args, **kwargs)
@@ -657,3 +740,16 @@ class UserManager(Manager):
 	
 	def get(self, *args, **kwargs):
 		return self.all().get(*args, **kwargs)
+
+	# clem 30/03/2017
+	def get_expired_guests(self):
+		limit = timezone.now() - timezone.timedelta(minutes=settings.GUEST_EXPIRATION_TIME)
+		return super(UserProfileManager, self).filter(user__first_name=settings.GUEST_FIRST_NAME, last_active__lt=limit)
+	
+	# clem 30/03/2017
+	def clear_expired_guests(self):
+		try:
+			for each in self.get_expired_guests():
+				each.delete()
+		except Exception as e:
+			logger.exception(e)

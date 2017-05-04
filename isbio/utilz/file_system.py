@@ -48,6 +48,22 @@ def get_md5(content):
 	return m.hexdigest()
 
 
+# clem on 29/03/2017
+def get_sha2(content):
+	""" Return the sha512 checksum of content argument
+
+	:type content: list|str
+	:rtype: str
+	"""
+	m = hashlib.sha512()
+	if type(content) == list:
+		for eachLine in content:
+			m.update(eachLine)
+	else:
+		m.update(content)
+	return m.hexdigest()
+
+
 # clem on 21/08/2015
 def get_file_md5(file_path):
 	""" Return md5 checksum of file

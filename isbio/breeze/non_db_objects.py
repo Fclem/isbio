@@ -5,8 +5,9 @@ from utils import *
 from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
+from django.http import HttpRequest
 
-__version__ = '0.1.1'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -522,7 +523,7 @@ class FolderObj(object):
 		:rtype:
 		"""
 		folder_to_archive = self.home_folder_full_path # writing shortcut
-		if cat.endswith('-result'): # returning only the Results sub-folder for result switch
+		if cat.endswith('-result') and os.path.isdir(folder_to_archive + '/Results'): # returning only the Results sub-folder for result switch
 			folder_to_archive += '/Results'
 		
 		# get the ignore and filtering list
@@ -1387,24 +1388,221 @@ class AutoJSON(object):
 	
 	@classmethod
 	def json_dump(cls, query=None):
-		if not query:
+		if query is None:
 			query = cls.objects.all()
 		return {
 			# '_keys': cls._serialize_keys,
 			'_keys': cls.json_key_list(),
-			'list': list(query)
+			'list': query if type(query) is list else list(query)
 		}
+
+	# clem 29/03/2017
+	@classmethod
+	def add_keys(cls, keys_list):
+		if type(keys_list) in [tuple, basestring]:
+			cls._serialize_keys.append(keys_list)
+		elif type(keys_list) is list:
+			cls._serialize_keys += keys_list
+		
+import breeze.models
+
+
+# clem 31/03/2017
+class MagicGetter(object):
+	""" Provides subclasses with a get method that returns a User subclass object from
+		a base User object, or a request object.
+		Must be inherited from a User subclass, or UserProfile class
+	
+	"""
+	
+	# clem 31/03/2017
+	@classproperty
+	def __get_key(cls):
+		# determines the key to query db with : id for User subclasses, user for UserProfile
+		return 'id' if issubclass(cls, User) else 'user'
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(**{cls.__get_key: request.user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(**{cls.__get_key: user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		:rtype: BreezeUser | breeze.models.UserProfile
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
+
+
+# clem 27/03/2017
+class BreezeUser(User, AutoJSON, MagicGetter):
+	objects = managers.BreezeUserManager()
+	_serialize_keys = ['username', 'full_name', 'id']
+	
+	# clem 31/03/2017
+	@property
+	def user_profile(self):
+		from breeze.models import UserProfile
+		return UserProfile.get(self)
+	
+	# clem 30/03/2017
+	def guest_auto_remove(self):
+		""" Delete self if self is a guest user
+		
+		:rtype: bool
+		"""
+		if self.is_guest:
+			username = self.username
+			try:
+				if self.delete():
+					logger.info('deleted guest user %s' % username)
+					return True
+			except Exception as e:
+				logger.error('while deleting %s : %s' % (username, e))
+		return False
+	
+	@property
+	def full_name(self):
+		return self.get_full_name()
+	
+	# clem 29/03/2017
+	@property
+	def is_guest(self):
+		return self.username.startswith(settings.GUEST_FIRST_NAME)
+		
+	# clem 30/03/2017
+	@classmethod
+	def new_guest(cls, force=False):
+		""" make a new guest user
+
+		:rtype: BreezeUser
+		"""
+		# return OrderedUser.objects.create_guest(force)
+		try:
+			# create the Django BreezeUser object
+			user = cls.objects.create_guest(force)
+			# *** create UserProfile
+			from breeze.models import UserProfile, ReportType, Group
+			UserProfile.make_guest(user)
+			
+			# *** allow access to DSRT pipeline ONLY
+			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
+			report_type.access.add(user)
+			report_type.save()
+			
+			# *** add user to Guest group
+			# FIXME with a proper design
+			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
+			if created:
+				guest_group.save()
+			guest_group.team.add(user)
+			logger.info('created guest user %s' % user.username)
+			return user
+		except DisabledByCurrentSettings:
+			logger.warning('Guest users are disabled')
+		return None
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		from breeze.models import Report, Jobs, Group, Project, OffsiteUser, Post
+		content = [
+			(Report, '_author'),
+			(Jobs, '_author'),
+			(Group, 'author'),
+			(Project, 'author'),
+			(OffsiteUser, 'added_by'),
+			(Post, 'author')
+		]
+		try:
+			for obj, key in content:
+				for each in obj.objects.filter(**{key: self.id}):
+					each.delete()
+			
+			super(BreezeUser, self).delete(using, keep_parents)
+			return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
+	
+	class Meta:
+		proxy = True
+		# pass
+
+
+# 04/06/2015 {% if user.is_guest %} disabled{% endif %}
+class OrderedUser(BreezeUser):
+	class Meta:
+		ordering = ["username"]
+		proxy = True
+		auto_created = True # FIXME Hack
 
 
 # 23/11/2015 # FIXME
-class CustomUser(User, AutoJSON):
-	objects = managers.CustomUserManager()
-	
+# class CustomUser(OrderedUser, AutoJSON):
+class CustomUser(BreezeUser):
 	class Meta:
 		ordering = ["username"]
-		# proxy = True
+		proxy = True
 		auto_created = True # FIXME Hack
-	# db_table = 'auth_user'
+		# db_table = 'auth_user'
+
+
+class TrashClass(object):
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
 	
-	# broken
-	# OrderedUser = CustomUser
+	get = magic
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(id=request.user.id)
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(id=user.id)
