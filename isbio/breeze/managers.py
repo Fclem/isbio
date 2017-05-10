@@ -598,7 +598,7 @@ class ProjectManager(ObjectsWithAuth):
 			except ObjectDoesNotExist:
 				pass
 		return super(ProjectManager, self).exclude(
-			~org_Q(author__exact=user) & org_Q(collaborative=False)).order_by("name")
+			~org_Q(author__exact=user) and org_Q(collaborative=0)).order_by("name")
 
 
 # clem 20/10/2016
