@@ -498,6 +498,7 @@ def reports(request, _all=False):
 		return report_search(request, _all)
 	else:
 		page_index = 1
+		
 		reports_list = paginator.page(page_index)
 		
 		# user_profile = UserProfile.objects.get(user=request.user)
@@ -2882,6 +2883,9 @@ def report_search(request, _all=False):
 	count = {'total': len(found_entries)}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
+	if page_index > paginator.num_pages:
+		page_index = 1
+		
 	found_entries = paginator.page(page_index)
 	# Copy the query for the paginator to work with filtering
 	query_string = aux.make_http_query(request)

@@ -326,6 +326,10 @@
 	</script>
 	<!-- Pagination, research, filtering management, popover -->
 	<script type="text/javascript">
+		var thisPageUrl = window.location.href.toString().split('?')[0];
+		if(!thisPageUrl.charAt(thisPageUrl.length - 1) === '/') thisPageUrl += '/';
+		var searchUrl = thisPageUrl + 'search';
+		
 		//AJAX submission of the filtering form (triggers reports list refresh)
 		function submit_filter_form(e, sort) {
 			$("#pagination-content").fadeTo(0, 0.33);
@@ -333,7 +337,7 @@
 			if (sort != undefined ) formData+= '&sort=' + encodeURIComponent(sort);
 			$.ajax({
 				type   : 'POST',
-				url    : '/reports/search',
+				url    : searchUrl,
 				data   : formData,
 				success: function (response, textStatus, jqXHR) {
 					$("#pagination-content").fadeTo(0, 1);
@@ -359,7 +363,7 @@
 			alignment    : 'center',
 			onPageChanged: function (e, oldPage, newPage) {
 				if (oldPage == newPage || !refresh) return;
-				$.get("/reports/", {page: newPage}, function (data) {
+				$.get(thisPageUrl, {page: newPage}, function (data) {
 					$('#pagination-content').html(data);
 				});
 			}
@@ -432,13 +436,12 @@
 			// FILTERING: Clean filter form
 			function resetForm () {
 				$("#pagination-content").fadeTo("slow", 0.33);
-				$("#pagination-content").load('/reports/search', {
+				$("#pagination-content").load(searchUrl, {
 					reset              : 1,
 					csrfmiddlewaretoken: '{{ csrf_token }}'
 				}, function (response, status, xhr) {
 					$("#pagination-content").fadeTo(0, 1);
 				});
-				
 			}
 			
 			// FILTERING: Clean filter form

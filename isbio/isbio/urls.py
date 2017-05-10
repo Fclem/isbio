@@ -103,6 +103,7 @@ else:
 		url(r'^reports2/?$', breeze.views.reports2, name='reports2'),
 		url(r'^reports/all/?$', breeze.views.reports, name='reports', kwargs={'_all': True}),
 		url(r'^reports/search$', breeze.views.report_search, name='report_search'),
+		url(r'^reports/all/search$', breeze.views.report_search, name='report_search', kwargs={'_all': True}),
 		url(r'^reports/view/\d+/Results/HTMLreport/(?P<a_dir>[^/]+)/(?P<a_path>.+)$', breeze.views.report_statics,
 			name='report.statics'), # FIXME deprecated
 		url(r'^reports/view/(?P<rid>\d+)/(?P<file_name>.+)?$', breeze.views.report_file_view, name='report.view'),
