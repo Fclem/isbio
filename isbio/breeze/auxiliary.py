@@ -10,6 +10,7 @@ from django.template.defaultfilters import slugify
 from django.http import Http404, HttpResponse
 from django.template import loader
 from django.template.context import RequestContext
+from django.core.handlers.wsgi import WSGIRequest
 from utils import *
 
 DASHED_LINE = '-' * 111
@@ -657,3 +658,80 @@ def image_embedding(path_to_file, cached_path=None):
 		f2.write(str(soup))
 
 	return str(soup)
+
+
+def legacy_request(request):
+	""" Adds back the REQUEST property as dict(self.GET + self.POST) that seems to be missing
+	
+	:type request: WSGIRequest
+	:rtype: WSGIRequest
+	"""
+	
+	assert isinstance(request, WSGIRequest)
+	if not hasattr(request, 'REQUEST'):
+		request.REQUEST = copy.copy(request.GET)
+		request.REQUEST.update(request.POST)
+	return request
+
+
+# clem 10/05/2017
+def report_filtering(request, _all):
+	from models import Report
+	request = legacy_request(request)
+	
+	search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
+		request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
+		request.REQUEST.get('access_filter1', '')
+	
+	entry_query = None
+	page_index, entries_nb = report_common(request)
+	owned_filter = False
+	
+	if search.strip() != '' and not request.REQUEST.get('reset'):
+		def query_concat(request, entry_query, rq_name, cols, user_name=False, exact=True):
+			# like_a = '%' if like else ''
+			query_type = (request.REQUEST.get(rq_name, '') if not user_name else request.user.id)
+			tmp_query = get_query(query_type, cols, exact)
+			if not tmp_query:
+				return entry_query
+			return (entry_query & tmp_query) if entry_query else tmp_query
+		
+		# TODO make a sub function to reduce code duplication
+		# filter by report name
+		entry_query = query_concat(request, entry_query, 'filt_name', ['_name'], exact=False)
+		# filter by type
+		entry_query = query_concat(request, entry_query, 'filt_type', ['type_id'])
+		# filter by author name
+		entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
+		# filter by project name
+		entry_query = query_concat(request, entry_query, 'filt_project', ['project_id'])
+		# filter by owned reports
+		if request.REQUEST.get('access_filter1', None) not in ['all', '', None]:
+			owned_filter = True
+			if request.REQUEST['access_filter1'] == 'owned':
+				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id'], True)
+			# filter by accessible reports
+			elif request.REQUEST['access_filter1'] == 'accessible':
+				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
+	# Manage sorting
+	if request.REQUEST.get('sort'):
+		sorting = request.REQUEST.get('sort')
+	else:
+		sorting = '-_created'
+	
+	# Process the query
+	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+	
+	if entry_query and found_entries:
+		found_entries = found_entries.filter(entry_query)
+	found_entries = found_entries.distinct()
+	
+	response = {
+		'page':              page_index,
+		'sorting':           sorting,
+		'entries_nb':        entries_nb,
+		'owned_filter':      owned_filter
+	}
+	
+	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
+	return Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries), response

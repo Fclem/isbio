@@ -592,6 +592,11 @@ class ProjectManager(ObjectsWithAuth):
 		:type user:
 		:rtype: list
 		"""
+		if user.is_guest:
+			try:
+				return super(ProjectManager, self).filter(name=settings.GUEST_GROUP_NAME)
+			except ObjectDoesNotExist:
+				pass
 		return super(ProjectManager, self).exclude(
 			~org_Q(author__exact=user) & org_Q(collaborative=False)).order_by("name")
 

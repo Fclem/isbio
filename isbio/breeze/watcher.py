@@ -79,7 +79,7 @@ def refresh_proc():
 			dbitem.log.debug("refresh_proc")
 			proc = proc_item.process
 
-			if not proc.is_alive: # thread finished
+			if not proc.is_alive(): # thread finished
 				exit_c = 0
 				end_tracking(proc_item)
 				msg = 'waiting process ended with code %s' % exit_c

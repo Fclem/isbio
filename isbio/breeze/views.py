@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datadog import util
 from pip._vendor.cachecontrol import wrapper
-
 import auxiliary as aux
 import forms as breezeForms
 import urllib
@@ -47,11 +46,7 @@ def legacy_request(request):
 	""" Adds back the REQUEST property as dict(self.GET + self.POST) that seems to be missing
 	
 	"""
-	assert isinstance(request, WSGIRequest)
-	if not hasattr(request, 'REQUEST'):
-		request.REQUEST = copy.copy(request.GET)
-		request.REQUEST.update(request.POST)
-	return request
+	return aux.legacy_request(request)
 
 
 class RequestStorage(object):
@@ -494,7 +489,7 @@ def reports(request, _all=False):
 
 	# If AJAX - use the search view
 	# Otherwise return the first page
-	if request.is_ajax() and request.method == 'GET':
+	if request.is_ajax(): #  and request.method == 'GET':
 		return report_search(request, _all)
 	else:
 		page_index = 1
@@ -508,7 +503,10 @@ def reports(request, _all=False):
 		url_lst = {  # TODO remove static url mappings
 			'Edit': '/reports/edit_access/',
 			'Add': '/off_user/add/',
-			'Send': '/reports/send/'
+			'Send': '/reports/send/',
+			'less': '/reports/',
+			'self': '/reports/%s' % ('all/' if _all else ''),
+			'all': '/reports/all/'
 		}
 		# paginator counter
 		count.update(aux.view_range(page_index, entries_nb, count['total']))
@@ -2828,57 +2826,8 @@ def report_search(request, _all=False):
 		request.method = 'GET'
 		return reports(request, _all)  # Redirects to the default view (internally : no new HTTP request)
 	
-	request = legacy_request(request)
-
-	search = request.REQUEST.get('filt_name', '') + request.REQUEST.get('filt_type', '') + \
-		request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
-		request.REQUEST.get('access_filter1', '')
-	entry_query = None
-	page_index, entries_nb = aux.report_common(request)
-	owned_filter = False
-
-	if search.strip() != '' and not request.REQUEST.get('reset'):
-		def query_concat(request, entry_query, rq_name, cols, user_name=False, exact=True):
-			# like_a = '%' if like else ''
-			query_type = (request.REQUEST.get(rq_name, '') if not user_name else request.user.id)
-			tmp_query = aux.get_query(query_type, cols, exact)
-			if not tmp_query:
-				return entry_query
-			return (entry_query & tmp_query) if entry_query else tmp_query
-
-		# TODO make a sub function to reduce code duplication
-		# filter by report name
-		entry_query = query_concat(request, entry_query, 'filt_name', ['_name'], exact=False)
-		# filter by type
-		entry_query = query_concat(request, entry_query, 'filt_type', ['type_id'])
-		# filter by author name
-		entry_query = query_concat(request, entry_query, 'filt_author', ['author_id'])
-		# filter by project name
-		entry_query = query_concat(request, entry_query, 'filt_project', ['project_id'])
-		# filter by owned reports
-		if request.REQUEST.get('access_filter1'):
-			owned_filter = True
-			if request.REQUEST['access_filter1'] == 'owned':
-				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id'], True)
-			# filter by accessible reports
-			elif request.REQUEST['access_filter1'] == 'accessible':
-				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
-	# Manage sorting
-	if request.REQUEST.get('sort'):
-		sorting = request.REQUEST.get('sort')
-	else:
-		sorting = '-_created'
-	
-	# Process the query
-	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
-
-	if not entry_query and found_entries:
-		if entry_query:
-			found_entries = found_entries.filter(entry_query)
-		found_entries = found_entries.distinct()
-		
-	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries)
+	found_entries, response = aux.report_filtering(request, _all)
+	page_index, sorting, entries_nb = response['page'], response['sorting'], response['entries_nb']
 	
 	count = {'total': len(found_entries)}
 	# apply pagination
@@ -2891,17 +2840,19 @@ def report_search(request, _all=False):
 	query_string = aux.make_http_query(request)
 	# paginator counter
 	count.update(aux.view_range(page_index, entries_nb, count['total']))
-	return render_to_response('reports-paginator.html', RequestContext(request, {
-		'reports': found_entries,
+	
+	response.update({
+		'reports':           found_entries,
 		'pagination_number': paginator.num_pages,
-		'page': page_index,
-		'url': 'search?',
-		'search': query_string,
-		'count': count,
-		'sorting': sorting,
-		'owned_filter': owned_filter #,
-		# 'show_author_filter': settings.SET_SHOW_ALL_USERS
-	}))
+		# 'page': page_index,
+		'url':               'search?',
+		'search':            query_string,
+		'count':             count,
+		# 'sorting': sorting,
+		# 'owned_filter': owned_filter #,
+		# # 'show_author_filter': settings.SET_SHOW_ALL_USERS
+	})
+	return render_to_response('reports-paginator.html', RequestContext(request, response))
 
 
 @csrf_exempt

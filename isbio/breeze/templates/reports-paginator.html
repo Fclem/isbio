@@ -5,6 +5,15 @@
 			<strong>{{ count.first }}</strong> -
 			<strong>{{ count.last }}</strong> out of
 			<strong>{{ count.total }}</strong> reports found
+			{% if user.is_superuser %}
+				<i style="color:darkred; float: right;">Admins :
+				{% if 'all' not in url_lst.self %}
+					<a href="{{ url_lst.all }}">show all</a>
+				{% else  %}
+					<a href="{{ url_lst.less }}">show less</a>
+				{% endif %}
+				</i>
+			{% endif %}
 		</h4>
 	</small>
 {% endif %}
@@ -13,21 +22,21 @@
 	{% if reports %}
 		<thead>
 		<tr>
-			<th onclick="submit_filter_form(null, '{% if sorting = '_created' %}-_created{% else %}_created{% endif %}')">
+			<th onclick="submit_filter_form(null, '{% if sorting == '_created' %}-_created{% else %}_created{% endif %}')">
 				Date
 				<i class="icon {% if sorting = '_created' %}icon-chevron-up{% elif sorting = '-_created' %}icon-chevron-down{% endif %}"></i></th>
-			<th onclick="submit_filter_form(null, '{% if sorting = '_type' %}-_type{% else %}_type{% endif %}')">
+			<th onclick="submit_filter_form(null, '{% if sorting == '_type' %}-_type{% else %}_type{% endif %}')">
 				Report Type
 				<i class="icon {% if sorting = '_type' %}icon-chevron-up{% elif sorting = '-_type' %}icon-chevron-down{% endif %}"></i></th>
-			<th onclick="submit_filter_form(null, '{% if sorting = '_name' %}-_name{% else %}_name{% endif %}')">
+			<th onclick="submit_filter_form(null, '{% if sorting == '_name' %}-_name{% else %}_name{% endif %}')">
 				Report Name
 				<i class="icon {% if sorting = '_name' %}icon-chevron-up{% elif sorting = '-_name' %}icon-chevron-down{% endif %}"></i>
 			</th>
-			<th onclick="submit_filter_form(null, '{% if sorting = '_author__last_name' %}-_author__last_name{% else %}_author__last_name{% endif %}')">
+			<th onclick="submit_filter_form(null, '{% if sorting == '_author__last_name' %}-_author__last_name{% else %}_author__last_name{% endif %}')">
 				Author
 				<i class="icon {% if sorting = '_author__last_name' %}icon-chevron-up{% elif sorting = '-_author__last_name' %}icon-chevron-down{% endif %}"></i>
 			</th>
-			<th onclick="submit_filter_form(null, '{% if sorting = 'project__name' %}-project__name{% else %}project__name{% endif %}')">
+			<th onclick="submit_filter_form(null, '{% if sorting == 'project__name' %}-project__name{% else %}project__name{% endif %}')">
 				Project
 				<i class="icon {% if sorting = 'project__name' %}icon-chevron-up{% elif sorting = '-project__name' %}icon-chevron-down{% endif %}"></i>
 			</th>
@@ -99,7 +108,9 @@
 	{% endfor %}
 	</tbody>
 </table>
-<p><br>&nbsp;</p>
+<p style="text-align: center"><br>{% if user.is_superuser and 'all' in url_lst.self %}
+	<i style="color:darkred;">This is an admins'-only view</i>
+{% endif %}&nbsp;</p>
 <div id="paginator_control"></div>
 <script type="text/javascript">
 	$(document).ready(function () {
