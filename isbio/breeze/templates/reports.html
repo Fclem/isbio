@@ -327,7 +327,7 @@
 	<!-- Pagination, research, filtering management, popover -->
 	<script type="text/javascript">
 		var thisPageUrl = window.location.href.toString().split('?')[0];
-		if(!thisPageUrl.charAt(thisPageUrl.length - 1) === '/') thisPageUrl += '/';
+		if(thisPageUrl.charAt(thisPageUrl.length - 1) !== '/') thisPageUrl += '/';
 		var searchUrl = thisPageUrl + 'search';
 		
 		//AJAX submission of the filtering form (triggers reports list refresh)

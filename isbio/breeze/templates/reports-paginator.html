@@ -115,7 +115,7 @@
 				if (oldPage == newPage || !refresh) return;
 				$("#pagination-content").fadeTo('', 0.33);
 				$.extend(searchQ, {page: newPage});
-				$.get("/reports/{% if url %}{{ url }}{% endif %}" ,  searchQ , function (data) {
+				$.get(thisPageUrl + "{% if url %}{{ url }}{% endif %}" ,  searchQ , function (data) {
 					//$('#pagination-content').html('');
 					$("#pagination-content").fadeTo(0, 1);
 					$('#pagination-content').html(data);
