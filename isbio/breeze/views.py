@@ -451,14 +451,14 @@ def reports2(request, _all=False):
 	}))
 
 
-@allow_guest
+@allow_guest # FIXME make a class for this (and grab all aux code)
 def reports(request, _all=False):
 
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
 	# get the user's institute
-	insti = UserProfile.get_institute(request.user)
+	# insti = UserProfile.get_institute(request.user)
 	user_rtypes = request.user.pipeline_access.all()
 	# first find all the users from the same institute, then find their accessible report types
 	
@@ -489,25 +489,13 @@ def reports(request, _all=False):
 
 	# If AJAX - use the search view
 	# Otherwise return the first page
-	if request.is_ajax(): #  and request.method == 'GET':
+	if request.is_ajax(): # and request.method == 'GET':
 		return report_search(request, _all)
 	else:
 		page_index = 1
-		
 		reports_list = paginator.page(page_index)
-		
-		# user_profile = UserProfile.objects.get(user=request.user)
 		user_profile = UserProfile.get(request)
-		
 		db_access = user_profile.db_agreement
-		url_lst = {  # TODO remove static url mappings
-			'Edit': '/reports/edit_access/',
-			'Add': '/off_user/add/',
-			'Send': '/reports/send/',
-			'less': '/reports/',
-			'self': '/reports/%s' % ('all/' if _all else ''),
-			'all': '/reports/all/'
-		}
 		# paginator counter
 		count.update(aux.view_range(page_index, entries_nb, count['total']))
 
@@ -523,7 +511,7 @@ def reports(request, _all=False):
 			'page': page_index,
 			'db_access': db_access,
 			'count': count,
-			'url_lst': url_lst,
+			'url_lst': aux.reports_links(_all),
 			'show_author_filter': not _report_filtering_show_limited_predicate(request.user, _all)
 		}))
 
@@ -2819,7 +2807,7 @@ def ajax_user_stat(request):
 	return HttpResponse(simplejson.dumps(response_data), content_type=c_t.JSON)
 
 
-@allow_guest
+@allow_guest # FIXME make a class for this (and grab all aux code)
 def report_search(request, _all=False):
 
 	if not request.is_ajax():
@@ -2848,6 +2836,7 @@ def report_search(request, _all=False):
 		'url':               'search?',
 		'search':            query_string,
 		'count':             count,
+		'url_lst':           aux.reports_links(_all),
 		# 'sorting': sorting,
 		# 'owned_filter': owned_filter #,
 		# # 'show_author_filter': settings.SET_SHOW_ALL_USERS

@@ -318,7 +318,7 @@ def merge_job_lst(item1, item2):
 # ##	*** END ***
 ###
 
-# 02/06/2015 Clem
+# 02/06/2015 Clem # FIXME merge into a class with rest of related code
 def view_range(page_index, entries_nb, total):
 	""" Calculate and return a dict with the number of the first and last elements in the current view of the paginator
 
@@ -364,7 +364,7 @@ def make_http_query(request):
 	return query_string
 
 
-# clem 23/06/2016
+# clem 23/06/2016 # FIXME merge into a class with rest of related code
 def get_argument(req, arg_name):
 	g = req.GET.get(arg_name, None)
 	p = req.POST.get(arg_name, None)
@@ -379,7 +379,7 @@ def get_argument(req, arg_name):
 		raise AttributeError('argument %s is both in both GET and POST' % arg_name)
 
 
-# 10/03/2015 Clem updated 23/06/2016
+# 10/03/2015 Clem updated 23/06/2016 # FIXME merge into a class with rest of related code
 def report_common(request, v_max=15):
 	"""
 	:type request: django.core.handlers.wsgi.WSGIRequest
@@ -674,7 +674,7 @@ def legacy_request(request):
 	return request
 
 
-# clem 10/05/2017
+# clem 10/05/2017 # FIXME merge into a class with rest of related code
 def report_filtering(request, _all):
 	from models import Report
 	request = legacy_request(request)
@@ -735,3 +735,15 @@ def report_filtering(request, _all):
 	
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	return Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries), response
+
+
+# clem 10/05/2017 # FIXME merge into a class with rest of related code
+def reports_links(_all):
+	return { # TODO remove static url mappings
+		'Edit': '/reports/edit_access/',
+		'Add':  '/off_user/add/',
+		'Send': '/reports/send/',
+		'less': '/reports/',
+		'self': '/reports/%s' % ('all/' if _all else ''),
+		'all':  '/reports/all/'
+	}
