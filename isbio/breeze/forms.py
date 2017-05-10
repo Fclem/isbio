@@ -277,9 +277,13 @@ class ReportPropsFormMixin(object):
 		if not hasattr(self, 'fields'):
 			self.fields = dict()
 
+		rq = breeze.models.Project.objects.available(self.request.user)
+	
 		# FIXME : use manager instead
 		self.fields["project"] = forms.ModelChoiceField(
-			queryset=breeze.models.Project.objects.available(self.request.user)
+			queryset=rq,
+			initial=rq[0] if len(rq) == 1 else None,
+			widget=forms.Select()
 		)
 
 		self.fields["target"] = forms.ChoiceField(
