@@ -467,7 +467,8 @@ def reports(request, _all=False):
 	user_rtypes = request.user.pipeline_access.all()
 	# first find all the users from the same institute, then find their accessible report types
 	
-	all_projects = Project.objects.all()
+	# all_projects = Project.objects.all()
+	all_projects = Project.objects.available(request.user)
 	
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
@@ -497,9 +498,12 @@ def reports(request, _all=False):
 		return report_search(request, _all)
 	else:
 		page_index = 1
+		
 		reports_list = paginator.page(page_index)
 		
-		user_profile = UserProfile.objects.get(user=request.user)
+		# user_profile = UserProfile.objects.get(user=request.user)
+		user_profile = UserProfile.get(request)
+		
 		db_access = user_profile.db_agreement
 		url_lst = {  # TODO remove static url mappings
 			'Edit': '/reports/edit_access/',
@@ -2868,8 +2872,10 @@ def report_search(request, _all=False):
 	# Process the query
 	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
 
-	if not entry_query:
-		found_entries = found_entries.filter(entry_query).distinct()
+	if not entry_query and found_entries:
+		if entry_query:
+			found_entries = found_entries.filter(entry_query)
+		found_entries = found_entries.distinct()
 		
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries)
@@ -2877,6 +2883,9 @@ def report_search(request, _all=False):
 	count = {'total': len(found_entries)}
 	# apply pagination
 	paginator = Paginator(found_entries, entries_nb)
+	if page_index > paginator.num_pages:
+		page_index = 1
+		
 	found_entries = paginator.page(page_index)
 	# Copy the query for the paginator to work with filtering
 	query_string = aux.make_http_query(request)
