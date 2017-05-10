@@ -12,6 +12,7 @@
 	<link href="/static/css/bootstrapSwitch.css" rel="stylesheet">
 	<script src="/static/js/bootstrapSwitch.js"></script>
 	<script type="text/javascript" src="/static/js/bootstrap-paginator.min.js"></script>
+	<script type="text/javascript" src="/static/js/jsrender.min.js"></script>
 
 	<style type="text/css">
 		#main_table td {text-align:center; vertical-align:middle;}
@@ -81,25 +82,9 @@
 					<form id="filter_form" class="form-inline" method="post" onsubmit="return false;"
 					      onchange="submit_filter_form()" style="text-align: center;">
 						{% csrf_token %}
-						<select id="filt_type" name="filt_type" class="input-medium">
-							<option id="" value="">All Types</option>
-							{% for item in report_types %}
-								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
-							{% endfor %}
-						</select>
-						<select id="filt_author" name="filt_author" class="input-medium">
-							<option id="" value="">All Authors</option>
-							{% for item in users %}
-								<option id="{{ item.user.id }}" value="{{ item.user.id }}">
-									{{ item.the_full_name }}</option>
-							{% endfor %}
-						</select>
-						<select id="filt_project" name="filt_project" class="input-medium">
-							<option id="" value="">All projects</option>
-							{% for item in projects %}
-								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.name }}</option>
-							{% endfor %}
-						</select>
+						<select id="filt_type" name="filt_type" class="input-medium"></select>
+						<select id="filt_author" name="filt_author" class="input-medium"></select>
+						<select id="filt_project" name="filt_project" class="input-medium"></select>
 						<input id="filt_name" name="filt_name" type="text" class="input"
 						       placeholder="Report name (type & press Enter)">
 						<!--<button type="submit" class="btn">Search</button>-->
@@ -128,13 +113,6 @@
 			</div>
 			<!-- FILTERS HIDE/SHOW button -->
 			<div class="span2">
-				&nbsp;
-				<!--
-				<a href="#" id="filter_popover" class="btn btn-primary input-medium btn-right" data-toggle="collapse"
-				   data-target="#filter-form-box">
-					<strong><i class="icon-filter icon-white"></i> &nbsp;Filters </strong>
-				</a>
-				-->
 			</div>
 		</div>
 		
@@ -147,7 +125,7 @@
 			</div>
 		</div>-->
 		<div id="pagination-content" class="span10 offset1">
-			{% include "reports-paginator.html" %}
+			{% include "reports-paginator2.html" %}
 		</div>
 	</div>
 	<!-- DELETE modal dialogue-->
@@ -445,6 +423,203 @@
 			$('#filt_clean').click(resetForm);
 			$('#radio_all').click(resetForm);
 			
+		});
+	</script>
+
+{% verbatim %}
+	<script id="lineTemplate" type="text/x-jsrender">
+		{{for reports}}
+        <tr>
+			<td> {{:created }} </td>
+			<td> {{:~type(type) }} </td>
+			<td data-toggle="tooltip" title="{{:name }}"> {{:name }} </td>
+			<td> {{:~user(author)}} </td>
+			<td class="Glyph" data-toggle="tooltip" title="{{:~project(project)}}"> {{:~project(project) }} </td>
+			<!-- View button (only if user has access or is super-user) -->
+			<td>
+				<a class="Glyph" data-toggle="tooltip" title="View the Report" href="/reports/view/{{:id}}/report.html" target="_blank">
+					<i class="icon-eye-open"></i>
+				</a>
+			</td>
+			<!-- Download button (only if user has access) -->
+			<td>
+				<a class="Glyph" href="/report/download/{{:id }}-result" data-toggle="tooltip" title="Download result archive<br />Includes everything">
+					<i class="icon-download-alt"></i>
+				</a>
+			</td>
+			{{if ~isOwn(author) }}
+			<!-- Send (to off-site users) button -->
+			<td>
+				&nbsp;
+			</td>
+			<!-- Edit sharing button -->
+			<td>
+				<a class="Glyph" href="#" data-toggle="modal" data-toggle="tooltip" title="Edit sharing" data-target="#Edit" class="btn btn-inverse apply" data-param="{{:id }}" onclick="get_form({{:id }}, 'Edit');">
+					<i class="icon-user"></i>
+				</a>
+			</td>
+			<!-- Delete button -->
+			<td>
+				<a class="Glyph" href="#" data-toggle="modal" data-toggle="tooltip" title="Delete report" data-target="#Del" onclick="$('#del_btn').attr('href', '/reports/delete/{{:id}}'); $('#del_title').text('Delete \'{{:name }}\' ?')
+				;" >
+					<i class="icon-trash"></i>
+				</a>
+			</td>
+			{{else}}
+			<td colspan="3">&nbsp;</td>
+			{{/if}}
+		</tr>
+        {{/for}}
+		
+	</script>
+
+	<script id="countTemplate" type="text/x-jsrender">
+		<small>
+			<h4>Report
+				<strong>{{:first }}</strong> -
+				<strong>{{:last }}</strong> out of
+				<strong>{{:total }}</strong> reports found
+			</h4>
+		</small>
+	</script>
+
+	<script id="optionTemplate" type="text/x-jsrender">
+		<option id="" value="">All {{:cat}}</option>
+		{{for list}}
+		<option id="{{:id }}" value="{{:id }}">{{:name }}</option>
+		{{/for}}
+	</script>
+{% endverbatim %}
+
+	<script type="text/javascript">
+		var reportUrl = '/api/reports',
+			reportTypeUrl = '/api/report_types',
+			projectUrl = '/api/projects',
+			userUrl = '/api/users';
+			myInfoUrl = '/api/auth/me';
+		
+		if(!window.hasOwnProperty("userDict"))
+			window.userDict = {};
+		if (!window.hasOwnProperty("projectDict"))
+			window.projectDict = {};
+		if (!window.hasOwnProperty("reportTypeDict"))
+			window.reportTypeDict = {};
+		if (!window.hasOwnProperty("myInfoDict"))
+			window.myInfoDict = {};
+		if (!window.hasOwnProperty("reportList"))
+			window.reportList = {};
+		
+		var rowTemplate = $.templates("#lineTemplate"),
+			countTemplate = $.templates("#countTemplate"),
+		    optionTemplate = $.templates("#optionTemplate");
+		
+		function apiClient(url, callback1, callback2){
+			$.get(url, function (data) {
+				if(data.result === 200){
+					callback1(data.data);
+				}else{
+					console.error('Api at ' + url + ' returned code ' + data.result);
+				}
+				if(callback2 !== undefined) callback2();
+			})
+		}
+		
+		function apiListClient(url, callback1, callback2){
+			apiClient(url, function (data) {
+				callback1(data.list);
+			}, callback2);
+		}
+		
+		var tableId = '#reportList',
+			reportCountId = '#reportCount',
+			reportFiltTypeId = '#filt_type',
+			reportFiltAuthId = '#filt_author',
+			reportFiltProjectId = '#filt_project',
+			empty =
+		  '<tr> <td colspan="7">There is no report in the database matching your search criteria... </td> </tr>';
+		
+		function populateDict(list, dict){
+			//var size = list.length;
+			for (eachIndex in list) {
+				dict[list[eachIndex].id] = list[eachIndex];
+			}
+		}
+		
+		function populateWrapper(dict){
+			return function (list){
+				populateDict(list, dict);
+			}
+		}
+		
+		function callApiListIfNeeded(url, dict){
+			if (!Object.keys(dict).length) {
+				apiListClient(url, populateWrapper(dict));
+			}
+		}
+		
+		function getMyInfo(){
+			if (!Object.keys(myInfoDict).length) {
+				apiClient(myInfoUrl, function (data) {
+					myInfoDict = data.auth;
+				});
+			}
+		}
+		
+		function getReportList(){
+			if (!Object.keys(reportList).length) {
+				apiListClient(reportUrl, function (data) {
+					reportList = data;
+					fillTable(reportList);
+				});
+			}
+		}
+		
+		function dictGetter(dict, value, sub){
+			try{
+				return dict[value][sub];
+			}catch (e){
+				console.error('Key', value, '.', sub, 'not found in ', dict);
+				return value;
+			}
+		}
+		
+		var myHelpers = {
+			project: function (val) { return projectDict[val].name; },
+			type: function (val) { return reportTypeDict[val].name; },
+			user: function (val) { return dictGetter(userDict, val, 'full_name'); },
+			isOwn: function (val) { return val === myInfoDict.id; }
+		};
+		
+		var helper2 = {
+			id: function (val) { return projectDict[val].name; },
+			name: function (val) { return projectDict[val].name; }
+		};
+		
+		function fillTable(list){
+			var size = list.length;
+			if(size > 0) {
+				$(tableId).html(rowTemplate.render({'reports': list}, myHelpers));
+				$(reportCountId).html(countTemplate.render({'first': 1, 'last': size, 'total': size}));
+			}else{
+				$(tableId).html(empty);
+			}
+		}
+		
+		function fillOption(list, target) {
+			$(target).html(optionTemplate.render({'list': list, 'cat': target}, helper2));
+		}
+		
+		$(document).ready(function () {
+			callApiListIfNeeded(userUrl, userDict);
+			callApiListIfNeeded(reportTypeUrl, reportTypeDict);
+			callApiListIfNeeded(projectUrl, projectDict);
+			getMyInfo();
+			
+			getReportList();
+			
+			fillOption(reportTypeDict, reportFiltTypeId);
+			fillOption(userDict, reportFiltAuthId);
+			fillOption(projectDict, reportFiltProjectId);
 		});
 	</script>
 {% endblock %}

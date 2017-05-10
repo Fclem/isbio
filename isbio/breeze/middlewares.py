@@ -1,13 +1,16 @@
 # -*- coding: latin-1 -*-
+from __future__ import print_function
 from breeze.watcher import runner
 import logging
 import os
 import datetime
 import sys
 from breeze.models import UserProfile
+from django.contrib.auth.models import AnonymousUser, User
 from breeze import views
-from breeze.utils import TermColoring
+from breeze.utils import TermColoring # , context
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
 if settings.DEBUG:
 	# quick fix to solve PyCharm Django console environment issue
@@ -58,11 +61,12 @@ def is_on():
 
 
 def reload_urlconf(urlconf=None):
-	print TermColoring.warning('State changed') + ', ' + TermColoring.ok_blue('Reloading urls...')
+	print(TermColoring.warning('State changed') + ', ' + TermColoring.ok_blue('Reloading urls...'))
 	if urlconf is None:
 		urlconf = settings.ROOT_URLCONF
 	if urlconf in sys.modules:
-		reload(sys.modules[urlconf])
+		# noinspection PyCompatibility
+		reload(sys.modules[urlconf]) # FIXME not py3 compatible
 
 
 def check_state():
@@ -76,7 +80,7 @@ def check_state():
 # END
 
 
-class JobKeeper:
+class JobKeeper(object):
 	# p = Process(target=runner)
 	p = Thread(target=runner)
 	log = None
@@ -108,6 +112,7 @@ class BreezeAwake:
 	@staticmethod
 	def process_request(_):
 		check_state()
+		
 
 if settings.ENABLE_DATADOG:
 	from datadog import statsd
@@ -137,10 +142,100 @@ if settings.ENABLE_DATADOG:
 
 
 class CheckUserProfile(object):
+	# clem 30/03/2017
 	@staticmethod
-	def process_exception(request, exception):
-		if isinstance(exception, UserProfile.DoesNotExist):
+	def __get_user_safe(request):
+		user = AnonymousUser()
+		try:
+			if hasattr(request, 'user') and isinstance(request.user, User):
+				user = request.user
+				repr(user)
+		except Exception as e:
+			logger.exception(str(e))
+		request.user = user
+		return request, user
+	
+	# clem 21/02/2017
+	@staticmethod # FIXME should be somewhere else, like during log-on (excluding guest) or login signal
+	def process_response(request, response):
+		""" set encrypted session_id cookie for shiny to check authentication
+		Warning : shiny_secret must be at least 32 char long.
+		"""
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if request.user.is_authenticated() and request.session.session_key:
+			from utilz import compute_enc_session_id
+			value = compute_enc_session_id(request.session.session_key, settings.SHINY_SECRET)
+			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
+				response.set_cookie(settings.ENC_SESSION_ID_COOKIE_NAME, value)
+		return response
+	
+	@staticmethod
+	def process_request(request):
+		""" Insert useful method into User base class and update UserProfile.last_active for current user
+		
+		:type request: django.http.HttpRequest
+		"""
+		from django.contrib.auth.models import User
+		from breeze.models import OrderedUser, UserProfile
+		# hacking base User model to add some methods to it
+		User.is_guest = OrderedUser.is_guest
+		User.objects = OrderedUser.objects
+		
+		# noinspection PyTypeChecker
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if not isinstance(user, AnonymousUser): # TODO move to backend
+			# update the last_active field of UserProfile (as this field is set to auto_now)
+			# this is useful mostly to track inactive guest user
+			profile = UserProfile.get(request)
+			profile.save()
+			
+		UserProfile.objects.clear_expired_guests() # FIXME put in a separate guest middleware
+
+
+# clem 28/03/2017
+class ContextualRequest(object):
+	@staticmethod
+	def process_request(request):
+		# from utilz import context
+		# context = {'request': request}
+		pass
+
+
+class RemoteFW(object):
+	@staticmethod
+	def process_request(request):
+		print(type(request), request)
+
+
+class Empty(object):
+	pass
+
+
+class _DeprecatedCheckUserProfile(object):
+	# clem 30/03/2017
+	@staticmethod
+	def __get_user_safe(request):
+		user = AnonymousUser()
+		try:
+			if hasattr(request, 'user') and isinstance(request.user, User):
+				user = request.user
+				repr(user)
+		except Exception as e:
+			logger.exception(str(e))
+		request.user = user
+		return request, user
+	
+	@classmethod
+	def process_exception(cls, request, exception):
+		request, user = cls.__get_user_safe(request)
+		logger.exception('middle process ex: %s' % exception)
+		
+		if isinstance(exception, UserProfile.DoesNotExist) and not user.is_anonymous:
 			return views.home(request)
+		raise exception
+	
+	# from hello_auth.views import show_login_page
+	# return show_login_page(request)
 	
 	# clem 21/02/2017
 	@staticmethod
@@ -148,19 +243,32 @@ class CheckUserProfile(object):
 		""" set encrypted session_id cookie for shiny to check authentication
 		Warning : shiny_secret must be at least 32 char long.
 		"""
-		if hasattr(request, 'user') and request.user.is_authenticated() and request.session.session_key:
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if request.user.is_authenticated() and request.session.session_key:
 			from utilz import compute_enc_session_id
 			value = compute_enc_session_id(request.session.session_key, settings.SHINY_SECRET)
 			if request.COOKIES.get(settings.ENC_SESSION_ID_COOKIE_NAME, '') != value:
 				response.set_cookie(settings.ENC_SESSION_ID_COOKIE_NAME, value)
 		return response
-		
-
-class RemoteFW(object):
+	
 	@staticmethod
 	def process_request(request):
-		print type(request), request
+		""" Insert useful method into User base class and update UserProfile.last_active for current user
 
-
-class Empty(object):
-	pass
+		:type request: django.http.HttpRequest
+		"""
+		from django.contrib.auth.models import User
+		from breeze.models import OrderedUser, UserProfile
+		# hacking base User model to add some methods to it
+		User.is_guest = OrderedUser.is_guest
+		User.objects = OrderedUser.objects
+		
+		# noinspection PyTypeChecker
+		request, user = CheckUserProfile.__get_user_safe(request)
+		if not isinstance(user, AnonymousUser): # TODO move to backend
+			# update the last_active field of UserProfile (as this field is set to auto_now)
+			# this is useful mostly to track inactive guest user
+			profile = UserProfile.get(request)
+			profile.save()
+		
+		UserProfile.objects.clear_expired_guests()

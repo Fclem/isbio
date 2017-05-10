@@ -27,3 +27,5 @@ running
 static_source/
 .*
 !.gitignore
+*.ipynb
+*/*.ipynb

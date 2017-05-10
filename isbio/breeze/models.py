@@ -60,19 +60,11 @@ class CustomModel(CustomModelAbstract):
 	
 	class Meta:
 		abstract = True
+
 	
 from shiny.models import ShinyReport
 
 
-# 04/06/2015
-class OrderedUser(User):
-	# objects = managers.CustomUserManager()
-	
-	class Meta:
-		ordering = ["username"]
-		proxy = True
-		auto_created = True # FIXEME Hack
-		# db_table = 'auth_user'
 
 
 # User = OrderedUser
@@ -90,7 +82,7 @@ class Post(CustomModelAbstract):
 		return self.title
 
 
-class Project(CustomModel):
+class Project(CustomModel, AutoJSON):
 	name = models.CharField(max_length=50, unique=True)
 	manager = models.CharField(max_length=50)
 	pi = models.CharField(max_length=50)
@@ -106,6 +98,9 @@ class Project(CustomModel):
 
 	def __unicode__(self):
 		return self.name
+	
+	# clem 24/03/2017
+	_serialize_keys = ['id', 'name', 'pi', 'author', 'collaborative', 'wbs', 'external_id', 'description']
 
 
 # TODO add an Institute db field
@@ -697,7 +692,7 @@ def report_type_fn_spe(self, filename):
 
 # TODO change from CustomModel to CustomModelAbstract
 # TODO change the institute field to a ManyToManyField
-class ReportType(FolderObj, CustomModel):
+class ReportType(FolderObj, CustomModel, AutoJSON):
 	BASE_FOLDER_NAME = settings.REPORT_TYPE_FN
 
 	# objects = managers.ReportTypeManager()
@@ -730,7 +725,14 @@ class ReportType(FolderObj, CustomModel):
 	def __init__(self, *args, **kwargs):
 		super(ReportType, self).__init__(*args, **kwargs)
 		self.__prev_shiny_report = self.shiny_report_id
-
+	
+	# clem 24/03/2017
+	_serialize_keys = ['id', ('type', 'name'), 'author', 'created']
+	
+	# clem 24/03/2017
+	# def to_json(self):
+	# 	return {'id': self.id, 'name': self.type, 'author': self.author.id, 'created': str(self.created)}
+	
 	@property
 	def folder_name(self):
 		return '%s_%s' % (self.id, slugify(self.type))
@@ -1095,9 +1097,9 @@ def user_prof_fn_spe(self, filename):
 
 
 # TODO fix naming of institute
-class UserProfile(CustomModelAbstract): # TODO move to a common base app
-	# user = models.ForeignKey(User, unique=True)
-	user = models.OneToOneField(User)
+class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a common base app
+	__custom_user_model = BreezeUser
+	user = models.OneToOneField(__custom_user_model)
 
 	fimm_group = models.CharField(max_length=75, blank=True)
 	logo = models.FileField(upload_to=user_prof_fn_spe, blank=True)
@@ -1105,9 +1107,13 @@ class UserProfile(CustomModelAbstract): # TODO move to a common base app
 	# institute = institute_info
 	# if user accepts the agreement or not
 	db_agreement = models.BooleanField(default=False)
-	last_active = models.DateTimeField(default=timezone.now)
+	last_active = models.DateTimeField(auto_now=True)
 	
-	objects = managers.UserManager()
+	objects = managers.UserProfileManager()
+	
+	_serialize_keys = [('user.id', 'id'), ('user.full_name', 'full_name'), ('user.username', 'username'),
+		('institute_info', 'institute')]
+	_serialize_recur = True
 	
 	# clem 19/01/2017
 	@property
@@ -1118,6 +1124,26 @@ class UserProfile(CustomModelAbstract): # TODO move to a common base app
 	@classmethod
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
+	
+	@classmethod
+	def make_guest(cls, user):
+		user_profile = cls()
+		user_profile.user = user
+		# FIXME broken due to DB constrains
+		# FIXME should be part of Breeze installation not runtime
+		user_profile.institute_info, created = Institute.objects.get_or_create(
+			institute=settings.GUEST_FIRST_NAME.capitalize())
+		user_profile.save()
+		return user_profile
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		try:
+			if self.user.delete():
+				return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
 	
 	def __unicode__(self):
 		return self.the_full_name  # return self.user.username
@@ -2095,8 +2121,8 @@ class Jobs(Runnable):
 		abstract = False
 		db_table = 'breeze_jobs'
 
-
-class Report(Runnable):
+		
+class Report(Runnable, AutoJSON):
 	def __init__(self, *args, **kwargs):
 		super(Report, self).__init__(*args, **kwargs)
 		allowed_keys = Trans.translation.keys() + ['shared', 'title', 'project', 'rora_id']
@@ -2125,7 +2151,7 @@ class Report(Runnable):
 	_doc_ml = models.FileField(upload_to=generic_super_fn_spe, blank=True, db_column='dochtml')
 	email = ''
 	mailing = ''
-
+	
 	# Report specific
 	project = models.ForeignKey(Project, null=True, blank=True, default=None)
 	shared = models.ManyToManyField(User, blank=True, default=None, related_name='report_shares')
@@ -2144,7 +2170,13 @@ class Report(Runnable):
 	# 25/06/15
 	@property
 	def folder_name(self):
-		return slugify('%s_%s_%s' % (self.id, self._name, self._author.username))
+		slug = slugify('%s_%s' % (self.id, self._type))
+		from os.path import dirname, basename
+		try:
+			slug = basename(dirname(self._rexec.path))
+		except ValueError:
+			pass
+		return slug
 
 	# 26/06/15
 	@property
@@ -2426,8 +2458,19 @@ class Report(Runnable):
 	def delete(self, using=None):
 		if self.type.shiny_report_id > 0:
 			self.type.shiny_report.unlink_report(self)
-
+		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
+	
+	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']
+	_serialize_recur = False
+
+	# clem 24/03/2017
+	def _extra_json(self):
+		return {
+			'links': {
+				
+			}
+		}
 
 	class Meta(Runnable.Meta): # TODO check if inheritance is required here
 		abstract = False

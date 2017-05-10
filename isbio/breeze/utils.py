@@ -58,8 +58,10 @@ and also notable custom functions as :
 """
 from django.conf import settings
 from datetime import datetime
+from django.utils import timezone
 from breeze.b_exceptions import * # DO NOT DELETE : used in sub-modules
 from utilz import * # import all the non Breeze / non Django related utilities
+from decorators import *
 
 # 01/04/2016 : Moved all non-Django related code to utilities package
 # THIS MODULE SHOULD ONLY BE USED FOR DJANGO / BREEZE RELATED CODE, THAT EITHER USE THE DB, OR IMPORTS
@@ -80,7 +82,7 @@ def date_t(date_f=None, time_stamp=None):
 	if date_f is None:
 		date_f = settings.USUAL_DATE_FORMAT
 	if not time_stamp:
-		date = datetime.now()
+		date = timezone.now()
 	else:
 		date = datetime.fromtimestamp(time_stamp)
 	return str(date.strftime(date_f))

@@ -18,7 +18,7 @@ def get_response(data=empty_dict, version='', result=''):
 
 # clem 17/10/2016
 # copied from breeze
-@login_required(login_url='/')
+@allow_guest
 def show_templates(_, content, iid=None):
 	from breeze.models import DataSet, InputTemplate, Rscripts
 	response = dict()

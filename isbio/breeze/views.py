@@ -5,7 +5,8 @@ from pip._vendor.cachecontrol import wrapper
 import auxiliary as aux
 import forms as breezeForms
 import urllib
-import rpy2, os.path
+import rpy2
+import os.path
 import rora
 import shell as rshell
 import xml.etree.ElementTree as xml
@@ -86,6 +87,7 @@ def logout(request):
 	return HttpResponseRedirect('/')  # FIXME hardcoded url
 
 
+# FIXME not used
 def register_user(request):
 	if request.user.is_authenticated():
 		return HttpResponseRedirect('/home/')  # FIXME hardcoded url
@@ -109,19 +111,22 @@ def register_user(request):
 		return render_to_response('forms/register.html', RequestContext(request, {'form': form}))
 
 
+# FIXME not used
 def base(request):
 	return render_to_response('base.html')
 
 
 # FIXME obsolete
 # TODO rewrite
-@login_required(login_url='/')
+@allow_guest
 def home(request, state="feed"):
-	# user_info = User.objects.get(username=request.user)
-	user_info = request.user
+	user_info = BreezeUser.get(request)
+	if user_info.is_guest:
+		return HttpResponseRedirect(reverse('reports')) # FIXME hardcoded url
+	
 	db_access = False
 	try:
-		user_profile = UserProfile.objects.get(user=user_info)
+		user_profile = UserProfile.get(request)
 		user_info_complete = True
 		db_access = user_profile.db_agreement
 	except UserProfile.DoesNotExist:
@@ -262,14 +267,7 @@ def home(request, state="feed"):
 	}))
 
 
-def update_server(request):
-	server, server_info = aux.update_server_routine()
-
-	return HttpResponse(simplejson.dumps({'server_status': server, 'server_info': server_info}),
-		content_type=c_t.JSON)
-
-
-@login_required(login_url='/')
+@allow_guest
 def jobs(request, state="", error_msg="", page=1):
 	if state == "scheduled":
 		tab = "scheduled_tab"
@@ -446,29 +444,35 @@ def _report_filtering(all_reports, user, _all=False):
 	return all_reports
 
 
-@login_required(login_url='/')
+@allow_guest
+def reports2(request, _all=False):
+	return render_to_response('reports2.html', RequestContext(request, {
+		'url_lst': {
+			# TODO remove static url mappings
+			'Edit': '/reports/edit_access/',
+			'Add' : '/off_user/add/',
+			'Send': '/reports/send/'
+		}
+	}))
+
+
+@allow_guest
 def reports(request, _all=False):
 
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
 	# get the user's institute
-	# insti = UserProfile.objects.get(user=request.user).institute_info
 	insti = UserProfile.get_institute(request.user)
-	all_reports = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)
 	user_rtypes = request.user.pipeline_access.all()
-	# later all_users will be changed to all users from the same institute
-	# all_users = UserProfile.objects.filter(institute_info=insti).order_by('user__username')
-	all_users = UserProfile.objects.all().order_by('user__username')
 	# first find all the users from the same institute, then find their accessible report types
 	
-	# report_type_lst = ReportType.objects.filter(access=request.user)
-	# all_projects = Project.objects.filter(institute=insti)
 	all_projects = Project.objects.all()
 	
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	all_reports = _report_filtering(all_reports, request.user, 'all' in request.REQUEST or _all)
+	all_reports = Report.objects.f.get_done(False, False).order_by(sorting)
+	all_reports = Report.objects.get_accessible(request.user, _all, all_reports)
 	
 	a_user_list = dict()
 	for each in all_reports:
@@ -479,7 +483,6 @@ def reports(request, _all=False):
 	reptypelst = list()
 	for each in all_users:
 		rtypes = each.user.pipeline_access.all()
-		# rtypes = each.pipeline_access.all()
 		if rtypes:
 			for each_type in rtypes:
 				if each_type not in reptypelst:
@@ -505,7 +508,6 @@ def reports(request, _all=False):
 		}
 		# paginator counter
 		count.update(aux.view_range(page_index, entries_nb, count['total']))
-		# count.update(dict(first=1, last=min(entries_nb, count['total'])))
 
 		return render_to_response('reports.html', RequestContext(request, {
 			'reports_status': 'active',
@@ -1001,7 +1003,7 @@ def db_policy(request):
 
 
 @csrf_exempt
-@login_required(login_url='/')
+@allow_guest
 def report_overview(request, rtype, iname=None, iid=None, mod=None):
 	from django.http import HttpResponseServerError
 	tags_data_list = list()
@@ -1122,7 +1124,7 @@ def showdetails(request, sid=None):
 	}))
 
 
-@login_required(login_url='/')
+@allow_guest
 def search(request, what=None):
 	report_type_lst = ReportType.objects.filter(search=True)
 	ds = DataSet.objects.all()
@@ -1292,9 +1294,9 @@ def manage_pipes(request):
 		}))
 
 
-@login_required(login_url='/')
+@allow_guest
 def dochelp(request):
-	user_profile = UserProfile.objects.get(user=request.user)
+	user_profile = UserProfile.get(request)
 	db_access = user_profile.db_agreement
 	return render_to_response('help.html', RequestContext(request, {'help_status': 'active', 'db_access': db_access}))
 
@@ -1374,7 +1376,7 @@ def install(request, sid=None):
 		return HttpResponse(simplejson.dumps({"install_status": "No"}), content_type=c_t.JSON)
 
 
-@login_required(login_url='/')
+@login_required
 def installreport(request, sid=None):
 	try:
 		# get the report type by id
@@ -1567,7 +1569,7 @@ def dash_redir(request, job=None, state=None):
 	return HttpResponseRedirect('/jobs/' + tab + '?page=' + page) # FIXME hardcoded url
 
 
-@login_required(login_url='/')
+@allow_guest
 def delete_job(request, jid, state='', page=1):
 	job = None
 	try:
@@ -1606,7 +1608,7 @@ def delete_pipe(request, pid):
 	return HttpResponseRedirect('/resources/pipes/') # FIXME hardcoded url
 
 
-@login_required(login_url='/')
+@allow_guest
 def delete_report(request, rid, redir):
 	report = None
 	try:
@@ -1627,7 +1629,7 @@ def delete_report(request, rid, redir):
 
 
 # clem 11/09/2015
-@login_required(login_url='/')
+@allow_guest
 @csrf_exempt
 def runnable_del(request, page=1, state=None):
 	report = None
@@ -1653,7 +1655,7 @@ def runnable_del(request, page=1, state=None):
 	return HttpResponseRedirect('/jobs/' + page)  # FIXME hardcoded url
 
 
-@login_required(login_url='/')
+@allow_guest
 def edit_report_access(request, rid):
 	report_inst = Report.objects.owner_get(request, rid)
 	__self__ = this_function_name()  # instance to self
@@ -1711,7 +1713,7 @@ def read_descr(request, sid=None):
 
 
 # Wrapper for report edition/ReRunning
-@login_required(login_url='/')
+@allow_guest
 def edit_report(request, jid=None, mod=None):
 	return report_overview(request, rtype=None, iid=jid, mod='reload')
 
@@ -1732,7 +1734,7 @@ def edit_reportMMMMM(request, jid=None, mod=None):
 	return HttpResponse(data + '\n' + files)
 
 
-@login_required(login_url='/')
+@allow_guest
 def check_reports(request):
 	reports = Report.objects.filter(status='succeed').order_by('-created')
 	i = 0
@@ -1871,7 +1873,7 @@ def run_script(request, jid):
 
 
 # FIXME obsolete
-@login_required(login_url='/')
+@allow_guest
 def abort_sge(request, id, type):
 	log = logger.getChild('abort_sge')
 	# assert isinstance(log, logging.getLoggerClass())
@@ -1899,7 +1901,7 @@ def abort_sge(request, id, type):
 		return jobs(request, error_msg="%s\nOn DRMAA job/report id  %s\nPlease contact Breeze support" % (s, id))
 
 
-@login_required(login_url='/')
+@allow_guest
 def abort_report(request, rid):
 	return abort_sge(request, rid, "report")
 
@@ -2052,6 +2054,7 @@ def save(request):
 		return HttpResponseRedirect(reverse(scripts))
 
 
+@login_required(login_url='/')
 def show_rcode(request, jid):
 	job = Jobs.objects.get(id=jid)
 	# docxml = xml.parse(str(settings.MEDIA_ROOT) + str(job._doc_ml))
@@ -2077,6 +2080,7 @@ def show_rcode(request, jid):
 	}))
 
 
+@login_required(login_url='/')
 def veiw_project(request, pid):
 	project = Project.objects.get(id=pid)
 	context = {'project': project}
@@ -2084,6 +2088,7 @@ def veiw_project(request, pid):
 	return render_to_response('forms/project_info.html', RequestContext(request, context))
 
 
+@login_required(login_url='/')
 def view_group(request, gid):
 	group = Group.objects.get(id=gid)
 	context = {'group': group, 'user_list': group.user_list}
@@ -2092,7 +2097,7 @@ def view_group(request, gid):
 
 
 # Clem 28/08/2015
-@login_required(login_url='/')
+@allow_guest
 def send_zipfile_r(request, jid, mod=''):
 	return send_zipfile(request, jid, mod=mod, serv_obj=Report)
 
@@ -2103,7 +2108,7 @@ def send_zipfile_j(request, jid, mod=''):
 	return send_zipfile(request, jid, mod, Jobs)
 
 
-@login_required(login_url='/')
+@allow_guest
 def send_zipfile(request, jid, mod='', serv_obj=None):
 	# 28/08/2015 changes : ACL, object agnostic, added Reports
 	# 02/10/2015 migrated to Runnable and FolderObj
@@ -2139,7 +2144,7 @@ def send_zipfile(request, jid, mod='', serv_obj=None):
 		return aux.fail_with404(request, 'Some OS disk operation failed : %s' % e)
 
 
-@login_required(login_url='/')
+@allow_guest
 def send_template(request, name):
 	template = InputTemplate.objects.get(name=name)
 	path_to_file = str(settings.MEDIA_ROOT) + str(template.file)
@@ -2346,27 +2351,27 @@ def report_statics(request, a_dir, a_path):
 	return HttpResponsePermanentRedirect('%sHTMLreport/%s/%s' % (settings.STATIC_URL, a_dir, a_path))
 
 
-@login_required(login_url='/')
+@allow_guest
 def report_file_view(request, rid, file_name=None):
 	return report_file_server(request, rid, 'view', file_name)
 
 
-@login_required(login_url='/')
+@allow_guest
 def report_file_wrap(request, rid, rest, file_name=None):
 	return report_file_server(request, rid, 'view', file_name)
 
 
-@login_required(login_url='/')
+@allow_guest
 def report_file_wrap2(request, rid, file_name=None):
 	return report_file_server(request, rid, 'view', file_name)
 
 
-@login_required(login_url='/')
+@allow_guest
 def report_file_get(request, rid, file_name=None):
 	return report_file_server(request, rid, 'get', file_name)
 
 
-@login_required(login_url='/')
+@allow_guest
 def report_file_server(request, rid, category, file_name=None):
 	"""
 	Serve report files, while enforcing access rights
@@ -2377,11 +2382,6 @@ def report_file_server(request, rid, category, file_name=None):
 		msg = 'There is no report with id %s in DB' % rid
 		logger.warning(msg)
 		return aux.fail_with404(request, msg)
-
-	# Enforce user access restrictions
-	# if request.user not in report_inst.shared.all() and report_inst.author != request.user\
-	#	and not request.user.is_superuser:
-	#	raise PermissionDenied(request=request)
 
 	return report_file_server_sub(request, rid, category, fname=file_name, report_inst=report_inst)
 
@@ -2452,7 +2452,7 @@ def report_file_server_sub(request, rid, category, report_inst, fname=None):
 
 
 # Clem on 22/09/2015
-@login_required(login_url='/')
+@allow_guest(login_url='/')
 def update_jobs_json(request, jid, item):
 	if item == 'script':
 		obj = Jobs.objects.get(id=jid)
@@ -2469,13 +2469,13 @@ def update_jobs_json(request, jid, item):
 					progress=obj.progress, sge=obj.get_status(), md5=obj.md5), obj
 
 
-@login_required(login_url='/')
+@allow_guest
 def update_jobs(request, jid, item):
 	response, _ = update_jobs_json(request, jid, item)
 	return HttpResponse(simplejson.dumps(response), content_type=c_t.JSON)
 
 
-@login_required(login_url='/')
+@allow_guest
 def update_jobs_lp(request, jid, item, md5_t=None):
 	if md5_t is None:
 		return update_jobs(request, jid, item)
@@ -2744,10 +2744,9 @@ def edit_group_dialog(request, gid):
 @login_required(login_url='/')
 def update_user_info_dialog(request):
 	__self__ = this_function_name()  # instance to self
-	# user_info = User.objects.get(username=request.user)
-	user_info = OrderedUser.objects.get(id=request.user.id)
-
-	if request.method == 'POST':
+	user_info = OrderedUser.get(request)
+	
+	if request.method == 'POST' and not user_info.is_guest:
 		personal_form = breezeForms.PersonalInfo(request.POST)
 		if personal_form.is_valid():
 			user_info.first_name = personal_form.cleaned_data.get('first_name', None)
@@ -2789,6 +2788,7 @@ def update_user_info_dialog(request):
 
 
 # FIXME no login ?
+@login_required
 def ajax_user_stat(request):
 	timeinfo = User.objects.values_list('date_joined', flat=True)
 	# only keep year and month info
@@ -2817,12 +2817,12 @@ def ajax_user_stat(request):
 	return HttpResponse(simplejson.dumps(response_data), content_type=c_t.JSON)
 
 
-@login_required(login_url='/')
-def report_search(request, all=False):
+@allow_guest
+def report_search(request, _all=False):
 
 	if not request.is_ajax():
 		request.method = 'GET'
-		return reports(request)  # Redirects to the default view (internally : no new HTTP request)
+		return reports(request, _all)  # Redirects to the default view (internally : no new HTTP request)
 	
 	request = legacy_request(request)
 
@@ -2865,17 +2865,14 @@ def report_search(request, all=False):
 	else:
 		sorting = '-_created'
 	
-	insti = UserProfile.get_institute(request.user)
 	# Process the query
-	if entry_query is None:
-		found_entries = Report.objects.filter(status="succeed", _institute=insti).order_by(sorting)  #
-	# .distinct()
-	else:
-		found_entries = Report.objects.filter(entry_query, status="succeed", _institute=insti).order_by(
-			sorting).distinct()
+	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+
+	if not entry_query:
+		found_entries = found_entries.filter(entry_query).distinct()
 		
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
-	found_entries = _report_filtering(found_entries, request.user, 'all' in request.REQUEST or all)
+	found_entries = Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries)
 	
 	count = {'total': len(found_entries)}
 	# apply pagination

@@ -86,14 +86,15 @@ class MagicConst(StaticPropertyBase):
 		return self.__name__
 
 magic_const = MagicConst
+classproperty = ClassProperty
 
 
 # clem 15/12/2016
 class MagicAutoConstEnum(object):
 	""" type that enables iteration of MagicConst list of static class """
 	@classmethod
-	def __iter__(self):
-		for k, v in self.__dict__.items():
+	def __iter__(cls):
+		for k, v in cls.__dict__.items():
 			if type(v) is MagicConst:
 				yield k
 	
@@ -117,7 +118,7 @@ class MagicAutoConstEnum(object):
 		return self
 	
 	@magic_const
-	def undefined():
+	def undefined(*args):
 		pass
 
 

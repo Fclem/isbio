@@ -106,7 +106,7 @@ class HookWSGIReq(WSGIRequest):
 		:rtype: str
 		"""
 		import hmac
-		if not algorithm or not self._is_hash_algorithm_valid(algorithm) :
+		if not algorithm or not self._is_hash_algorithm_valid(algorithm):
 			self._hash_algorithm = self.DEF_HASH_ALGORITHM
 		return hmac.new(key, self.body, self._hash_algorithm).hexdigest()
 	

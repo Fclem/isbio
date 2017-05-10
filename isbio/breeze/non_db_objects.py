@@ -5,8 +5,9 @@ from utils import *
 from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
+from django.http import HttpRequest
 
-__version__ = '0.1.1'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -522,7 +523,7 @@ class FolderObj(object):
 		:rtype:
 		"""
 		folder_to_archive = self.home_folder_full_path # writing shortcut
-		if cat.endswith('-result'): # returning only the Results sub-folder for result switch
+		if cat.endswith('-result') and os.path.isdir(folder_to_archive + '/Results'): # returning only the Results sub-folder for result switch
 			folder_to_archive += '/Results'
 		
 		# get the ignore and filtering list
@@ -1292,15 +1293,316 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 		abstract = True
 
 
-# 23/11/2015 # FIXME
-class CustomUser(User):
-	objects = managers.CustomUserManager()
+# clem 24/03/2017
+class AutoJSON(object):
+	""" Provides an automated JSON serializer for listed attributes only.
+	
+	Define attributes to serialize using a list :
+		cls._serialize_keys = ['attr1', 'attr2', ('attr3', 'json_custom_name'), ...]
+		
+		Attributes names may also be path to level+1 attributes, like in 'user.id'
+	Define if attributes should be recursively serialized to json if they are AutoJSON subclasses
+		cls._serialize_recur = True | False
+	
+	Attributes values are
+		attr.to_json(), if cls._serialize_recur and attr is an AutoJSON object
+		
+		or attr.id, if attr as an id attribute
+		
+		or true | false, Json's value if type(attr) is bool
+		
+		or null, if attr is None or attr == 'None'
+		
+		or int(attr), if attribute name is 'id'
+		
+		or unicode(attr), else
+	"""
+	
+	def __init__(self, *args, **kwargs):
+		# super(AutoJSONserialize, self).__init__(*args, **kwargs)
+		if not hasattr(self, '_serialize_keys'):
+			raise AttributeError('_serialize_keys attribute is required for auto JSON serialization')
+	
+	# clem 27/03/2017
+	@staticmethod
+	def __base_name_parser(base_name):
+		return (base_name[1], base_name[0]) if type(base_name) is tuple else (base_name, base_name)
+	
+	# clem 27/03/2017
+	def __internal_attr_name(self, base_name):
+		json_name, name = self.__base_name_parser(base_name)
+		if '.' in name:
+			split = name.split('.', 1)
+			return json_name, split[0], split[1]
+		else:
+			return json_name, ('_' + name if not hasattr(self, name) and hasattr(self, '_' + name) else name), ''
+		
+	# clem 27/03/2017
+	def __attr_parser(self, attr_path):
+		json_name, root, sub = self.__internal_attr_name(attr_path)
+		if sub:
+			attr_name = sub
+			parent_object = self.__getattribute__(root)
+		else:
+			attr_name = root
+			parent_object = self
+		return parent_object.__getattribute__(attr_name), json_name
+	
+	# clem 27/03/2017
+	def __recur_predicate(self, attribute):
+		return hasattr(attribute, 'to_json') and callable(attribute.to_json) \
+			and (not hasattr(self, '_serialize_recur') or self._serialize_recur)
+	
+	def to_json(self):
+		assert hasattr(self, '_serialize_keys')
+		a_dict = dict()
+		for each in self._serialize_keys:
+			attribute, json_name = self.__attr_parser(each)
+
+			if self.__recur_predicate(attribute):
+				value = attribute.to_json()
+			elif hasattr(attribute, 'id'):
+				value = int(attribute.id)
+			else:
+				if type(attribute) in (bool, type(None)):
+					value = attribute
+				else:
+					value = unicode(attribute) if json_name != 'id' else int(attribute)
+				if value == 'None':
+					value = None
+			a_dict.update({json_name: value})
+		
+		if hasattr(self, '_extra_json') and callable(self._extra_json):
+			a_dict.update(self._extra_json())
+		
+		return a_dict
+	
+	# clem 27/03/2017
+	@classmethod
+	def json_key_list(cls):
+		a_list = list()
+		for each in cls._serialize_keys:
+			json_name, _ = cls.__base_name_parser(each)
+			a_list.append(json_name)
+		return a_list
+	
+	@classmethod
+	def json_dump(cls, query=None):
+		if query is None:
+			query = cls.objects.all()
+		return {
+			# '_keys': cls._serialize_keys,
+			'_keys': cls.json_key_list(),
+			'list': query if type(query) is list else list(query)
+		}
+
+	# clem 29/03/2017
+	@classmethod
+	def add_keys(cls, keys_list):
+		if type(keys_list) in [tuple, basestring]:
+			cls._serialize_keys.append(keys_list)
+		elif type(keys_list) is list:
+			cls._serialize_keys += keys_list
+		
+import breeze.models
+
+
+# clem 31/03/2017
+class MagicGetter(object):
+	""" Provides subclasses with a get method that returns a User subclass object from
+		a base User object, or a request object.
+		Must be inherited from a User subclass, or UserProfile class
+	
+	"""
+	
+	# clem 31/03/2017
+	@classproperty
+	def __get_key(cls):
+		# determines the key to query db with : id for User subclasses, user for UserProfile
+		return 'id' if issubclass(cls, User) else 'user'
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(**{cls.__get_key: request.user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(**{cls.__get_key: user.id})
+	
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		:rtype: BreezeUser | breeze.models.UserProfile
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
+
+
+# clem 27/03/2017
+class BreezeUser(User, AutoJSON, MagicGetter):
+	objects = managers.BreezeUserManager()
+	_serialize_keys = ['username', 'full_name', 'id']
+	
+	# clem 31/03/2017
+	@property
+	def user_profile(self):
+		from breeze.models import UserProfile
+		return UserProfile.get(self)
+	
+	# clem 30/03/2017
+	def guest_auto_remove(self):
+		""" Delete self if self is a guest user
+		
+		:rtype: bool
+		"""
+		if self.is_guest:
+			username = self.username
+			try:
+				if self.delete():
+					logger.info('deleted guest user %s' % username)
+					return True
+			except Exception as e:
+				logger.error('while deleting %s : %s' % (username, e))
+		return False
+	
+	@property
+	def full_name(self):
+		return self.get_full_name()
+	
+	# clem 29/03/2017
+	@property
+	def is_guest(self):
+		return self.username.startswith(settings.GUEST_FIRST_NAME)
+		
+	# clem 30/03/2017
+	@classmethod
+	def new_guest(cls, force=False):
+		""" make a new guest user
+
+		:rtype: BreezeUser
+		"""
+		# return OrderedUser.objects.create_guest(force)
+		try:
+			# create the Django BreezeUser object
+			user = cls.objects.create_guest(force)
+			# *** create UserProfile
+			from breeze.models import UserProfile, ReportType, Group
+			UserProfile.make_guest(user)
+			
+			# *** allow access to DSRT pipeline ONLY
+			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
+			report_type.access.add(user)
+			report_type.save()
+			
+			# *** add user to Guest group
+			# FIXME with a proper design
+			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
+			if created:
+				guest_group.save()
+			guest_group.team.add(user)
+			logger.info('created guest user %s' % user.username)
+			return user
+		except DisabledByCurrentSettings:
+			logger.warning('Guest users are disabled')
+		return None
+	
+	# clem 29/03/2017
+	def delete(self, using=None, keep_parents=False):
+		from breeze.models import Report, Jobs, Group, Project, OffsiteUser, Post
+		content = [
+			(Report, '_author'),
+			(Jobs, '_author'),
+			(Group, 'author'),
+			(Project, 'author'),
+			(OffsiteUser, 'added_by'),
+			(Post, 'author')
+		]
+		try:
+			for obj, key in content:
+				for each in obj.objects.filter(**{key: self.id}):
+					each.delete()
+			
+			super(BreezeUser, self).delete(using, keep_parents)
+			return True
+		except Exception as e:
+			logger.error(str(e))
+		return False
 	
 	class Meta:
-		ordering = ["username"]
-		proxy = False
-		auto_created = True # FIXME Hack
-	# db_table = 'auth_user'
+		proxy = True
+		# pass
 
-# broken
-# OrderedUser = CustomUser
+
+# 04/06/2015 {% if user.is_guest %} disabled{% endif %}
+class OrderedUser(BreezeUser):
+	class Meta:
+		ordering = ["username"]
+		proxy = True
+		auto_created = True # FIXME Hack
+
+
+# 23/11/2015 # FIXME
+# class CustomUser(OrderedUser, AutoJSON):
+class CustomUser(BreezeUser):
+	class Meta:
+		ordering = ["username"]
+		proxy = True
+		auto_created = True # FIXME Hack
+		# db_table = 'auth_user'
+
+
+class TrashClass(object):
+	# clem 30/03/2017
+	@classmethod
+	def magic(cls, user_or_request):
+		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
+
+		:type user_or_request: User | HttpRequest
+		"""
+		if isinstance(user_or_request, User):
+			return cls.user_getter(user_or_request)
+		elif isinstance(user_or_request, HttpRequest):
+			return cls.rq_getter(user_or_request)
+		return cls()
+	
+	get = magic
+	
+	# clem 29/03/2017
+	@classmethod
+	def rq_getter(cls, request):
+		""" Code type competition helper, writing shortcut
+
+		:type request: HttpRequest
+		"""
+		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
+		return cls.objects.get(id=request.user.id)
+	
+	# clem 30/03/2017
+	@classmethod
+	def user_getter(cls, user):
+		""" Code type competition helper, writing shortcut
+
+		:type user: User
+		"""
+		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
+		return cls.objects.get(id=user.id)

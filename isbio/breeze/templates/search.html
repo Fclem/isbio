@@ -113,7 +113,7 @@
 					<div class="controls">
 						<input name="query" type="text" class="input-xlarge search-query" placeholder="Search... " value="{{ query_value }}">
 						<select name="type" class="input-medium search-query">
-							{% for item in rtypes %}
+							{% for item in report_types %}
 								<option id="opt{{ item.type }}" value="{{ item.type }}">{{ item.type }}</option>
 							{% endfor %}
 						</select>

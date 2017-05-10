@@ -1,21 +1,7 @@
-from . import code_v1 as code
-from .common import *
-
-# import json # included in common
-# import time # included in common
-# from django.http import HttpResponse # included in common
-# from django.core.handlers.wsgi import WSGIRequest # included in common
-# from django.core.exceptions import SuspiciousOperation # included in common
-# from breeze.utilities import * # included in common
-# from breeze.utils import pp
-# from django.core.urlresolvers import reverse
-# from django.conf import settings
-# from django import http
-# from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
-# from django.template.context import RequestContext
-# from django.contrib.auth.decorators import login_required
-# from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
-
+import code_v1 as code
+from common import *
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseNotModified
 
 #########
 # VIEWS #
@@ -35,11 +21,11 @@ def reload_sys(request):
 		raise default_suspicious(request)
 	
 	allow_filter = {
-		'ref'                 : settings.GIT_AUTO_REF,
-		'repository.id'       : "70237993",
+		'ref':                  settings.GIT_AUTO_REF,
+		'repository.id':        "70237993",
 		'repository.full_name': 'Fclem/isbio2',
-		'pusher.name'         : 'Fclem',
-		'sender.id'           : "6617239",
+		'pusher.name':          'Fclem',
+		'sender.id':            "6617239",
 	}
 	if rq.event_name == 'push' and match_filter(payload, allow_filter):
 		logger.info(
@@ -56,10 +42,10 @@ def git_hook(request):
 	payload, rq = code.get_git_hub_json(request)
 	if not (payload and rq.is_json_post):
 		raise default_suspicious(request)
-
+	
 	allow_filter = {
-		'ref'                 : "refs/heads/master",
-		'repository.id'       : "70131764", # "DSRT-v2"
+		'ref':           "refs/heads/master",
+		'repository.id': "70131764", # "DSRT-v2"
 	}
 	if rq.event_name == 'push' and match_filter(payload, allow_filter):
 		logger.info('Received git push event for R code')
@@ -70,14 +56,42 @@ def git_hook(request):
 
 
 # clem 22/10/2016
+@login_required
 def show_cache(_):
 	from utilz.object_cache import ObjectCache
-	data = { 'cache': dict(ObjectCache.dump()) }
+	data = {'cache': ObjectCache.dump_list()}
 	return code.get_response(data=data)
+
+
+# clem 24/03/2017
+@allow_guest
+def reports(request):
+	from breeze.models import Report
+	return code.default_object_json_dump(Report, Report.objects.get_accessible(request.user))
+
+
+# clem 24/03/2017
+@allow_guest
+def projects(_):
+	from breeze.models import Project
+	return code.default_object_json_dump(Project)
+
+
+# clem 24/03/2017
+@allow_guest
+def report_types(_):
+	from breeze.models import ReportType
+	return code.default_object_json_dump(ReportType)
+
+
+# clem 27/03/2017
+@allow_guest
+def users(_):
+	from breeze.models import UserProfile
+	return code.default_object_json_dump(UserProfile)
 
 
 # clem 28/02/2016
 def news(_):
-	data = json.load(file(settings.settings.DJANGO_ROOT + 'news.json'))
-	# return code.get_response(data=data, raw=True)
+	data = json.load(open(settings.settings.DJANGO_ROOT + 'news.json'))
 	return code.get_response(data=data)

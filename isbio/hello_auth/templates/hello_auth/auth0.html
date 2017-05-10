@@ -1,0 +1,58 @@
+<script src="https://cdn.auth0.com/js/lock/10.14/lock.min.js"></script>
+<script type="text/javascript">
+	var availableLang = ['ca', 'cs', 'da', 'de', 'en', 'es', 'fa', 'fi', 'fr', 'hu', 'it', 'ja', 'nb', 'nl', 'pl', 'pt', 'ru', 'sk', 'sv', 'tr', 'ua', 'vi', 'zh'];
+	
+	function getLock(showTab) {
+		if (showTab === undefined) showTab = 'login';
+		return new Auth0Lock('{{ AUTH0_CLIENT_ID }}', '{{ AUTH0_DOMAIN }}', {
+			initialScreen     : showTab,
+			language          : lang,
+			autofocus         : true,
+			rememberLastLogin : false,
+			languageDictionary: {
+				title: "Breeze Login"
+			},
+			auth              : {
+				redirectUrl : '{{ AUTH0_CALLBACK_URL }}',
+				responseType: 'code',
+				params      : {
+					scope: 'openid profile'
+				}
+			}
+		});
+	}
+	function showLock(showTab) {
+		getLock(showTab).show();
+		return event.preventDefault();
+	}
+	
+	var lang = window.navigator.languages ? window.navigator.languages[0] : null;
+	lang = lang || window.navigator.language || window.navigator.browserLanguage || window.navigator.userLanguage;
+	if (lang.indexOf('-') !== -1)
+		lang = lang.split('-')[0];
+	
+	if (lang.indexOf('_') !== -1)
+		lang = lang.split('_')[0];
+	
+	if (availableLang.indexOf(lang) === -1) lang = 'en';
+	
+	var urlParams;
+	(window.onpopstate = function () {
+		var match,
+		  pl = /\+/g,  // Regex for replacing addition symbol with a space
+		  search = /([^&=]+)=?([^&]*)/g,
+		  decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+		  query = window.location.search.substring(1);
+		
+		urlParams = {};
+		while (match = search.exec(query))
+			urlParams[decode(match[1])] = decode(match[2]);
+	})();
+	
+	if ('show_login' in urlParams) {
+		window.onload = function () {
+			//lock.show();
+			showLock();
+		};
+	}
+</script>

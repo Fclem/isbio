@@ -1,0 +1,58 @@
+<p id="reportCount">
+</p>
+<table class="table table-striped table-hover" id="main_table">
+	<thead>
+		<tr>
+			<th>
+				Date
+				<i class="icon {% if sorting = '_created' %}icon-chevron-up{% elif sorting = '-_created' %}icon-chevron-down{% endif %}"></i></th>
+			<th>
+				Report Type
+				<i class="icon {% if sorting = '_type' %}icon-chevron-up{% elif sorting = '-_type' %}icon-chevron-down{% endif %}"></i></th>
+			<th>
+				Report Name
+				<i class="icon {% if sorting = '_name' %}icon-chevron-up{% elif sorting = '-_name' %}icon-chevron-down{% endif %}"></i>
+			</th>
+			<th>
+				Author
+				<i class="icon {% if sorting = '_author__last_name' %}icon-chevron-up{% elif sorting = '-_author__last_name' %}icon-chevron-down{% endif %}"></i>
+			</th>
+			<th>
+				Project
+				<i class="icon {% if sorting = 'project__name' %}icon-chevron-up{% elif sorting = '-project__name' %}icon-chevron-down{% endif %}"></i>
+			</th>
+			<th colspan="5">Actions</th>
+		</tr>
+	</thead>
+	<tbody id="reportList">
+	</tbody>
+</table>
+<p><br>&nbsp;</p>
+<div id="paginator_control"></div>
+<script type="text/javascript">
+	$(document).ready(function () {
+		var searchQ = {	{{ search|safe }} };
+		// new paginator setup
+		var pagOptions = {
+			currentPage  : {{ page|default:"1" }},
+			numberOfPages: 5,
+			loop         : true,
+			totalPages   : {{ pagination_number|default:"1" }},
+			alignment    : 'center',
+			onPageChanged: function (e, oldPage, newPage) {
+				if (oldPage == newPage || !refresh) return;
+				$("#pagination-content").fadeTo('', 0.33);
+				$.extend(searchQ, {page: newPage});
+				$.get("/reports/{% if url %}{{ url }}{% endif %}" ,  searchQ , function (data) {
+					//$('#pagination-content').html('');
+					$("#pagination-content").fadeTo(0, 1);
+					$('#pagination-content').html(data);
+				});
+			}
+		}
+		//call refresh
+		apply_pg(pagOptions);
+		$("#pagination-content").change()
+
+	});
+</script>

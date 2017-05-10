@@ -114,6 +114,11 @@ class CachedObject:
 		"""
 		return self.get_object()
 
+	# clem 24/03/2017
+	def to_json(self):
+		print(type(self.get_object()))
+		return self.get_object()
+
 	def __str__(self):
 		return '<cached %s (idle %s sec / %s sec old)>' % (
 			repr(self.__stored_object), int(self.idle_time), int(self.age))
@@ -128,9 +133,22 @@ class ObjectCache(object):
 	_DEBUG = False
 	data_mutex = Lock()
 	
+	# clem 24/03/2017
 	@classmethod
 	def dump(cls): # TODO : dump as serializable dict
-		return cls._cache
+		result = dict()
+		for each in cls._cache.keys():
+			if not each.lower().startswith('secret'):
+				value = cls._cache.get(each)
+			else:
+				value = '***REDACTED***'
+				
+			result.update({each: value})
+		return result
+	
+	@classmethod
+	def dump_list(cls):
+		return cls._cache.keys()
 
 	@classmethod
 	def get_cached(cls, key, default=None):

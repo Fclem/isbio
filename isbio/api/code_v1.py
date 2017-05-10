@@ -1,4 +1,4 @@
-from .common import *
+from common import *
 from webhooks import hooker
 
 
@@ -25,7 +25,7 @@ def get_git_hub_json(request_init):
 	The request should be using POST method, application/json CONTENT_TYPE\n
 	the header signature must match the request.body HMAC he PSK loaded from configs/.[name_of_the_calling_func]_secret
 	
-	:type request_init: WSGIRequest
+	:type request_init: django.http.HttpRequest
 	:return: (json, request) | (None, request)
 	:rtype: (dict , hooker.GitHubWSGIReq)
 	"""
@@ -40,7 +40,7 @@ def get_json(request_init):
 	if the request has a signature it must match the request.body HMAC against the PSK loaded from
 	configs/.[name_of_the_calling_func]_secret
 	
-	:type request_init: WSGIRequest
+	:type request_init: django.http.HttpRequest
 	:return: (json, request) | (None, request)
 	"""
 	return _get_abstract(hooker.HookWSGIReq(request_init, 2))
@@ -86,3 +86,14 @@ def do_r_source_git_pull():
 	except Exception as e:
 		logger.exception(str(e))
 	return False
+
+
+# clem 28/03/2017
+def default_object_json_dump(the_object, query=None):
+	if query is None:
+		query = the_object.objects.all()
+	
+	content = the_object.json_dump(query) if \
+		hasattr(the_object, 'json_dump') else list(query) if type(query) is not list else query
+	
+	return get_response(data={'data': content})

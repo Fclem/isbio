@@ -51,15 +51,21 @@ MANAGERS = ADMINS
 
 MYSQL_SECRET_FILE = 'mysql_root'
 
+# Local time zone for this installation. Choices can be found here:
+# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# although not all choices may be available on all operating systems.
+# In a Windows environment this must be set to your system time zone.
+TIME_ZONE = 'Europe/Helsinki'
+
 DATABASES = {
 	'default': {
-		'ENGINE'  : 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-		'NAME'    : 'breezedb', # Or path to database file if using sqlite3.
-		'USER'    : 'root', # Not used with sqlite3.
-		'PASSWORD': get_key(MYSQL_SECRET_FILE), # Not used with sqlite3.
-		'HOST'    : 'breeze-sql', # Set to empty string for localhost. Not used with sqlite3.
-		'PORT'    : '3306', # Set to empty string for default. Not used with sqlite3.
-		'OPTIONS' : {
+		'ENGINE'	: 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+		'NAME'		: 'breezedb', # Or path to database file if using sqlite3.
+		'USER'		: 'root', # Not used with sqlite3.
+		'PASSWORD'	: get_key(MYSQL_SECRET_FILE), # Not used with sqlite3.
+		'HOST'		: 'breeze-sql', # Set to empty string for localhost. Not used with sqlite3.
+		'PORT'		: '3306', # Set to empty string for default. Not used with sqlite3.
+		'OPTIONS'	: {
 			"init_command": "SET default_storage_engine=INNODB; SET SESSION TRANSACTION ISOLATION LEVEL READ "
 							"COMMITTED",
 		}
@@ -91,13 +97,6 @@ TEMPLATES = [
 		},
 	},
 ]
-
-
-# Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-# although not all choices may be available on all operating systems.
-# In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'Europe/Helsinki'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -156,7 +155,7 @@ SECRET_KEY = get_key(SECRET_KEY_FN)
 # )
 
 # AUTH_USER_MODEL = 'breeze.OrderedUser'
-# AUTH_USER_MODEL = 'breeze.CustomUser'
+# AUTH_USER_MODEL = 'breeze.CustomUser' # FIXME
 
 INSTALLED_APPS = [
 	'suit',
@@ -199,12 +198,12 @@ MIDDLEWARE_CLASSES = [
 	# 'django.middleware.doc.XViewMiddleware',
 	'breeze.middlewares.JobKeeper',
 	'breeze.middlewares.CheckUserProfile',
+	'breeze.middlewares.ContextualRequest',
 	'django_requestlogging.middleware.LogSetupMiddleware',
 	'breeze.middlewares.DataDog' if ENABLE_DATADOG else 'breeze.middlewares.Empty',
 	'breeze.middlewares.RemoteFW' if ENABLE_REMOTE_FW else 'breeze.middlewares.Empty',
 	'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' if ENABLE_ROLLBAR else 'breeze.middlewares.Empty',
 ]
-
 
 # ** AUTHENTICATION_BACKENDS moved to specific auth config files (config/env/auth/*)
 
@@ -222,6 +221,16 @@ WSGI_APPLICATION = 'isbio.wsgi.application'
 
 # provide our profile model
 AUTH_PROFILE_MODULE = 'breeze.UserProfile'
+
+# allow on the fly creation of guest user accounts
+AUTH_ALLOW_GUEST = False		# allow anonymous visitor to login as disposable guests
+GUEST_INSTITUTE_ID = 3			# guest institute
+GUEST_EXPIRATION_TIME = 24 * 60	# expiration time of inactive guests in minutes
+GUEST_FIRST_NAME = 'guest'
+GUEST_GROUP_NAME = GUEST_FIRST_NAME.capitalize() + 's'
+RESTRICT_GUEST_TO_SPECIFIC_VIEWS = True
+DEFAULT_LOGIN_URL = '/login_page'
+FORCE_DEFAULT_LOGIN_URL = True
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -293,6 +302,11 @@ ADMINS = (
 SOURCE_ROOT = recur(3, os.path.dirname, os.path.realpath(__file__)) + '/'
 DJANGO_ROOT = recur(2, os.path.dirname, os.path.realpath(__file__)) + '/'
 TEMPLATE_FOLDER = DJANGO_ROOT + 'templates/' # source templates (not HTML ones)
+
+DJANGO_AUTH_MODEL_BACKEND_PY_PATH = 'django.contrib.auth.backends.ModelBackend'
+# CAS_NG_BACKEND_PY_PATH = 'my_django.cas_ng_custom.CASBackend'
+AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
+AUTH0_CUSTOM_BACKEND_PY_PATH = 'custom_auth0.auth_backend.Auth0Backend'
 
 os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 

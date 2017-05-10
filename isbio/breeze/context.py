@@ -19,18 +19,22 @@ def site(request):
 def user_context(request):
 	is_auth = request.user.is_authenticated()
 	is_admin = False
-	# assert isinstance(request.user, User)
-	is_admin = is_auth and (request.user.is_staff or request.user.is_superuser)
+	try:
+		is_admin = is_auth and (request.user.is_staff or request.user.is_superuser)
+	except Exception as e:
+		from utilz import logger
+		logger.critical('while forming is_admin context: %s' % e)
 	
 	return {
 		'is_local_admin': is_admin,
-		'is_authenticated': is_auth
+		'is_authenticated': is_auth,
+		'guest_expiry': '%s hours' % (settings.GUEST_EXPIRATION_TIME / 60)
 	}
 
 
 def date_context(_):
 	import datetime
-	return { 'now': datetime.datetime.now() }
+	return {'now': datetime.datetime.now()}
 
 
 def run_mode_context(_):
