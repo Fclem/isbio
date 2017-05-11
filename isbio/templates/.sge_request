@@ -1,0 +1,6 @@
+-S $shell
+ -l h_vmem=$h_vmem
+ -l h_cpu=$h_cpu
+ -l h_rt=$h_rt
+ -q $queue
+

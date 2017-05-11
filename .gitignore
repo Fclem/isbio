@@ -27,5 +27,6 @@ running
 static_source/
 .*
 !.gitignore
+!.sge_request
 *.ipynb
 */*.ipynb
