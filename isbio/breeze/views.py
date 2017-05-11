@@ -482,7 +482,7 @@ def reports(request, _all=False):
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
-
+	
 	# If AJAX - use the search view
 	# Otherwise return the first page
 	if request.is_ajax(): # and request.method == 'GET':
