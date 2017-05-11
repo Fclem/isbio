@@ -46,7 +46,7 @@
 	{% endif %}
 	<tbody id="">
 	{% for report in reports %}
-		<tr {% if report.user_has_access and not owned_filter %}style="font-weight: bold;"{% endif %}><!-- {{ report.id }} -->
+		<tr {% if report.user_is_owner and not owned_filter %}style="font-weight: bold;"{% endif %}><!-- {{ report.id }} -->
 			<td> {{ report.created }} </td>
 			<td> {{ report.type }} </td> <!-- Implement TYPE in colors depending on report type =) -->
 			<td data-toggle="tooltip" title="{{ report.name }}"> {{ report.name|truncatechars:40 }} </td>

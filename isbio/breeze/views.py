@@ -480,18 +480,6 @@ def reports(request, _all=False):
 	listed_projects.sort()
 	listed_r_types.sort()
 	
-	# FIXEME ?? what kind of logic is that ?
-	# first find all the users from the same institute, then find their accessible report types
-	"""
-	listed_r_types = list()
-	for each in listed_users:
-		rtypes = each.user.pipeline_access.all()
-		if rtypes:
-			for each_type in rtypes:
-				if each_type not in listed_r_types:
-					listed_r_types.append(each_type)
-	"""
-	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
 

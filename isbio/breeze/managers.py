@@ -382,8 +382,6 @@ class ObjectsWithAuth(CustomManager):
 		"""
 		# Enforce access rights
 		if not self.has_full_access:
-			# raise PermissionDenied(user=self.context_user, message=self.context_obj.id if self.context_obj else
-			#  '')
 			raise self._denier
 		return True
 
@@ -400,7 +398,6 @@ class ObjectsWithAuth(CustomManager):
 		"""
 		# Enforce access rights
 		if not self.has_read_access:
-			# raise PermissionDenied(user=self.context_user)
 			raise self._denier
 		return True
 
@@ -435,7 +432,6 @@ class ObjectsWithAuth(CustomManager):
 			if self.is_owner_or_raise:
 				return self.context_obj
 		except PermissionDenied:
-			# raise PermissionDenied(user=self.context_user)
 			raise self._denier
 		except (ObjectDoesNotExist, InvalidArguments, ObjectHasNoReadOnlySupport):
 			assert callable(fail_ex)
@@ -461,7 +457,6 @@ class ObjectsWithAuth(CustomManager):
 			self.set_read_only_or_raise() # set to RO event if user is owner or admin
 			return self.context_obj
 		except PermissionDenied:
-			# raise PermissionDenied(user=self.context_user)
 			raise self._denier
 		except (ObjectDoesNotExist, InvalidArguments, ObjectHasNoReadOnlySupport):
 			assert callable(fail_ex)
@@ -485,7 +480,6 @@ class ObjectsWithAuth(CustomManager):
 			if self.has_read_access:
 				self.set_read_only_or_raise()
 				return self.context_obj
-			# raise PermissionDenied(user=self.context_user, message=kwargs.get('id', '') or kwargs.get('pk', ''))
 			raise self._denier
 		return self.context_obj
 	
