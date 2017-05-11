@@ -83,7 +83,8 @@
 						{% csrf_token %}
 						<select id="filt_type" name="filt_type" class="input-medium">
 							<option id="" value="">All Types</option>
-							{% for item in report_types %}
+							{% comment %}{% for item in report_types %}{% endcomment %}
+							{% for item in rtypes %}
 								<option id="{{ item.id }}" value="{{ item.id }}">{{ item.type }}</option>
 							{% endfor %}
 						</select>

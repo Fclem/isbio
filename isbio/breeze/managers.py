@@ -597,8 +597,8 @@ class ProjectManager(ObjectsWithAuth):
 				return super(ProjectManager, self).filter(name=settings.GUEST_GROUP_NAME)
 			except ObjectDoesNotExist:
 				pass
-		return super(ProjectManager, self).exclude(
-			~org_Q(author__exact=user) and org_Q(collaborative=0)).order_by("name")
+		return super(ProjectManager, self).filter(
+			org_Q(author__exact=user) or org_Q(collaborative=1)).order_by("name")
 
 
 # clem 20/10/2016
