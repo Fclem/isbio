@@ -4,7 +4,7 @@ from django.db.models import Manager
 from django.core.exceptions import ObjectDoesNotExist
 import django.db.models.query_utils
 from django.conf import settings
-from django.http import Http404
+from django.http import Http404, HttpResponseForbidden
 from django.contrib.auth.models import UserManager
 from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied, DisabledByCurrentSettings
 from comp import translate
@@ -382,7 +382,7 @@ class ObjectsWithAuth(CustomManager):
 		"""
 		# Enforce access rights
 		if not self.has_full_access:
-			raise PermissionDenied(user=self.context_user, message=self.context_obj.id if self.context_obj else '')
+			raise self._denier
 		return True
 
 	# clem 21/06/2016
@@ -398,7 +398,7 @@ class ObjectsWithAuth(CustomManager):
 		"""
 		# Enforce access rights
 		if not self.has_read_access:
-			raise PermissionDenied(user=self.context_user)
+			raise self._denier
 		return True
 
 	# clem 21/06/2016
@@ -431,7 +431,9 @@ class ObjectsWithAuth(CustomManager):
 			self.user_get(id=obj_id, user=request.user)
 			if self.is_owner_or_raise:
 				return self.context_obj
-		except (ObjectDoesNotExist, PermissionDenied, InvalidArguments, ObjectHasNoReadOnlySupport):
+		except PermissionDenied:
+			raise self._denier
+		except (ObjectDoesNotExist, InvalidArguments, ObjectHasNoReadOnlySupport):
 			assert callable(fail_ex)
 			raise fail_ex()
 
@@ -454,7 +456,9 @@ class ObjectsWithAuth(CustomManager):
 			self.secure_get(id=obj_id, user=request.user)
 			self.set_read_only_or_raise() # set to RO event if user is owner or admin
 			return self.context_obj
-		except (ObjectDoesNotExist, PermissionDenied, InvalidArguments, ObjectHasNoReadOnlySupport):
+		except PermissionDenied:
+			raise self._denier
+		except (ObjectDoesNotExist, InvalidArguments, ObjectHasNoReadOnlySupport):
 			assert callable(fail_ex)
 			raise fail_ex()
 
@@ -476,8 +480,20 @@ class ObjectsWithAuth(CustomManager):
 			if self.has_read_access:
 				self.set_read_only_or_raise()
 				return self.context_obj
-			raise PermissionDenied(user=self.context_user, message=kwargs.get('id', '') or kwargs.get('pk', ''))
+			raise self._denier
 		return self.context_obj
+	
+	# clem 11/05/2017
+	class _PermDenied(PermissionDenied):
+		def __init__(self, auth_object):
+			from utilz import this_function_caller_name
+			super(ObjectsWithAuth._PermDenied, self).__init__(user=auth_object.context_user,
+				message=auth_object.context_obj.id if auth_object.context_obj else '', func_name=this_function_caller_name(2))
+	
+	# clem 11/05/2017
+	@property
+	def _denier(self):
+		return self._PermDenied(self)
 
 
 class WorkersManager(ObjectsWithAuth):
@@ -560,6 +576,7 @@ class WorkersManager(ObjectsWithAuth):
 
 		:type user: User
 		:type _all: bool
+		:type query: iterable|None
 		:rtype: list
 		"""
 		a_list = list()
@@ -573,6 +590,28 @@ class WorkersManager(ObjectsWithAuth):
 			each.user_has_access = each.has_access(user)
 			
 			if not self._report_filtering_each_predicate(each, user, _all):
+				a_list.append(each)
+		return a_list
+
+	# clem 11/05/2017
+	def get_all_done(self, user, query=None):
+		"""
+
+		:type user: User
+		:rtype: list
+		"""
+		a_list = list()
+		from models import UserProfile
+		insti = UserProfile.get_institute(user)
+		if query is None:
+			query = self.f.get_done(False, False).filter(_institute=insti)
+		# FIXME : turn that into an SQL query rather than a programmatic filtering
+		for each in query:
+			each.user_is_owner = each.is_owner(user)
+			each.user_has_access = each.has_access(user)
+			each.admin_access = each.has_admin_access(user)
+			
+			if not self._report_filtering_each_predicate(each, user, True):
 				a_list.append(each)
 		return a_list
 

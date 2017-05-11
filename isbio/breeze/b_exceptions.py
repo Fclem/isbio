@@ -133,18 +133,23 @@ class ObjectHasNoReadOnlySupport(RuntimeError):
 class PermissionDenied(PermissionDenied_org):
 	def __init__(self, *args, **kwargs):
 		
+		# print 'kwargs.keys() : %s' % kwargs.keys()
+		# print kwargs.get('user')
+		
 		def is_user_obj(obj):
 			from django.contrib.auth.models import User
-			return isinstance(obj, User) or (hasattr(obj, '__class__') and issubclass(User, obj.__class__))
+			print 'is_user_obj ? %s or (%s and %s) %s' % (isinstance(obj, User), hasattr(obj, '__class__'), issubclass(obj.__class__, User))
+			return isinstance(obj, User) or (hasattr(obj, '__class__') and issubclass(obj.__class__, User))
 		
 		def is_request_obj(obj):
 			from django.core.handlers.wsgi import WSGIRequest
-			return isinstance(obj, WSGIRequest) or (hasattr(obj, '__class__') and issubclass(WSGIRequest, obj.__class__))
+			return isinstance(obj, WSGIRequest) or (hasattr(obj, '__class__') and issubclass(obj.__class__, WSGIRequest))
 		
 		def _extract_user_obj():
 			if 'user' in kwargs.keys():
 				result = kwargs.get('user', None)
-				return result if is_user_obj(result) else None
+				# return result if is_user_obj(result) else None
+				return result
 			elif len(args) >= 1:
 				for each in args:
 					if each and is_user_obj(each):
@@ -173,16 +178,24 @@ class PermissionDenied(PermissionDenied_org):
 		
 		def get_user():
 			rq = _extract_request_obj()
+			print 'rq : %s' % rq
 			return _extract_user_obj() or rq.user if rq else None
 		
 		def get_username():
 			user = get_user()
 			return user.username if user else ''
 		
+		# clem 11/05/2017
+		def get_function_name():
+			if 'func_name' in kwargs.keys():
+				result = kwargs.get('func_name', None)
+				return result if result else this_function_caller_name(1)
+		
 		super(PermissionDenied, self).__init__()
-		user_name = get_username()
+		user_name = get_user() # FIXME broken # get_username()
 		message = get_message()
-		final_text = 'Access denied to %s for %s' % (user_name or '?', this_function_caller_name())
+		function_name = get_function_name()
+		final_text = 'Access denied to %s for %s' % (user_name or '?', function_name or '?')
 		if message:
 			if final_text:
 				message = ' (%s)' % message

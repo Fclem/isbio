@@ -713,6 +713,8 @@ def report_filtering(request, _all):
 			# filter by accessible reports
 			elif request.REQUEST['access_filter1'] == 'accessible':
 				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
+			elif request.REQUEST['access_filter1'] == 'shared':
+				entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
 	# Manage sorting
 	if request.REQUEST.get('sort'):
 		sorting = request.REQUEST.get('sort')
