@@ -453,53 +453,43 @@ def reports2(request, _all=False):
 
 @allow_guest # FIXME make a class for this (and grab all aux code)
 def reports(request, _all=False):
-
+	# manage pagination
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
 	sorting = aux.get_argument(request, 'sort') or '-created'
-	# get the user's institute
-	# insti = UserProfile.get_institute(request.user)
-	user_rtypes = request.user.pipeline_access.all()
-	# first find all the users from the same institute, then find their accessible report types
+	user_r_types = request.user.pipeline_access.all()
 	
-	# all_projects = Project.objects.all()
-	all_projects = Project.objects.available(request.user)
-	
+	# Merge request.GET and request.POST into request.REQUEST
 	request = legacy_request(request)
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	all_reports = Report.objects.f.get_done(False, False).order_by(sorting)
-	all_reports = Report.objects.get_accessible(request.user, _all, all_reports)
+	if not (_all and request.user.is_superuser):
+		all_reports = Report.objects.get_accessible(request.user, _all, all_reports)
+	else:
+		all_reports = Report.objects.get_all_done(request.user, all_reports)
 	
-	# generate a user list based only on reports author from the current selection
-	a_user_list = dict()
-	# generate a project list based only on projectsfrom the current selection
-	a_project_list = dict()
-	# generate a rtype list based only on projectsfrom the current selection
-	a_type_list = dict()
+	# generate a user, project, rtype list based only on listed reports from the current selection
+	a_user_list, a_project_list, a_type_list = dict(), dict(), dict()
 	for each in all_reports:
-		# a_user_list.update({each.author: UserProfile.objects.get(user=each.author)})
 		a_user_list.update({each.author: UserProfile.get(each.author)})
 		a_project_list.update({each.project.name: each.project})
-		a_type_list.update({each._type.type: each.type})
+		a_type_list.update({each.type.type: each.type})
 		
-	all_users = a_user_list.values()
-	all_users.sort()
-	
-	all_projects = a_project_list.values()
-	all_projects.sort()
-	
-	reptypelst = a_type_list.values()
-	reptypelst.sort()
+	listed_users, listed_projects, listed_r_types = a_user_list.values(), a_project_list.values(), a_type_list.values()
+	listed_users.sort()
+	listed_projects.sort()
+	listed_r_types.sort()
 	
 	# FIXEME ?? what kind of logic is that ?
+	# first find all the users from the same institute, then find their accessible report types
 	"""
-	reptypelst = list()
-	for each in all_users:
+	listed_r_types = list()
+	for each in listed_users:
 		rtypes = each.user.pipeline_access.all()
 		if rtypes:
 			for each_type in rtypes:
-				if each_type not in reptypelst:
-					reptypelst.append(each_type)
+				if each_type not in listed_r_types:
+					listed_r_types.append(each_type)
 	"""
 	
 	count = {'total': len(all_reports)}
@@ -521,15 +511,16 @@ def reports(request, _all=False):
 			'reports_status': 'active',
 			'reports': reports_list,
 			'sorting': sorting,
-			'rtypes': reptypelst,
-			'user_rtypes': user_rtypes,
-			'users': all_users,
-			'projects': all_projects,
+			'rtypes': listed_r_types,
+			'user_r_types': user_r_types,
+			'users': listed_users,
+			'projects': listed_projects,
 			'pagination_number': paginator.num_pages,
 			'page': page_index,
 			'db_access': db_access,
 			'count': count,
 			'url_lst': aux.reports_links(_all),
+			'show_all': _all and request.user.is_superuser and settings.SU_ACCESS_OVERRIDE,
 			'show_author_filter': not _report_filtering_show_limited_predicate(request.user, _all)
 		}))
 
@@ -1669,10 +1660,6 @@ def edit_report_access(request, rid):
 	__self__ = this_function_name()  # instance to self
 	form_action = reverse(__self__, kwargs={'rid': rid})
 	form_title = 'Edit "' + report_inst.name + '" sharing'
-
-	# Enforce access rights
-	# if report_inst.author != request.user:
-	#	raise PermissionDenied(request=request)
 
 	if request.method == 'POST':
 		# Validates input info and commit the changes to report_inst instance directly through Django back-end
@@ -2855,6 +2842,7 @@ def report_search(request, _all=False):
 		'search':            query_string,
 		'count':             count,
 		'url_lst':           aux.reports_links(_all),
+		'show_all': _all and request.user.is_superuser and settings.SU_ACCESS_OVERRIDE,
 		# 'sorting': sorting,
 		# 'owned_filter': owned_filter #,
 		# # 'show_author_filter': settings.SET_SHOW_ALL_USERS

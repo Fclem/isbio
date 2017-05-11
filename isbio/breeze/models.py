@@ -195,7 +195,11 @@ class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 	
 	# clem 18/01/2017
 	def has_access(self, user):
-		return self.admin_override_param(user) or self.is_owner(user) or self.is_in_share_list(user)
+		return self.is_owner(user) or self.is_in_share_list(user)
+	
+	# clem 11/05/2017
+	def has_admin_access(self, user):
+		return self.admin_override_param(user) or self.has_access(user)
 	
 	class Meta:
 		abstract = True
