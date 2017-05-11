@@ -470,12 +470,29 @@ def reports(request, _all=False):
 	all_reports = Report.objects.f.get_done(False, False).order_by(sorting)
 	all_reports = Report.objects.get_accessible(request.user, _all, all_reports)
 	
+	# generate a user list based only on reports author from the current selection
 	a_user_list = dict()
+	# generate a project list based only on projectsfrom the current selection
+	a_project_list = dict()
+	# generate a rtype list based only on projectsfrom the current selection
+	a_type_list = dict()
 	for each in all_reports:
-		a_user_list.update({each.author: UserProfile.objects.get(user=each.author)})
+		# a_user_list.update({each.author: UserProfile.objects.get(user=each.author)})
+		a_user_list.update({each.author: UserProfile.get(each.author)})
+		a_project_list.update({each.project.name: each.project})
+		a_type_list.update({each._type.type: each.type})
+		
 	all_users = a_user_list.values()
 	all_users.sort()
 	
+	all_projects = a_project_list.values()
+	all_projects.sort()
+	
+	reptypelst = a_type_list.values()
+	reptypelst.sort()
+	
+	# FIXEME ?? what kind of logic is that ?
+	"""
 	reptypelst = list()
 	for each in all_users:
 		rtypes = each.user.pipeline_access.all()
@@ -483,6 +500,7 @@ def reports(request, _all=False):
 			for each_type in rtypes:
 				if each_type not in reptypelst:
 					reptypelst.append(each_type)
+	"""
 	
 	count = {'total': len(all_reports)}
 	paginator = Paginator(all_reports, entries_nb)  # show 18 items per page
