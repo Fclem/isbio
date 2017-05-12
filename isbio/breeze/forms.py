@@ -231,10 +231,12 @@ class ReportPropsFormMixin(object):
 		super(ReportPropsFormMixin, self).__init__(*args, **kwargs)
 	
 	# clem 19/01/2017
-	def users_list_of_tuples_gen(self, prefix=''):
+	def users_list_of_tuples_gen(self, prefix='', user_list=None):
 		a_list = list()
 		
-		for ur in breeze.models.OrderedUser.objects.exclude(id__exact=self.request.user.id):
+		user_list = user_list or self._user_only_list_query
+		
+		for ur in user_list:
 			a_list.append(tuple(('%s%s' % (prefix, ur.id), ur.get_full_name() or ur.username)))
 			
 		return a_list
@@ -245,10 +247,12 @@ class ReportPropsFormMixin(object):
 		return self.users_list_of_tuples_gen('u')
 	
 	# clem 19/01/2017
-	def group_list_of_tuples_gen(self, prefix=''):
+	def group_list_of_tuples_gen(self, prefix='', group_list=None):
 		a_list = list()
-				
-		for gr in breeze.models.Group.objects.filter(author__exact=self.request.user).order_by("name"):
+		
+		group_list = group_list or self._group_list_query
+		
+		for gr in group_list:
 			a_list.append(tuple(('%s%s' % (prefix, gr.id), gr.name)))
 			
 		return a_list
@@ -262,8 +266,12 @@ class ReportPropsFormMixin(object):
 	def share_options(self):
 		if not self._share_options:
 			self._share_options = list()
-			self._share_options.append(tuple(('Groups', tuple(self._group_list_of_tuples))))
-			self._share_options.append(tuple(('Individual Users', tuple(self._users_list_of_tuples))))
+			groups = self._group_list_of_tuples
+			if groups:
+				self._share_options.append(tuple(('Groups', tuple(groups))))
+			users = self._users_list_of_tuples
+			if users:
+				self._share_options.append(tuple(('Individual Users', tuple(users))))
 		return self._share_options
 
 	# clem 19/04/2016
@@ -301,7 +309,73 @@ class ReportPropsFormMixin(object):
 			)
 		)
 	
+	# clem 12/05/2017
+	@property
+	def _user_only_list_query(self):
+		""" Override to user list that is usually stripped of current user, except when user is superuser
+		
+		:return:
+		:rtype:
+		"""
+		if self.request.user.is_superuser:
+			return breeze.models.OrderedUser.objects.all_but_guests()
+		else:
+			return breeze.models.OrderedUser.objects.all_but_user(self.request.user, include_guests=False)
 	
+	# clem 12/05/2017
+	@property
+	def _group_list_query(self):
+		if self.request.user.is_superuser:
+			query = breeze.models.Group.objects.all()
+		else:
+			query = breeze.models.Group.objects.filter(author__exact=self.request.user)
+		return query.order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def _user_guest_list_query(self):
+		return breeze.models.OrderedUser.objects.guests()
+	
+	# clem 12/05/2017
+	@property
+	def _group_list_owned_query(self):
+		return self._group_list_query.filter(author__id__exact=self.request.user.id)
+	
+	# clem 12/05/2017
+	@property
+	def _group_list_others_query(self):
+		return self._group_list_query.exclude(author__id__exact=self.request.user.id)
+	
+	# clem 12/05/2017
+	@property
+	def user_share_options_grouped_guests(self):
+		a_list = list()
+		user_list = self.users_list_of_tuples_gen(user_list=self._user_only_list_query)
+		guest_query = self._user_guest_list_query
+		if guest_query.count():
+			guest_list = self.users_list_of_tuples_gen(user_list=guest_query)
+			a_list.append(tuple(('Users', user_list)))
+			a_list.append(tuple(('Guests', guest_list)))
+		else:
+			a_list = user_list
+		return a_list
+	
+	# clem 12/05/2017
+	@property
+	def group_share_options_grouped_ownership(self):
+		a_list = list()
+		own_query = self._group_list_owned_query
+		own_groups = self.group_list_of_tuples_gen(group_list=own_query)
+		others_query = self._group_list_others_query
+		others_groups = self.group_list_of_tuples_gen(group_list=others_query)
+		if others_query.count() and own_query.count():
+			a_list.append(tuple(('My groups', own_groups)))
+			a_list.append(tuple(('Others\'', others_groups)))
+		else:
+			a_list = own_groups + others_groups
+		return a_list
+
+
 class EditReportSharing(forms.ModelForm, ReportPropsFormMixin):
 	author_id = 0
 	
@@ -311,9 +385,9 @@ class EditReportSharing(forms.ModelForm, ReportPropsFormMixin):
 		instance = kwargs.get('instance', None)
 		self.author_id = instance.author.id if instance else self.request.user if self.request else 0
 		self.fields['shared'].label = 'Individuals: '
-		self.fields['shared'].choices = self.users_list_of_tuples_gen()
+		self.fields['shared'].choices = self.user_share_options_grouped_guests
 		self.fields['shared_g'].label = 'Groups: '
-		self.fields['shared_g'].choices = self.group_list_of_tuples_gen()
+		self.fields['shared_g'].choices = self.group_share_options_grouped_ownership
 	
 	class Meta:
 		model = breeze.models.Report

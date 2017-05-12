@@ -1551,12 +1551,23 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	class Meta:
 		proxy = True
 		# pass
+	
+	# clem 12/05/2017
+	def __init__(self, *args, **kwargs):
+		super(BreezeUser, self).__init__(*args, **kwargs)
+		self._is_superuser = self.is_superuser
+		self.is_superuser = self.__is_superuser
+	
+	@property
+	def __is_superuser(self):
+		return settings.SU_ACCESS_OVERRIDE and self.is_superuser
 
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}
 class OrderedUser(BreezeUser):
 	class Meta:
-		ordering = ["username"]
+		ordering = ["username", ]
+		# ordering = ["last_name", "first_name"]
 		proxy = True
 		auto_created = True # FIXME Hack
 

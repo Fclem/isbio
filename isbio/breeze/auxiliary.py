@@ -687,6 +687,15 @@ def report_filtering(request, _all):
 	page_index, entries_nb = report_common(request)
 	owned_filter = False
 	
+	# Manage sorting
+	if request.REQUEST.get('sort'):
+		sorting = request.REQUEST.get('sort')
+	else:
+		sorting = '-_created'
+	
+	# initial the query
+	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+	
 	if search.strip() != '' and not request.REQUEST.get('reset'):
 		def query_concat(request, entry_query, rq_name, cols, user_name=False, exact=True):
 			# like_a = '%' if like else ''
@@ -714,16 +723,10 @@ def report_filtering(request, _all):
 			elif request.REQUEST['access_filter1'] == 'accessible':
 				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
 			elif request.REQUEST['access_filter1'] == 'shared':
-				entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
-	# Manage sorting
-	if request.REQUEST.get('sort'):
-		sorting = request.REQUEST.get('sort')
-	else:
-		sorting = '-_created'
-	
-	# Process the query
-	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
-	
+				# entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
+				found_entries = Report.objects.get_shared_with_user_all(request.user, found_entries)
+
+	# if some filters apply, filter the original query
 	if entry_query and found_entries:
 		found_entries = found_entries.filter(entry_query)
 	found_entries = found_entries.distinct()
@@ -737,6 +740,7 @@ def report_filtering(request, _all):
 	
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	return Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries), response
+	# return found_entries, response
 
 
 # clem 10/05/2017 # FIXME merge into a class with rest of related code
