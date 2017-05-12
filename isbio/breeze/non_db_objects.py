@@ -1253,6 +1253,13 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 	""" Provides and enforce read-only property ( read_only ). This property is set by the CustomManager """
 	
 	__prop_read_only = False
+	RESERVED = {} # will cause validation error in forms
+	"""Exemple :
+	RESERVED = {
+		'name': ['System', 'Admin'],
+		...
+	}
+	"""
 	objects = managers.ObjectsWithAuth()
 	
 	@property
@@ -1279,14 +1286,26 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 		if not self.__prop_read_only and val:
 			self.__prop_read_only = True
 	
-	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+	# clem 12/05/2017 # FIXME obsolete
+	def __check_for_reserved_words(self):
+		""" Will raise if the field RESERVED_NAME_FIELD is set to any value of RESERVED_NAMES
+		:raise: PermissionDenied
+		"""
+		field_name = self.RESERVED_NAME_FIELD.strip()
+		reserved = self.RESERVED_NAMES
+		if field_name != '' and hasattr(self, field_name) and reserved:
+			if self.__getattribute__(field_name) in reserved:
+				raise PermissionDenied
+	
+	def save(self, force_insert=False, force_update=False, using=None):
 		if not self.read_only:
-			return super(CustomModelAbstract, self).save(force_insert, force_update, using, update_fields)
+			# self.__check_for_reserved_words()
+			return super(CustomModelAbstract, self).save(force_insert, force_update, using)
 		return False
 	
-	def delete(self, using=None, keep_parents=False):
+	def delete(self, using=None):
 		if not self.read_only:
-			return super(CustomModelAbstract, self).delete(using, keep_parents)
+			return super(CustomModelAbstract, self).delete(using)
 		return False
 	
 	class Meta:
@@ -1551,12 +1570,23 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	class Meta:
 		proxy = True
 		# pass
+	
+	# clem 12/05/2017
+	def __init__(self, *args, **kwargs):
+		super(BreezeUser, self).__init__(*args, **kwargs)
+		self._is_superuser = self.is_superuser
+		self.is_superuser = self.__is_superuser
+	
+	@property
+	def __is_superuser(self):
+		return settings.SU_ACCESS_OVERRIDE and self.is_superuser
 
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}
 class OrderedUser(BreezeUser):
 	class Meta:
-		ordering = ["username"]
+		ordering = ["username", ]
+		# ordering = ["last_name", "first_name"]
 		proxy = True
 		auto_created = True # FIXME Hack
 
@@ -1569,40 +1599,3 @@ class CustomUser(BreezeUser):
 		proxy = True
 		auto_created = True # FIXME Hack
 		# db_table = 'auth_user'
-
-
-class TrashClass(object):
-	# clem 30/03/2017
-	@classmethod
-	def magic(cls, user_or_request):
-		""" router to convert a User or HttpRequest object into this enhanced cls User subclass
-
-		:type user_or_request: User | HttpRequest
-		"""
-		if isinstance(user_or_request, User):
-			return cls.user_getter(user_or_request)
-		elif isinstance(user_or_request, HttpRequest):
-			return cls.rq_getter(user_or_request)
-		return cls()
-	
-	get = magic
-	
-	# clem 29/03/2017
-	@classmethod
-	def rq_getter(cls, request):
-		""" Code type competition helper, writing shortcut
-
-		:type request: HttpRequest
-		"""
-		assert isinstance(request, HttpRequest) and hasattr(request, 'user')
-		return cls.objects.get(id=request.user.id)
-	
-	# clem 30/03/2017
-	@classmethod
-	def user_getter(cls, user):
-		""" Code type competition helper, writing shortcut
-
-		:type user: User
-		"""
-		assert isinstance(user, User) and not isinstance(user, AnonymousUser)
-		return cls.objects.get(id=user.id)

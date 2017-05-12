@@ -7,15 +7,31 @@
       </a>
     </td>
     <td> <!-- Edit -->
+	    {% if not group.is_special %}
+	        {% if group.author == user or user.is_superuser %}
       <a href="#" class="hcalls" data-toggle="modal" data-target="#EditGroup" data-param="/groups/edit/{{ group.id }}">
-        <i class="icon-edit"></i>
+        <i
+          {% if not group.author == user and user.is_superuser %}
+	          style="border: 1px solid darkred"
+          {% endif %}
+          class="icon-edit"></i>
       </a>
+	        {% endif %}
+	    {% endif %}
     </td>
     <td></td>
     <td> <!-- Delete -->
+	    {% if not group.is_special %}
+	        {% if group.author == user or user.is_superuser %}
       <a href="#" data-toggle="modal" data-target="#DeleteItem" onclick="$('#del_item_btn').attr('href', '/groups/delete/{{ group.id }}'); $('#del_title').text('{{ group.name }}'); $('#del_body').html('All related jobs and reports will be deleted as well! <br>Do you want to delete this group ?!');">
-        <i class="icon-trash"></i>
+        <i
+          {% if not group.author == user and user.is_superuser %}
+	          style="border: 1px solid darkred"
+          {% endif %}
+          class="icon-trash"></i>
       </a>
+	        {% endif %}
+	    {% endif %}
     </td>
   </tr>
 {% empty %}

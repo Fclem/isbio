@@ -83,29 +83,7 @@ def save_new_project(form, author):
 	return True
 
 
-def save_new_group(form, author, post):
-	""" Saves New Group data from a valid form to DB model.
-
-	Arguments:
-	form        -- instance of GroupForm
-	author      -- user name
-	"""
-
-	dbitem = breeze.models.Group(
-		name=str(form.cleaned_data.get('group_name', None)),
-		author=author
-	)
-
-	# Important:
-	# Before using ManyToMany we should first save the model!!!
-	dbitem.save()
-
-	for chel in post.getlist('group_team'):
-		dbitem.team.add(breeze.models.User.objects.get(id=chel))
-
-	dbitem.save()
-
-	return True
+# moved save_new_group 12/05/2017 to breeze.models.Groups.new
 
 
 def edit_project(form, project):
@@ -154,15 +132,7 @@ def delete_project(project):
 	return True
 
 
-def delete_group(group):
-	""" Remove a group from a DB model.
-
-	Arguments:
-	group     -- db instance of Group
-	"""
-	group.delete()
-
-	return True
+# deleted delete_group(group) 12/05/2017, using breeze.Group.delete() instead
 
 
 def open_folder_permissions(path, permit=0770):
@@ -687,6 +657,15 @@ def report_filtering(request, _all):
 	page_index, entries_nb = report_common(request)
 	owned_filter = False
 	
+	# Manage sorting
+	if request.REQUEST.get('sort'):
+		sorting = request.REQUEST.get('sort')
+	else:
+		sorting = '-_created'
+	
+	# initial the query
+	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
+	
 	if search.strip() != '' and not request.REQUEST.get('reset'):
 		def query_concat(request, entry_query, rq_name, cols, user_name=False, exact=True):
 			# like_a = '%' if like else ''
@@ -714,16 +693,10 @@ def report_filtering(request, _all):
 			elif request.REQUEST['access_filter1'] == 'accessible':
 				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
 			elif request.REQUEST['access_filter1'] == 'shared':
-				entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
-	# Manage sorting
-	if request.REQUEST.get('sort'):
-		sorting = request.REQUEST.get('sort')
-	else:
-		sorting = '-_created'
-	
-	# Process the query
-	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
-	
+				# entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
+				found_entries = Report.objects.get_shared_with_user_all(request.user, found_entries)
+
+	# if some filters apply, filter the original query
 	if entry_query and found_entries:
 		found_entries = found_entries.filter(entry_query)
 	found_entries = found_entries.distinct()
@@ -737,6 +710,7 @@ def report_filtering(request, _all):
 	
 	# filtering accessible reports (DO NOT DISPLAY OTHERS REPORTS ANYMORE; EXCEPT ADMIN OVERRIDE)
 	return Report.objects.get_accessible(request.user, 'all' in request.REQUEST or _all, query=found_entries), response
+	# return found_entries, response
 
 
 # clem 10/05/2017 # FIXME merge into a class with rest of related code

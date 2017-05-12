@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import django.db.models.query_utils
 from django.conf import settings
 from django.http import Http404, HttpResponseForbidden
-from django.contrib.auth.models import UserManager
+from django.contrib.auth.models import UserManager, User
 from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied, DisabledByCurrentSettings
 from comp import translate
 from utilz import logger, time
@@ -569,25 +569,22 @@ class WorkersManager(ObjectsWithAuth):
 		return self._report_filtering_show_limited_predicate(user, _all) \
 			and not (each.is_owner(user) or each.is_in_share_list(user))
 	
-	# FIXME should probably go into the object directly ?
 	# clem 23/03/2017 29/03/2017
 	def get_accessible(self, user, _all=False, query=None):
 		"""
 
 		:type user: User
 		:type _all: bool
-		:type query: iterable|None
+		:type query: QuerySet|None
 		:rtype: list
 		"""
 		a_list = list()
-		from models import UserProfile
-		insti = UserProfile.get_institute(user)
-		if query is None:
-			query = self.f.get_done(False, False).filter(_institute=insti)
+		query = query or self._get_base_query(user)
 		# FIXME : turn that into an SQL query rather than a programmatic filtering
 		for each in query:
 			each.user_is_owner = each.is_owner(user)
 			each.user_has_access = each.has_access(user)
+			each.admin_access = each.has_admin_access(user)
 			
 			if not self._report_filtering_each_predicate(each, user, _all):
 				a_list.append(each)
@@ -598,22 +595,56 @@ class WorkersManager(ObjectsWithAuth):
 		"""
 
 		:type user: User
+		:type query: QuerySet|None
 		:rtype: list
 		"""
-		a_list = list()
+		return self.get_accessible(user, _all=True, query=query)
+
+	# clem 12/05/2017
+	def _get_base_query(self, user):
+		""" Use as base query for further filtering
+		
+		:type user: User
+		:returns: reports from user's institute
+		:rtype: QuerySet
+		"""
 		from models import UserProfile
-		insti = UserProfile.get_institute(user)
-		if query is None:
-			query = self.f.get_done(False, False).filter(_institute=insti)
-		# FIXME : turn that into an SQL query rather than a programmatic filtering
-		for each in query:
-			each.user_is_owner = each.is_owner(user)
-			each.user_has_access = each.has_access(user)
-			each.admin_access = each.has_admin_access(user)
-			
-			if not self._report_filtering_each_predicate(each, user, True):
-				a_list.append(each)
-		return a_list
+		return self.f.get_done(False, False).filter(_institute=UserProfile.get_institute(user))
+	
+	# clem 12/05/2017
+	def get_shared_with_user_namely(self, user, query=None):
+		"""
+		:type user: User
+		:type query: QuerySet
+		:returns: all Reports namely shared with user (no report shared to the user's groups)
+		:rtype: QuerySet
+		"""
+		query = query or self._get_base_query(user)
+		return query.filter(shared__id=user.id)
+	
+	# clem 12/05/2017 FIXME duplicate of ObjectsWithACL.is_in_share_list (better one though)
+	def get_shared_with_user_group(self, user, query=None):
+		"""
+		:type user: User
+		:type query: QuerySet
+		:returns: all Reports shared with user's groups (no report shared namely with the user)
+		:rtype: QuerySet
+		"""
+		from breeze.models import Group
+		query = query or self._get_base_query(user)
+		return query.filter(shared_g__id__in=
+			list(user.group_content.all().values_list('id', flat=True)) + [Group.objects.registered_group_id]
+		)
+	
+	# clem 12/05/2017
+	def get_shared_with_user_all(self, user, query=None):
+		"""
+		:type user: User
+		:type query: QuerySet
+		:returns: all Reports shared with user (namely and to its groups)
+		:rtype: QuerySet
+		"""
+		return (self.get_shared_with_user_group(user, query) | self.get_shared_with_user_namely(user, query)).distinct()
 
 	@property
 	def f(self):
@@ -693,9 +724,48 @@ class CompTargetsManager(CustomManager):
 
 # clem 26/10/2016
 class BreezeUserManager(UserManager):
+	
+	def _super_all(self):
+		return super(BreezeUserManager, self).all()
+	
+	def _base_all(self):
+		return self._super_all().exclude(username='system_user').exclude(is_active=0)
+	
 	# clem 30/03/20117
-	def all(self):
-		return super(BreezeUserManager, self).exclude(first_name=settings.GUEST_FIRST_NAME)
+	def all(self, include_guests=True, exclude_user=None):
+		""" All users
+
+		:param include_guests: wether to include guests or not (default to True)
+		:type include_guests: bool
+		:param exclude_user: wether to exclude a specified user (default to None : not)
+		:type exclude_user: User | None
+		:rtype: QuerySet
+		"""
+		query = self._base_all()
+		if exclude_user:
+			query = query.exclude(id__exact=exclude_user.id)
+		if not include_guests:
+			return query.exclude(first_name=settings.GUEST_FIRST_NAME)
+		else:
+			return query.all()
+	
+	# 12/05/2017
+	def all_but_guests(self):
+		""" All users that are not guests
+
+		:rtype: QuerySet
+		"""
+		return self.all(False)
+	
+	# 12/05/2017
+	def all_but_user(self, user, include_guests=True):
+		""" All users but the specified one
+		
+		:type user: User
+		:type include_guests: bool
+		:rtype: QuerySet
+		"""
+		return self.all(include_guests, user)
 	
 	def guests(self):
 		return super(BreezeUserManager, self).filter(first_name=settings.GUEST_FIRST_NAME)
@@ -797,3 +867,41 @@ class UserProfileManager(Manager):
 				each.delete()
 		except Exception as e:
 			logger.exception(e)
+
+
+# clem 12/05/2017
+class GroupManager(ObjectsWithAuth):
+	def _all(self):
+		return super(GroupManager, self).all()
+	
+	def all_but_special(self):
+		return self._all().exclude(name__in=self.model.SPECIAL_GROUPS)
+	
+	def filter(self, *args, **kwargs):
+		return self.all_but_special().filter(*args, **kwargs)
+	
+	def exclude(self, *args, **kwargs):
+		return self.all_but_special().exclude(*args, **kwargs)
+	
+	def get_owned(self, user):
+		return self.filter(author__exact=user)
+	
+	def get_others(self, user):
+		return self.exclude(author__exact=user)
+	
+	def get_specials(self):
+		return self._all().filter(name__in=self.model.SPECIAL_GROUPS)
+	
+	def get_guest(self):
+		return self._all().get(name__exact=self.model.GUEST_GROUP_NAME)
+	
+	def get_registered(self):
+		return self._all().get(name__exact=self.model.ALL_GROUP_NAME)
+	
+	@property
+	def registered_group_id(self):
+		return self.get_registered().id
+	
+	@property
+	def guest_group_id(self):
+		return self.get_guest().id
