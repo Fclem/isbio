@@ -95,10 +95,33 @@ class EditProjectForm(forms.Form):
 	)
 
 
-class GroupForm(forms.Form):
-	group_name = forms.CharField(
+# FIXME broken
+class AbstractFormValidator(forms.Form):
+	"""
+	def __init__(self, *args, **kwargs):
+		super(AbstractFormValidator, self).__init__(*args, **kwargs)
+		self.model = self.Meta.model
+
+	def clean(self):
+		cleaned_data = super(AbstractFormValidator, self).clean()
+		if hasattr(self.model, 'RESERVED') and self.model.RESERVED.keys():
+			# for field_name, values in set(self.model.RESERVED.keys()) & set(cleaned_data.keys()):
+			keys = list(set(self.model.RESERVED.keys()) & set(cleaned_data.keys()))
+			for field_name in keys:
+				value, data = self.model.RESERVED[field_name], cleaned_data[field_name]
+				if data.lower() in value:
+					self.add_error(None, "%s is a reserved value for field %s" % (data, field_name))
+					raise forms.ValidationError("%s is a reserved value for field %s" % (data, field_name))
+		return cleaned_data
+	"""
+	pass
+
+
+class GroupForm(AbstractFormValidator):
+	name = forms.CharField(
 		max_length=50,
-		widget=forms.TextInput(attrs={'placeholder': ' Group Name ', })
+		widget=forms.TextInput(attrs={'placeholder': ' Group Name ', }) #,
+		# validators=[validators.validate_slug]
 	)
 
 	group_team = forms.ModelMultipleChoiceField(
@@ -113,14 +136,30 @@ class GroupForm(forms.Form):
 		self.author = kwargs.pop('author', None)
 		super(GroupForm, self).__init__(*args, **kwargs)
 	
-	def clean_group_name(self):
-		group_name = self.cleaned_data.get('group_name')
+	def clean_name(self):
+		group_name = self.cleaned_data.get('name')
 		try:
 			breeze.models.Group.objects.get(name=group_name, author=self.author)
 		except breeze.models.Group.DoesNotExist:
 			return group_name
-		else:
-			raise forms.ValidationError("You already have a group with this name !")
+		self.add_error('name', "You already have a group with this name !")
+		raise forms.ValidationError("You already have a group with this name !")
+	
+	# FIXME
+	"""
+	def clean(self):
+		cleaned_data = super(GroupForm, self).clean()
+		group_name = cleaned_data.get('name')
+		try:
+			breeze.models.Group.objects.get(name=group_name, author=self.author)
+		except breeze.models.Group.DoesNotExist:
+			return cleaned_data
+		self.add_error('name', "You already have a group with this name !")
+		# raise forms.ValidationError("You already have a group with this name !")
+	"""
+	
+	class Meta:
+		model = breeze.models.Group
 
 
 class EditReportAccessForm(forms.Form): # FIXME obsolete & not in use anymore
@@ -266,6 +305,8 @@ class ReportPropsFormMixin(object):
 	def share_options(self):
 		if not self._share_options:
 			self._share_options = list()
+			spe_groups = self.group_list_of_tuples_gen('g', group_list=breeze.models.Group.objects.get_specials())
+			self._share_options.append(tuple(('Special groups', tuple(spe_groups))))
 			groups = self._group_list_of_tuples
 			if groups:
 				self._share_options.append(tuple(('Groups', tuple(groups))))
@@ -321,16 +362,7 @@ class ReportPropsFormMixin(object):
 			return breeze.models.OrderedUser.objects.all_but_guests()
 		else:
 			return breeze.models.OrderedUser.objects.all_but_user(self.request.user, include_guests=False)
-	
-	# clem 12/05/2017
-	@property
-	def _group_list_query(self):
-		if self.request.user.is_superuser:
-			query = breeze.models.Group.objects.all()
-		else:
-			query = breeze.models.Group.objects.filter(author__exact=self.request.user)
-		return query.order_by("name")
-	
+		
 	# clem 12/05/2017
 	@property
 	def _user_guest_list_query(self):
@@ -338,13 +370,27 @@ class ReportPropsFormMixin(object):
 	
 	# clem 12/05/2017
 	@property
+	def _group_list_query(self):
+		if self.request.user.is_superuser:
+			query = breeze.models.Group.objects.all_but_special()
+		else:
+			query = breeze.models.Group.objects.get_owned(self.request.user)
+		return query.order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def _group_special_list_query(self):
+		return breeze.models.Group.objects.get_specials().order_by("name")
+	
+	# clem 12/05/2017
+	@property
 	def _group_list_owned_query(self):
-		return self._group_list_query.filter(author__id__exact=self.request.user.id)
+		return breeze.models.Group.objects.get_owned(self.request.user).order_by("name")
 	
 	# clem 12/05/2017
 	@property
 	def _group_list_others_query(self):
-		return self._group_list_query.exclude(author__id__exact=self.request.user.id)
+		return breeze.models.Group.objects.get_others(self.request.user).order_by("name")
 	
 	# clem 12/05/2017
 	@property
@@ -364,15 +410,17 @@ class ReportPropsFormMixin(object):
 	@property
 	def group_share_options_grouped_ownership(self):
 		a_list = list()
+		special_query = self._group_special_list_query
+		special_groups = self.group_list_of_tuples_gen(group_list=special_query)
 		own_query = self._group_list_owned_query
 		own_groups = self.group_list_of_tuples_gen(group_list=own_query)
 		others_query = self._group_list_others_query
 		others_groups = self.group_list_of_tuples_gen(group_list=others_query)
-		if others_query.count() and own_query.count():
+		a_list.append(tuple(('Special groups', special_groups)))
+		if own_query.count():
 			a_list.append(tuple(('My groups', own_groups)))
+		if others_query.count():
 			a_list.append(tuple(('Others\'', others_groups)))
-		else:
-			a_list = own_groups + others_groups
 		return a_list
 
 

@@ -83,29 +83,7 @@ def save_new_project(form, author):
 	return True
 
 
-def save_new_group(form, author, post):
-	""" Saves New Group data from a valid form to DB model.
-
-	Arguments:
-	form        -- instance of GroupForm
-	author      -- user name
-	"""
-
-	dbitem = breeze.models.Group(
-		name=str(form.cleaned_data.get('group_name', None)),
-		author=author
-	)
-
-	# Important:
-	# Before using ManyToMany we should first save the model!!!
-	dbitem.save()
-
-	for chel in post.getlist('group_team'):
-		dbitem.team.add(breeze.models.User.objects.get(id=chel))
-
-	dbitem.save()
-
-	return True
+# moved save_new_group 12/05/2017 to breeze.models.Groups.new
 
 
 def edit_project(form, project):
@@ -154,15 +132,7 @@ def delete_project(project):
 	return True
 
 
-def delete_group(group):
-	""" Remove a group from a DB model.
-
-	Arguments:
-	group     -- db instance of Group
-	"""
-	group.delete()
-
-	return True
+# deleted delete_group(group) 12/05/2017, using breeze.Group.delete() instead
 
 
 def open_folder_permissions(path, permit=0770):

@@ -622,7 +622,7 @@ class WorkersManager(ObjectsWithAuth):
 		query = query or self._get_base_query(user)
 		return query.filter(shared__id=user.id)
 	
-	# clem 12/05/2017
+	# clem 12/05/2017 FIXME duplicate of ObjectsWithACL.is_in_share_list (better one though)
 	def get_shared_with_user_group(self, user, query=None):
 		"""
 		:type user: User
@@ -630,8 +630,11 @@ class WorkersManager(ObjectsWithAuth):
 		:returns: all Reports shared with user's groups (no report shared namely with the user)
 		:rtype: QuerySet
 		"""
+		from breeze.models import Group
 		query = query or self._get_base_query(user)
-		return query.filter(shared_g__id__in=user.group_content.all().values_list('id', flat=True))
+		return query.filter(shared_g__id__in=
+			list(user.group_content.all().values_list('id', flat=True)) + [Group.objects.registered_group_id]
+		)
 	
 	# clem 12/05/2017
 	def get_shared_with_user_all(self, user, query=None):
@@ -721,6 +724,13 @@ class CompTargetsManager(CustomManager):
 
 # clem 26/10/2016
 class BreezeUserManager(UserManager):
+	
+	def _super_all(self):
+		return super(BreezeUserManager, self).all()
+	
+	def _base_all(self):
+		return self._super_all().exclude(username='system_user').exclude(is_active=0)
+	
 	# clem 30/03/20117
 	def all(self, include_guests=True, exclude_user=None):
 		""" All users
@@ -731,7 +741,7 @@ class BreezeUserManager(UserManager):
 		:type exclude_user: User | None
 		:rtype: QuerySet
 		"""
-		query = super(BreezeUserManager, self).all()
+		query = self._base_all()
 		if exclude_user:
 			query = query.exclude(id__exact=exclude_user.id)
 		if not include_guests:
@@ -857,3 +867,41 @@ class UserProfileManager(Manager):
 				each.delete()
 		except Exception as e:
 			logger.exception(e)
+
+
+# clem 12/05/2017
+class GroupManager(ObjectsWithAuth):
+	def _all(self):
+		return super(GroupManager, self).all()
+	
+	def all_but_special(self):
+		return self._all().exclude(name__in=self.model.SPECIAL_GROUPS)
+	
+	def filter(self, *args, **kwargs):
+		return self.all_but_special().filter(*args, **kwargs)
+	
+	def exclude(self, *args, **kwargs):
+		return self.all_but_special().exclude(*args, **kwargs)
+	
+	def get_owned(self, user):
+		return self.filter(author__exact=user)
+	
+	def get_others(self, user):
+		return self.exclude(author__exact=user)
+	
+	def get_specials(self):
+		return self._all().filter(name__in=self.model.SPECIAL_GROUPS)
+	
+	def get_guest(self):
+		return self._all().get(name__exact=self.model.GUEST_GROUP_NAME)
+	
+	def get_registered(self):
+		return self._all().get(name__exact=self.model.ALL_GROUP_NAME)
+	
+	@property
+	def registered_group_id(self):
+		return self.get_registered().id
+	
+	@property
+	def guest_group_id(self):
+		return self.get_guest().id

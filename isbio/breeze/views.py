@@ -168,7 +168,7 @@ def home(request, state="feed"):
 		stat_pane = 'show_analysis_stat'
 
 	projects = Project.objects.exclude(~Q(author__exact=request.user) & Q(collaborative=False)).order_by("name")
-	groups = Group.objects.filter(author__exact=request.user).order_by("name")
+	groups = list(Group.objects.get_owned(request.user)) + list(Group.objects.get_specials())
 
 	# get all the script info
 	# rscripts = Rscripts.objects.all().get(draft=True)
@@ -1680,11 +1680,8 @@ def delete_project(request, pid):
 
 @login_required(login_url='/')
 def delete_group(request, gid):
-	group = Group.objects.get(id=gid)
-	# Enforce access rights
-	if group.author != request.user:
-		raise PermissionDenied(request=request)
-	aux.delete_group(group)
+	group = Group.objects.owner_get(request, gid)
+	group.delete()
 
 	return HttpResponseRedirect('/home/groups')  # FIXME hardcoded url
 
@@ -2650,8 +2647,12 @@ def new_group_dialog(request):
 	group_form = breezeForms.GroupForm(request.POST or None, author=request.user)
 
 	if group_form.is_valid():
-		aux.save_new_group(group_form, request.user, request.POST)
-		return HttpResponseRedirect(reverse(home, kwargs={ 'state': 'groups' }))
+		# aux.save_new_group(group_form, request.user, request.POST)
+		if Group.new(group_form, request.user, request.POST):
+			return HttpResponseRedirect(reverse(home, kwargs={ 'state': 'groups' }))
+		group_form.add_error(None, "Operation has failed with an unspecified error")
+	else:
+		print group_form
 
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': group_form,

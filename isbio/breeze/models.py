@@ -5,7 +5,7 @@ from django.db.models.fields.related import ForeignKey
 from django.contrib.auth.models import User # as DjangoUser
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.http import HttpRequest
+from django.http import HttpRequest, QueryDict
 from breeze import managers, utils, system_check, comp
 from comp import Trans
 from utils import *
@@ -65,8 +65,6 @@ class CustomModel(CustomModelAbstract):
 from shiny.models import ShinyReport
 
 
-
-
 # User = OrderedUser
 
 
@@ -106,14 +104,22 @@ class Project(CustomModel, AutoJSON):
 # TODO add an Institute db field
 # TODO change to CustomModel
 class Group(CustomModelAbstract):
+	GUEST_GROUP_NAME = settings.GUEST_GROUP_NAME
+	ALL_GROUP_NAME = settings.ALL_GROUP_NAME
+	SPECIAL_GROUPS = [GUEST_GROUP_NAME, ALL_GROUP_NAME]
+	SPECIAL_GROUPS_lower = [GUEST_GROUP_NAME.lower(), ALL_GROUP_NAME.lower()]
+	RESERVED = {'name': SPECIAL_GROUPS_lower}
+	
 	name = models.CharField(max_length=50)
 	author = ForeignKey(User)
 	team = models.ManyToManyField(User, blank=True, default=None, related_name='group_content')
 
-	def delete(self, using=None, keep_parents=False):
+	objects = managers.GroupManager()
+
+	def delete(self, using=None):
 		if not self.read_only:
 			self.team.clear()
-		return super(Group, self).delete(using=using, keep_parents=keep_parents)
+		return super(Group, self).delete(using=using)
 	
 	# clem 19/01/2017
 	@classmethod
@@ -123,6 +129,8 @@ class Group(CustomModelAbstract):
 	# clem 19/01/2017
 	@property
 	def user_list(self):
+		if self.is_all_group:
+			return BreezeUser.objects.all_but_guests()
 		return self.team.all()
 	
 	# clem 19/01/2017
@@ -135,6 +143,49 @@ class Group(CustomModelAbstract):
 
 	def __unicode__(self):
 		return self.name
+
+	# imported from auxiliary.py # 86 @ https://github.com/Fclem/isbio2/commit/314cd63d8a5d7cd579e4c6a5dbfaeb0e721f3d73
+	@classmethod
+	def new(cls, form, author, post):
+		""" Create a new Group
+		
+		:type form: breeze.forms.GroupForm
+		:type author: User
+		:type post: QueryDict
+		:rtype: bool
+		"""
+		try:
+			dbitem = cls(
+				name=form.cleaned_data.get('group_name', None),
+				author=author
+			)
+			dbitem.save() # makes the M2M rel available
+			
+			dbitem.team.add(*breeze.models.User.objects.filter(id__in=post.getlist('group_team')))
+			
+			dbitem.save()
+			return True
+		except Exception:
+			try:
+				dbitem.delete()
+			except Exception:
+				pass
+		return False
+	
+	# clem 12/05/2017
+	@property
+	def is_special(self):
+		return self in self.__class__.objects.get_specials()
+	
+	# clem 12/05/2017
+	@property
+	def is_all_group(self):
+		return self == self.__class__.objects.get_registered()
+	
+	# clem 12/05/2017
+	@property
+	def is_guest_group(self):
+		return self == self.__class__.objects.get_guest()
 
 
 class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
@@ -175,14 +226,16 @@ class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 			auth = self.script_buyer
 		return auth
 	
-	# clem 18/01/2017
+	# clem 18/01/2017 FIXME
 	def is_in_share_list(self, user):
 		assert isinstance(user, User)
 		in_user_lst = hasattr(self, 'shared') and user in self.shared.all()
 		in_group = False
 		if hasattr(self, 'shared_g'):
 			for each_group in self.shared_g.all():
-				if user in Group.objects.get(pk=each_group.id).team.all():
+				#if user in Group.objects.get(pk=each_group.id).team.all() or each_group.is_all_group:
+				# if user in Group.objects.get(pk=each_group.id).team.all():
+				if user in Group.list_users(each_group.id):
 					in_group = True
 					break
 		return in_user_lst or in_group
