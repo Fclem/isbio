@@ -146,30 +146,28 @@ class Group(CustomModelAbstract):
 
 	# imported from auxiliary.py # 86 @ https://github.com/Fclem/isbio2/commit/314cd63d8a5d7cd579e4c6a5dbfaeb0e721f3d73
 	@classmethod
-	def new(cls, form, author, post):
+	def new(cls, name, author, post):
 		""" Create a new Group
 		
-		:type form: breeze.forms.GroupForm
+		:type name: basestring
 		:type author: User
 		:type post: QueryDict
 		:rtype: bool
 		"""
 		try:
-			dbitem = cls(
-				name=form.cleaned_data.get('group_name', None),
-				author=author
-			)
+			dbitem = cls(name=name, author=author)
 			dbitem.save() # makes the M2M rel available
 			
 			dbitem.team.add(*breeze.models.User.objects.filter(id__in=post.getlist('group_team')))
 			
 			dbitem.save()
 			return True
-		except Exception:
+		except Exception as e:
+			logger.error(e)
 			try:
 				dbitem.delete()
-			except Exception:
-				pass
+			except Exception as e2:
+				logger.error(e2)
 		return False
 	
 	# clem 12/05/2017

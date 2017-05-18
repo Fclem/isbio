@@ -2644,15 +2644,15 @@ def new_group_dialog(request):
 		This view provides a dialog to create a new Group in DB.
 	"""
 	__self__ = this_function_name()  # instance to self
-	group_form = breezeForms.GroupForm(request.POST or None, author=request.user)
+	# group_form = breezeForms.GroupForm(request.POST or None, author=request.user)
+	group_form = breezeForms.GroupForm(request.POST or None, request=request)
 
 	if group_form.is_valid():
 		# aux.save_new_group(group_form, request.user, request.POST)
-		if Group.new(group_form, request.user, request.POST):
+		if Group.new(group_form.cleaned_data.get('name', None), request.user, request.POST):
 			return HttpResponseRedirect(reverse(home, kwargs={ 'state': 'groups' }))
+		logger.error("Operation has failed with an unspecified error")
 		group_form.add_error(None, "Operation has failed with an unspecified error")
-	else:
-		print group_form
 
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': group_form,

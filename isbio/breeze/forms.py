@@ -117,7 +117,180 @@ class AbstractFormValidator(forms.Form):
 	pass
 
 
-class GroupForm(AbstractFormValidator):
+# clem 18/04/2016
+class ReportPropsFormMixin(object):
+	request = None
+	_share_options = None
+	_share_options_ppl = None
+	_share_options_group = None
+	_target_list = None
+	_project_qs = None
+	
+	# clem 19/04/2016
+	def __init__(self, *args, **kwargs):
+		# if 'request' in kwargs:
+		self.request = self.request or kwargs.pop('request', None)
+		if self.request:
+			self.author = self.request.user
+		super(ReportPropsFormMixin, self).__init__(*args, **kwargs)
+	
+	# clem 19/01/2017
+	def users_list_of_tuples_gen(self, prefix='', user_list=None):
+		a_list = list()
+		
+		user_list = user_list or self._user_only_list_query
+		
+		for ur in user_list:
+			a_list.append(tuple(('%s%s' % (prefix, ur.id), ur.get_full_name() or ur.username)))
+		
+		return a_list
+	
+	# clem 19/01/2017
+	@property
+	def _users_list_of_tuples(self):
+		return self.users_list_of_tuples_gen('u')
+	
+	# clem 19/01/2017
+	def group_list_of_tuples_gen(self, prefix='', group_list=None):
+		a_list = list()
+		
+		group_list = group_list or self._group_list_query
+		
+		for gr in group_list:
+			a_list.append(tuple(('%s%s' % (prefix, gr.id), gr.name)))
+		
+		return a_list
+	
+	# clem 19/01/2017
+	@property
+	def _group_list_of_tuples(self):
+		return self.group_list_of_tuples_gen('g')
+	
+	@property
+	def share_options(self):
+		if not self._share_options:
+			self._share_options = list()
+			spe_groups = self.group_list_of_tuples_gen('g', group_list=breeze.models.Group.objects.get_specials())
+			self._share_options.append(tuple(('Special groups', tuple(spe_groups))))
+			groups = self._group_list_of_tuples
+			if groups:
+				self._share_options.append(tuple(('Groups', tuple(groups))))
+			users = self._users_list_of_tuples
+			if users:
+				self._share_options.append(tuple(('Individual Users', tuple(users))))
+		return self._share_options
+	
+	# clem 19/04/2016
+	@property
+	def target_list(self): # code moved to ReportType.target_list
+		return breeze.models.ReportType.objects.get(type=self.request.rtype).all_as_form_list
+	
+	def _sup_init_(self, *_, **kwargs):
+		if not self.request and 'request' in kwargs:
+			self.request = kwargs.get("request")
+		if not hasattr(self, 'fields'):
+			self.fields = dict()
+		
+		rq = breeze.models.Project.objects.available(self.request.user)
+		
+		# FIXME : use manager instead
+		self.fields["project"] = forms.ModelChoiceField(
+			queryset=rq,
+			initial=rq[0] if len(rq) == 1 else None,
+			widget=forms.Select()
+		)
+		
+		self.fields["target"] = forms.ChoiceField(
+			choices=self.target_list,
+			initial=self.target_list[0],
+			widget=forms.Select()
+		)
+		
+		# self.fields["Share"] = forms.MultipleChoiceField( # TODO find out why this has various spelling
+		self.fields["shared"] = forms.MultipleChoiceField(
+			required=False,
+			choices=self.share_options,
+			widget=forms.SelectMultiple(
+				attrs={'class': 'multiselect', }
+			)
+		)
+	
+	# clem 12/05/2017
+	@property
+	def _user_only_list_query(self):
+		""" Override to user list that is usually stripped of current user, except when user is superuser
+
+		:return:
+		:rtype:
+		"""
+		if self.request.user.is_superuser:
+			return breeze.models.OrderedUser.objects.all_but_guests()
+		else:
+			return breeze.models.OrderedUser.objects.all_but_user(self.request.user, include_guests=False)
+	
+	# clem 12/05/2017
+	@property
+	def _user_guest_list_query(self):
+		return breeze.models.OrderedUser.objects.guests()
+	
+	# clem 12/05/2017
+	@property
+	def _group_list_query(self):
+		if self.request.user.is_superuser:
+			query = breeze.models.Group.objects.all_but_special()
+		else:
+			query = breeze.models.Group.objects.get_owned(self.request.user)
+		return query.order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def _group_special_list_query(self):
+		return breeze.models.Group.objects.get_specials().order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def _group_list_owned_query(self):
+		return breeze.models.Group.objects.get_owned(self.request.user).order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def _group_list_others_query(self):
+		return breeze.models.Group.objects.get_others(self.request.user).order_by("name")
+	
+	# clem 12/05/2017
+	@property
+	def user_share_options_grouped_guests(self):
+		a_list = list()
+		user_list = self.users_list_of_tuples_gen(user_list=self._user_only_list_query)
+		guest_query = self._user_guest_list_query
+		if guest_query.count():
+			guest_list = self.users_list_of_tuples_gen(user_list=guest_query)
+			a_list.append(tuple(('Users', user_list)))
+			a_list.append(tuple(('Guests', guest_list)))
+		else:
+			a_list = user_list
+		return a_list
+	
+	# clem 12/05/2017
+	@property
+	def group_share_options_grouped_ownership(self):
+		a_list = list()
+		special_query = self._group_special_list_query
+		special_groups = self.group_list_of_tuples_gen(group_list=special_query)
+		own_query = self._group_list_owned_query
+		own_groups = self.group_list_of_tuples_gen(group_list=own_query)
+		others_query = self._group_list_others_query
+		others_groups = self.group_list_of_tuples_gen(group_list=others_query)
+		a_list.append(tuple(('Special groups', special_groups)))
+		if own_query.count():
+			a_list.append(tuple(('My groups', own_groups)))
+		if others_query.count():
+			a_list.append(tuple(('Others\'', others_groups)))
+		return a_list
+
+
+# class GroupForm(AbstractFormValidator, ReportPropsFormMixin):
+class GroupForm(ReportPropsFormMixin, forms.Form):
 	name = forms.CharField(
 		max_length=50,
 		widget=forms.TextInput(attrs={'placeholder': ' Group Name ', }) #,
@@ -133,8 +306,10 @@ class GroupForm(AbstractFormValidator):
 	)
 
 	def __init__(self, *args, **kwargs):
-		self.author = kwargs.pop('author', None)
+		# self.author = kwargs.pop('author', None)
+		# self.request = kwargs.pop("request", None)
 		super(GroupForm, self).__init__(*args, **kwargs)
+		self.fields['group_team'].choices = self.users_list_of_tuples_gen()
 	
 	def clean_name(self):
 		group_name = self.cleaned_data.get('name')
@@ -256,179 +431,11 @@ class AddOffsiteUser(forms.ModelForm):
 	# queryset = breeze.models.User.objects.all(),
 
 
-# clem 18/04/2016
-class ReportPropsFormMixin(object):
-	request = None
-	_share_options = None
-	_share_options_ppl = None
-	_share_options_group = None
-	_target_list = None
-	_project_qs = None
-
-	# clem 19/04/2016
-	def __init__(self, *args, **kwargs):
-		super(ReportPropsFormMixin, self).__init__(*args, **kwargs)
-	
-	# clem 19/01/2017
-	def users_list_of_tuples_gen(self, prefix='', user_list=None):
-		a_list = list()
-		
-		user_list = user_list or self._user_only_list_query
-		
-		for ur in user_list:
-			a_list.append(tuple(('%s%s' % (prefix, ur.id), ur.get_full_name() or ur.username)))
-			
-		return a_list
-		
-	# clem 19/01/2017
-	@property
-	def _users_list_of_tuples(self):
-		return self.users_list_of_tuples_gen('u')
-	
-	# clem 19/01/2017
-	def group_list_of_tuples_gen(self, prefix='', group_list=None):
-		a_list = list()
-		
-		group_list = group_list or self._group_list_query
-		
-		for gr in group_list:
-			a_list.append(tuple(('%s%s' % (prefix, gr.id), gr.name)))
-			
-		return a_list
-		
-	# clem 19/01/2017
-	@property
-	def _group_list_of_tuples(self):
-		return self.group_list_of_tuples_gen('g')
-	
-	@property
-	def share_options(self):
-		if not self._share_options:
-			self._share_options = list()
-			spe_groups = self.group_list_of_tuples_gen('g', group_list=breeze.models.Group.objects.get_specials())
-			self._share_options.append(tuple(('Special groups', tuple(spe_groups))))
-			groups = self._group_list_of_tuples
-			if groups:
-				self._share_options.append(tuple(('Groups', tuple(groups))))
-			users = self._users_list_of_tuples
-			if users:
-				self._share_options.append(tuple(('Individual Users', tuple(users))))
-		return self._share_options
-
-	# clem 19/04/2016
-	@property
-	def target_list(self): # code moved to ReportType.target_list
-		return breeze.models.ReportType.objects.get(type=self.request.rtype).all_as_form_list
-
-	def _sup_init_(self, *_, **kwargs):
-		if not self.request and 'request' in kwargs:
-			self.request = kwargs.get("request")
-		if not hasattr(self, 'fields'):
-			self.fields = dict()
-
-		rq = breeze.models.Project.objects.available(self.request.user)
-	
-		# FIXME : use manager instead
-		self.fields["project"] = forms.ModelChoiceField(
-			queryset=rq,
-			initial=rq[0] if len(rq) == 1 else None,
-			widget=forms.Select()
-		)
-
-		self.fields["target"] = forms.ChoiceField(
-			choices=self.target_list,
-			initial=self.target_list[0],
-			widget=forms.Select()
-		)
-
-		# self.fields["Share"] = forms.MultipleChoiceField( # TODO find out why this has various spelling
-		self.fields["shared"] = forms.MultipleChoiceField(
-			required=False,
-			choices=self.share_options,
-			widget=forms.SelectMultiple(
-				attrs={ 'class': 'multiselect', }
-			)
-		)
-	
-	# clem 12/05/2017
-	@property
-	def _user_only_list_query(self):
-		""" Override to user list that is usually stripped of current user, except when user is superuser
-		
-		:return:
-		:rtype:
-		"""
-		if self.request.user.is_superuser:
-			return breeze.models.OrderedUser.objects.all_but_guests()
-		else:
-			return breeze.models.OrderedUser.objects.all_but_user(self.request.user, include_guests=False)
-		
-	# clem 12/05/2017
-	@property
-	def _user_guest_list_query(self):
-		return breeze.models.OrderedUser.objects.guests()
-	
-	# clem 12/05/2017
-	@property
-	def _group_list_query(self):
-		if self.request.user.is_superuser:
-			query = breeze.models.Group.objects.all_but_special()
-		else:
-			query = breeze.models.Group.objects.get_owned(self.request.user)
-		return query.order_by("name")
-	
-	# clem 12/05/2017
-	@property
-	def _group_special_list_query(self):
-		return breeze.models.Group.objects.get_specials().order_by("name")
-	
-	# clem 12/05/2017
-	@property
-	def _group_list_owned_query(self):
-		return breeze.models.Group.objects.get_owned(self.request.user).order_by("name")
-	
-	# clem 12/05/2017
-	@property
-	def _group_list_others_query(self):
-		return breeze.models.Group.objects.get_others(self.request.user).order_by("name")
-	
-	# clem 12/05/2017
-	@property
-	def user_share_options_grouped_guests(self):
-		a_list = list()
-		user_list = self.users_list_of_tuples_gen(user_list=self._user_only_list_query)
-		guest_query = self._user_guest_list_query
-		if guest_query.count():
-			guest_list = self.users_list_of_tuples_gen(user_list=guest_query)
-			a_list.append(tuple(('Users', user_list)))
-			a_list.append(tuple(('Guests', guest_list)))
-		else:
-			a_list = user_list
-		return a_list
-	
-	# clem 12/05/2017
-	@property
-	def group_share_options_grouped_ownership(self):
-		a_list = list()
-		special_query = self._group_special_list_query
-		special_groups = self.group_list_of_tuples_gen(group_list=special_query)
-		own_query = self._group_list_owned_query
-		own_groups = self.group_list_of_tuples_gen(group_list=own_query)
-		others_query = self._group_list_others_query
-		others_groups = self.group_list_of_tuples_gen(group_list=others_query)
-		a_list.append(tuple(('Special groups', special_groups)))
-		if own_query.count():
-			a_list.append(tuple(('My groups', own_groups)))
-		if others_query.count():
-			a_list.append(tuple(('Others\'', others_groups)))
-		return a_list
-
-
-class EditReportSharing(forms.ModelForm, ReportPropsFormMixin):
+class EditReportSharing(ReportPropsFormMixin, forms.ModelForm):
 	author_id = 0
 	
 	def __init__(self, *args, **kwargs):
-		self.request = kwargs.pop("request", None)
+		# self.request = kwargs.pop("request", None)
 		super(EditReportSharing, self).__init__(*args, **kwargs)
 		instance = kwargs.get('instance', None)
 		self.author_id = instance.author.id if instance else self.request.user if self.request else 0
@@ -449,9 +456,9 @@ class EditReportSharing(forms.ModelForm, ReportPropsFormMixin):
 	}
 
 
-class EditGroupForm(forms.Form, ReportPropsFormMixin):
+class EditGroupForm(ReportPropsFormMixin, forms.Form):
 	def __init__(self, *args, **kwargs):
-		self.request = kwargs.pop("request", None)
+		# self.request = kwargs.pop("request", None)
 		super(EditGroupForm, self).__init__(*args, **kwargs)
 		self.fields['group_team'].choices = self.users_list_of_tuples_gen()
 	
@@ -465,23 +472,26 @@ class EditGroupForm(forms.Form, ReportPropsFormMixin):
 
 
 # clem 18/04/2016
-class ReportPropsFormMixinWrapperOne(forms.Form, ReportPropsFormMixin):
+# class ReportPropsFormMixinWrapperOne(forms.Form, ReportPropsFormMixin):
+class ReportPropsFormMixinWrapperOne(ReportPropsFormMixin, forms.Form):
 	def __init__(self, *args, **kwargs):
-		import copy
-		self.kwargs_copy = copy.copy(kwargs)
-		self.request = kwargs.pop("request", None)
+		# import copy
+		# self.kwargs_copy = copy.copy(kwargs)
+		# self.request = kwargs.pop("request", None)
 		super(ReportPropsFormMixinWrapperOne, self).__init__(*args, **kwargs)
-		self._sup_init_(*args, **self.kwargs_copy)
+		# self._sup_init_(*args, **self.kwargs_copy)
+		self._sup_init_(*args, **kwargs)
 
 
 # clem 18/04/2016
-class ReportPropsFormMixinWrapperTwo(forms.ModelForm, ReportPropsFormMixin):
+class ReportPropsFormMixinWrapperTwo(ReportPropsFormMixin, forms.ModelForm):
 	def __init__(self, *args, **kwargs):
-		import copy
-		self.kwargs_copy = copy.copy(kwargs)
-		self.request = kwargs.pop("request", None)
+		# import copy
+		# self.kwargs_copy = copy.copy(kwargs)
+		# self.request = kwargs.pop("request", None)
 		super(ReportPropsFormMixinWrapperTwo, self).__init__(*args, **kwargs)
-		self._sup_init_(*args, **self.kwargs_copy)
+		# self._sup_init_(*args, **self.kwargs_copy)
+		self._sup_init_(*args, **kwargs)
 
 
 class ReportPropsForm(ReportPropsFormMixinWrapperOne):
