@@ -1,5 +1,4 @@
-import django
-import os, shutil, re, stat, copy
+import os, shutil, re #, stat, copy
 from datetime import datetime
 import xml.etree.ElementTree as xml
 from Bio import Entrez
@@ -7,9 +6,10 @@ from django.template.defaultfilters import slugify
 from django.conf import settings
 from django.core.files import File, base
 import breeze.models
-import auxiliary as aux
 import logging
 from breeze.models import Report, Jobs, JobStat, Rscripts # , Runnable
+# import django
+# import auxiliary as aux
 # from exceptions import Exception
 # import hashlib
 # from django.utils import timezone
@@ -360,17 +360,7 @@ def get_report_overview(report_type, instance_name, instance_id):
 
 # DELETED dump_project_parameters on 13/07/2015 (now part of Report)
 # DELETED dump_pipeline_config on 13/07/2015 (now part of Report)
-
-
-def get_user_and_groups(item_list):
-	group_list = list()
-	user_list = list()
-	for each in item_list:
-		if each[0] in ['u', u'u']:
-			user_list.append(each[1:])
-		elif each[0] in ['g', u'g']:
-			group_list.append(each[1:])
-	return user_list, group_list
+# DELETED get_user_and_groups on 23/05/2017 (moved to Report)
 
 
 # TODO integrate in BreezeForm ? or Report or Runnable
@@ -399,7 +389,7 @@ def build_report(report_data, request_data, report_property, sections):
 	# get the request ReportType
 	rt = ReportType.objects.get(type=report_data['report_type'])
 	# list of users that will have access to this report
-	shared_users, shared_groups = get_user_and_groups(request_data.POST.getlist('shared'))
+	shared_users, shared_groups = Report.get_user_and_groups(request_data.POST.getlist('shared'))
 	# author
 	the_user = request_data.user
 	the_user.prof = UserProfile.objects.get(user=the_user)

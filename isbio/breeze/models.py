@@ -146,28 +146,26 @@ class Group(CustomModelAbstract):
 
 	# imported from auxiliary.py # 86 @ https://github.com/Fclem/isbio2/commit/314cd63d8a5d7cd579e4c6a5dbfaeb0e721f3d73
 	@classmethod
-	def new(cls, name, author, post):
+	def new(cls, name, author, member_list):
 		""" Create a new Group
 		
 		:type name: basestring
 		:type author: User
-		:type post: QueryDict
+		:type member_list: list
 		:rtype: bool
 		"""
 		try:
 			dbitem = cls(name=name, author=author)
-			dbitem.save() # makes the M2M rel available
-			
-			dbitem.team.add(*breeze.models.User.objects.filter(id__in=post.getlist('group_team')))
-			
-			dbitem.save()
-			return True
+			# dbitem.save() # makes the M2M rel available
+			# dbitem.team.add(*breeze.models.User.objects.filter(id__in=member_list))
+			# dbitem.save()
+			return dbitem.edit_team(member_list)
 		except Exception as e:
 			logger.error(e)
 			try:
 				dbitem.delete()
 			except Exception as e2:
-				logger.error(e2)
+				logger.warning(e2)
 		return False
 	
 	# clem 12/05/2017
@@ -184,6 +182,33 @@ class Group(CustomModelAbstract):
 	@property
 	def is_guest_group(self):
 		return self == self.__class__.objects.get_guest()
+
+	# clem 19/05/2017
+	@property
+	def team_dict(self):
+		team = dict()
+		for arr in self.user_list:
+			team[arr.id] = True
+		return team
+	
+	# clem 19/05/2017 from auxiliary.py # 105 @ https://github.com/Fclem/isbio2/commit
+	# /314cd63d8a5d7cd579e4c6a5dbfaeb0e721f3d73
+	def edit_team(self, member_list):
+		""" Edit Group data.
+
+			Arguments:
+			member_list -- a list of user to be part of this group
+		"""
+		try:
+			self.save()
+			self.team.clear() # clean up first
+			self.save()
+			self.team.add(*breeze.models.User.objects.filter(id__in=member_list))
+			self.save()
+			return True
+		except Exception as ee:
+			logger.error(str(ee))
+		return False
 
 
 class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
@@ -988,6 +1013,7 @@ def rscript_fn_spe(self, filename): # TODO check this
 # TODO add a ManyToManyField Institute field
 class Rscripts(FolderObj, CustomModelAbstract):
 	# objects = managers.ObjectsWithAuth() # The default manager.
+	objects = managers.RscritpManager()
 
 	BASE_FOLDER_NAME = settings.RSCRIPTS_FN
 
@@ -2182,6 +2208,10 @@ class Report(Runnable, AutoJSON):
 		super(Report, self).__init__(*args, **kwargs)
 		allowed_keys = Trans.translation.keys() + ['shared', 'title', 'project', 'rora_id']
 		self.__dict__.update((k, v) for k, v in kwargs.iteritems() if k in allowed_keys)
+		# shared swap for ModelForm hack
+		# TODO finish
+		# self.__org_shared = self.shared
+		# self.shared = self.__new_shared
 
 	##
 	# CONSTANTS
@@ -2526,6 +2556,48 @@ class Report(Runnable, AutoJSON):
 				
 			}
 		}
+
+	# clem 19/05/2017
+	@property
+	def shared_data_in_form_format(self):
+		""" On report generation form, shared and shared_g are grouped together in one field for user convenience.
+		Thus groups use a 'g' id-prefix, and users a 'u' id-prefix, witch prevents ModelForm from populating the shared
+		 data in the form on report re-does.
+		Thus this function will return a proper dict, that can be passed
+		 on to 'initial' parameter when calling ReportPropsFormRE.
+		
+		:rtype: dict
+		"""
+		shared = dict()
+		for group in self.shared.all():
+			shared['u%s' % group.id] = True
+		for user in self.shared_g.all():
+			shared['g%s' % user.id] = True
+		return shared
+	
+	@property
+	def __new_shared(self):
+		org_all = self.__org_shared.all
+		
+		def new_all():
+			for each in org_all():
+				yield 'u' + each.id
+			for each in self.shared_g.all():
+				yield 'g' + each.id
+		
+		new_shared = self.__org_shared
+		new_shared.all = new_all
+		return new_shared
+
+	# clem 23/05/2017 move from shell L365
+	@staticmethod
+	def get_user_and_groups(item_list):
+		group_list = list()
+		user_list = list()
+		
+		for each in item_list:
+			user_list.append(each[1:]) if each[0] == 'u' else group_list.append(each[1:])
+		return user_list, group_list
 
 	class Meta(Runnable.Meta): # TODO check if inheritance is required here
 		abstract = False
