@@ -59,6 +59,9 @@ and also notable custom functions as :
 from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
+from django.http import HttpRequest as DjangoHttpRequest
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.sessions.backends.base import SessionBase
 from breeze.b_exceptions import * # DO NOT DELETE : used in sub-modules
 from utilz import * # import all the non Breeze / non Django related utilities
 from decorators import *
@@ -267,3 +270,10 @@ def check_session(session_id):
 		user = AnonymousUser()
 	
 	return user.is_authenticated()
+
+
+# clem 23/05/2017
+class HttpRequest(DjangoHttpRequest):
+	""" Fake class to use as a prototype for better IDE code evaluation """
+	user = AnonymousUser()
+	session = SessionBase()
