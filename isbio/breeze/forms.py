@@ -119,6 +119,9 @@ class AbstractFormValidator(forms.Form):
 
 # clem 18/04/2016
 class ReportPropsFormMixin(object):
+	FIELD_SHARED = 'shared'
+	FIELD_TARGET = 'target'
+	FIELD_PROJECT = 'project'
 	request = None
 	_share_options = None
 	_share_options_ppl = None
@@ -128,7 +131,6 @@ class ReportPropsFormMixin(object):
 	
 	# clem 19/04/2016
 	def __init__(self, *args, **kwargs):
-		# if 'request' in kwargs:
 		self.request = self.request or kwargs.pop('request', None)
 		if self.request:
 			self.author = self.request.user
@@ -186,6 +188,7 @@ class ReportPropsFormMixin(object):
 		return breeze.models.ReportType.objects.get(type=self.request.rtype).all_as_form_list
 	
 	def _sup_init_(self, *_, **kwargs):
+		# FIXME obsolete
 		if not self.request and 'request' in kwargs:
 			self.request = kwargs.get("request")
 		if not hasattr(self, 'fields'):
@@ -194,26 +197,38 @@ class ReportPropsFormMixin(object):
 		rq = breeze.models.Project.objects.available(self.request.user)
 		
 		# FIXME : use manager instead
-		self.fields["project"] = forms.ModelChoiceField(
+		self.fields[self.FIELD_PROJECT] = forms.ModelChoiceField(
 			queryset=rq,
 			initial=rq[0] if len(rq) == 1 else None,
 			widget=forms.Select()
 		)
 		
-		self.fields["target"] = forms.ChoiceField(
+		self.fields[self.FIELD_TARGET] = forms.ChoiceField(
 			choices=self.target_list,
 			initial=self.target_list[0],
 			widget=forms.Select()
 		)
 		
 		# self.fields["Share"] = forms.MultipleChoiceField( # TODO find out why this has various spelling
-		self.fields["shared"] = forms.MultipleChoiceField(
+		self.fields[self.FIELD_SHARED] = forms.MultipleChoiceField(
 			required=False,
 			choices=self.share_options,
 			widget=forms.SelectMultiple(
 				attrs={'class': 'multiselect', }
 			)
 		)
+	
+	# clem 19/05/2017
+	def shared_init(self, **kwargs):
+		shared = dict()
+		if 'instance' in kwargs.keys(): # initial={'group_team': group_data.team_dict}
+			for group in kwargs['instance'].shared.all():
+				shared['g%s' % group.id] = True
+			for user in kwargs['instance'].shared_g.all():
+				shared['u%s' % user.id] = True
+			# self.fields["shared"].initial = shared
+		print shared
+		return shared
 	
 	# clem 12/05/2017
 	@property
@@ -289,12 +304,10 @@ class ReportPropsFormMixin(object):
 		return a_list
 
 
-# class GroupForm(AbstractFormValidator, ReportPropsFormMixin):
 class GroupForm(ReportPropsFormMixin, forms.Form):
 	name = forms.CharField(
 		max_length=50,
-		widget=forms.TextInput(attrs={'placeholder': ' Group Name ', }) #,
-		# validators=[validators.validate_slug]
+		widget=forms.TextInput(attrs={'placeholder': ' Group Name ', })
 	)
 
 	group_team = forms.ModelMultipleChoiceField(
@@ -306,8 +319,6 @@ class GroupForm(ReportPropsFormMixin, forms.Form):
 	)
 
 	def __init__(self, *args, **kwargs):
-		# self.author = kwargs.pop('author', None)
-		# self.request = kwargs.pop("request", None)
 		super(GroupForm, self).__init__(*args, **kwargs)
 		self.fields['group_team'].choices = self.users_list_of_tuples_gen()
 	
@@ -317,7 +328,7 @@ class GroupForm(ReportPropsFormMixin, forms.Form):
 			breeze.models.Group.objects.get(name=group_name, author=self.author)
 		except breeze.models.Group.DoesNotExist:
 			return group_name
-		self.add_error('name', "You already have a group with this name !")
+		self.add_error('name', "You already have a group with this name !") # TODO test
 		raise forms.ValidationError("You already have a group with this name !")
 	
 	# FIXME
@@ -435,7 +446,6 @@ class EditReportSharing(ReportPropsFormMixin, forms.ModelForm):
 	author_id = 0
 	
 	def __init__(self, *args, **kwargs):
-		# self.request = kwargs.pop("request", None)
 		super(EditReportSharing, self).__init__(*args, **kwargs)
 		instance = kwargs.get('instance', None)
 		self.author_id = instance.author.id if instance else self.request.user if self.request else 0
@@ -458,7 +468,6 @@ class EditReportSharing(ReportPropsFormMixin, forms.ModelForm):
 
 class EditGroupForm(ReportPropsFormMixin, forms.Form):
 	def __init__(self, *args, **kwargs):
-		# self.request = kwargs.pop("request", None)
 		super(EditGroupForm, self).__init__(*args, **kwargs)
 		self.fields['group_team'].choices = self.users_list_of_tuples_gen()
 	
@@ -471,26 +480,19 @@ class EditGroupForm(ReportPropsFormMixin, forms.Form):
 	)
 
 
+# TODO convert into class generator
 # clem 18/04/2016
-# class ReportPropsFormMixinWrapperOne(forms.Form, ReportPropsFormMixin):
 class ReportPropsFormMixinWrapperOne(ReportPropsFormMixin, forms.Form):
 	def __init__(self, *args, **kwargs):
-		# import copy
-		# self.kwargs_copy = copy.copy(kwargs)
-		# self.request = kwargs.pop("request", None)
 		super(ReportPropsFormMixinWrapperOne, self).__init__(*args, **kwargs)
-		# self._sup_init_(*args, **self.kwargs_copy)
 		self._sup_init_(*args, **kwargs)
+	
 
-
+# TODO convert into class generator
 # clem 18/04/2016
 class ReportPropsFormMixinWrapperTwo(ReportPropsFormMixin, forms.ModelForm):
 	def __init__(self, *args, **kwargs):
-		# import copy
-		# self.kwargs_copy = copy.copy(kwargs)
-		# self.request = kwargs.pop("request", None)
 		super(ReportPropsFormMixinWrapperTwo, self).__init__(*args, **kwargs)
-		# self._sup_init_(*args, **self.kwargs_copy)
 		self._sup_init_(*args, **kwargs)
 
 
@@ -501,6 +503,8 @@ class ReportPropsForm(ReportPropsFormMixinWrapperOne):
 
 class ReportPropsFormRE(ReportPropsFormMixinWrapperTwo):
 	def __init__(self, *args, **kwargs):
+		if 'instance' in kwargs:
+			kwargs['initial'] = {'shared': report.shared_data_in_form_format}
 		super(ReportPropsFormRE, self).__init__(*args, **kwargs)
 
 	class Meta:
