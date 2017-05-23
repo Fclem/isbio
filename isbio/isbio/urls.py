@@ -113,7 +113,7 @@ else:
 		url(r'^media/reports/(?P<rid>\d+)/(?P<file_name>.+)?$', breeze.views.report_file_wrap2, name='report_file_wrap2'),
 		url(r'^reports/delete/(?P<rid>\d+)(?P<redir>-[a-z]+)?$', breeze.views.delete_report, name='delete_report'),
 		url(r'^reports/edit_access/(?P<rid>\d+)$', breeze.views.edit_report_access, name='edit_report_access'),
-		url(r'^reports/overview/(?P<rtype>\w+)-(?P<iname>[^/]+)-(?P<iid>[^/-]+)$', breeze.views.report_overview,
+		url(r'^reports/new/(?P<type_id>\d+)-(?P<iname>[^/]+)$', breeze.views.report_overview,
 			name='report_overview'),
 		url(r'^reports/edit/(?P<jid>\d+)?$', breeze.views.edit_report, name='edit_report'),  # Re Run report
 		url(r'^reports/check/?$', breeze.views.check_reports, name='check_reports'),  # Re Run report

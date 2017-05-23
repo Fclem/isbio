@@ -59,7 +59,8 @@ and also notable custom functions as :
 from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
-from django.http import HttpRequest as DjangoHttpRequest
+# from django.http import HttpRequest as DjangoHttpRequest
+from django.core.handlers.wsgi import WSGIRequest
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.base import SessionBase
 from breeze.b_exceptions import * # DO NOT DELETE : used in sub-modules
@@ -250,11 +251,8 @@ logging.setLoggerClass(MyLogger)
 # get_logger = get_logger_bis
 
 from importlib import import_module
-# from django.utils.importlib import import_module
 from django.conf import settings
-from django.contrib.auth import get_user
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, load_backend
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, load_backend # , get_user
 
 
 def check_session(session_id):
@@ -273,7 +271,7 @@ def check_session(session_id):
 
 
 # clem 23/05/2017
-class HttpRequest(DjangoHttpRequest):
+class HttpRequest(WSGIRequest):
 	""" Fake class to use as a prototype for better IDE code evaluation """
 	user = AnonymousUser()
 	session = SessionBase()

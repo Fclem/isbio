@@ -120,6 +120,7 @@ class AbstractFormValidator(forms.Form):
 # clem 18/04/2016
 class ReportPropsFormMixin(object):
 	FIELD_SHARED = 'shared'
+	FIELD_SHARED_GROUPS = 'shared_g'
 	FIELD_TARGET = 'target'
 	FIELD_PROJECT = 'project'
 	request = None
@@ -217,18 +218,6 @@ class ReportPropsFormMixin(object):
 				attrs={'class': 'multiselect', }
 			)
 		)
-	
-	# clem 19/05/2017
-	def shared_init(self, **kwargs):
-		shared = dict()
-		if 'instance' in kwargs.keys(): # initial={'group_team': group_data.team_dict}
-			for group in kwargs['instance'].shared.all():
-				shared['g%s' % group.id] = True
-			for user in kwargs['instance'].shared_g.all():
-				shared['u%s' % user.id] = True
-			# self.fields["shared"].initial = shared
-		print shared
-		return shared
 	
 	# clem 12/05/2017
 	@property
@@ -449,23 +438,23 @@ class EditReportSharing(ReportPropsFormMixin, forms.ModelForm):
 		super(EditReportSharing, self).__init__(*args, **kwargs)
 		instance = kwargs.get('instance', None)
 		self.author_id = instance.author.id if instance else self.request.user if self.request else 0
-		self.fields['shared'].label = 'Individuals: '
-		self.fields['shared'].choices = self.user_share_options_grouped_guests
-		self.fields['shared_g'].label = 'Groups: '
-		self.fields['shared_g'].choices = self.group_share_options_grouped_ownership
+		self.fields[self.FIELD_SHARED].label = 'Individuals: '
+		self.fields[self.FIELD_SHARED].choices = self.user_share_options_grouped_guests
+		self.fields[self.FIELD_SHARED_GROUPS].label = 'Groups: '
+		self.fields[self.FIELD_SHARED_GROUPS].choices = self.group_share_options_grouped_ownership
+		
+		self.widgets = {
+			self.FIELD_SHARED:   forms.SelectMultiple(
+				attrs={'class': 'multiselect', }, ),
+			self.FIELD_SHARED_GROUPS: forms.SelectMultiple(
+				attrs={'class': 'multiselect', }, )
+		}
 	
 	class Meta:
 		model = breeze.models.Report
 		fields = ('shared', 'shared_g')
 	
-	widgets = {
-		'shared'  : forms.SelectMultiple(
-			attrs={ 'class': 'multiselect', }, ),
-		'shared_g': forms.SelectMultiple(
-			attrs={ 'class': 'multiselect', }, )
-	}
-
-
+	
 class EditGroupForm(ReportPropsFormMixin, forms.Form):
 	def __init__(self, *args, **kwargs):
 		super(EditGroupForm, self).__init__(*args, **kwargs)
@@ -503,8 +492,8 @@ class ReportPropsForm(ReportPropsFormMixinWrapperOne):
 
 class ReportPropsFormRE(ReportPropsFormMixinWrapperTwo):
 	def __init__(self, *args, **kwargs):
-		if 'instance' in kwargs:
-			kwargs['initial'] = {'shared': report.shared_data_in_form_format}
+		if 'instance' in kwargs: # initialize selection on the merged sharign field
+			kwargs['initial'] = {self.FIELD_SHARED: kwargs['instance'].shared_data_in_form_format}
 		super(ReportPropsFormRE, self).__init__(*args, **kwargs)
 
 	class Meta:

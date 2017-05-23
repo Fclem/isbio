@@ -344,6 +344,7 @@ def run_system_test():
 # clem 10/09/2015
 def gen_test_report(the_user, gen_number=10, job_duration=30, time_break=1):
 	from breeze.views import report_overview
+	from breeze import models
 	import time
 
 	posted = dict()
@@ -371,7 +372,8 @@ def gen_test_report(the_user, gen_number=10, job_duration=30, time_break=1):
 	for i in range(1, gen_number + 1):
 		name = 'SelfTest%s' % i
 		print name
-		report_overview(rq, 'TestPipe', name, '00000')
+		test_type = models.ReportType.objects.get(type='TestPipe') # TODO test
+		report_overview(rq, test_type.id, name, '00000')
 		time.sleep(time_break)
 
 	print 'done.'

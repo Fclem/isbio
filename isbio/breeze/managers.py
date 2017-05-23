@@ -15,6 +15,7 @@ org_Q = django.db.models.query_utils.Q
 
 
 # clem 20/06/2016
+# TODO replace with recursive QuerySet : https://www.dabapps.com/blog/higher-level-query-api-django-orm/
 class CustomManager(Manager):
 	context_user = None
 	context_obj = None
@@ -227,6 +228,7 @@ class Q(django.db.models.query_utils.Q):
 		super(Q, self).__init__(*args, **kwargs)
 
 
+# TODO replace with recursive QuerySet : https://www.dabapps.com/blog/higher-level-query-api-django-orm/
 class QuerySet(original_QS):
 	def __init__(self, *args, **kwargs):
 		super(QuerySet, self).__init__(*args, **kwargs)
@@ -481,6 +483,7 @@ class ObjectsWithAuth(CustomManager):
 				self.set_read_only_or_raise()
 				return self.context_obj
 			raise self._denier
+		assert isinstance(self.context_obj, (self.model, self.model.__class__)), 'type mismatch'
 		return self.context_obj
 	
 	# clem 11/05/2017
@@ -905,3 +908,22 @@ class GroupManager(ObjectsWithAuth):
 	@property
 	def guest_group_id(self):
 		return self.get_guest().id
+
+
+# clem 23/05/2017
+class RscritpManager(ObjectsWithAuth):
+	def get_tags_and_scripts(self):
+		""" i.e. Non Drafts """
+		return self.filter(draft="0").order_by('order')
+	
+	def get_tags(self):
+		return self.get_tags_and_scripts().filter(istag="1").order_by('order')
+		
+	def get_drafts(self):
+		return self.filter(draft="1").order_by('order')
+	
+	def get_scripts(self):
+		return self.get_tags_and_scripts().filter(istag="0").order_by('order')
+	
+	def get_tags_for_report_type(self, report_type):
+		return self.get_tags().filter(report_type=report_type).order_by('order')
