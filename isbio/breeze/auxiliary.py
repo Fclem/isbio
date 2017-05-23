@@ -1,16 +1,17 @@
 import breeze.models
 import re
-import copy
-import urllib
+# import copy
+# import urllib
 import urllib2
 import glob
 import mimetypes
+from breeze.managers import Q
 from django import http
 from django.template.defaultfilters import slugify
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse # , HttpRequest # ,Http404
 from django.template import loader
-from django.template.context import RequestContext
 from django.core.handlers.wsgi import WSGIRequest
+# from django.template.context import RequestContext
 from utils import *
 
 DASHED_LINE = '-' * 111
@@ -19,6 +20,7 @@ DASHED_LINE = '-' * 111
 # system integrity checks moved to system_check.py on 31/08/2015
 
 
+# FIXME obsolete
 def update_server_routine():
 	if False:
 		from sge_interface import Qstat, SGEError
@@ -83,7 +85,7 @@ def save_new_project(form, author):
 	return True
 
 
-# moved save_new_group 12/05/2017 to breeze.models.Groups.new
+# MOVED     save_new_group      12/05/2017, to breeze.models.Groups.new
 
 
 def edit_project(form, project):
@@ -101,38 +103,9 @@ def edit_project(form, project):
 	return True
 
 
-# FIXME
-def edit_group(form, group, post):
-	""" Edit Group data.
-
-	Arguments:
-	form        -- instance of EditGroupForm
-	group       -- db instance of existing Group
-	"""
-	# clean up first
-	group.team.clear()
-	group.save()
-
-	for chel in post.getlist('group_team'):
-		group.team.add(breeze.models.User.objects.get(id=chel))
-
-	group.save()
-
-	return True
-
-
-def delete_project(project):
-	""" Remove a project from a DB model.
-
-	Arguments:
-	project     -- db instance of Project
-	"""
-	project.delete()
-
-	return True
-
-
-# deleted delete_group(group) 12/05/2017, using breeze.Group.delete() instead
+# MOVED     edit_group          19/05/2017, to breeze.models.Groups.edit_team
+# DELETED   delete_project(...) 19/05/2017, using breeze.Project.delete() instead
+# DELETED   delete_group(group) 12/05/2017, using breeze.Group.delete() instead
 
 
 def open_folder_permissions(path, permit=0770):
@@ -144,13 +117,13 @@ def open_folder_permissions(path, permit=0770):
 				( default 0770 ) - '?rwxrwx---'
 	"""
 
-	for dirname, dirnames, filenames in os.walk(path):
-		for subdirname in dirnames:
-			full_dir_path = os.path.join(dirname, subdirname)
+	for dir_name, dir_names, file_names in os.walk(path):
+		for subdir_name in dir_names:
+			full_dir_path = os.path.join(dir_name, subdir_name)
 			os.chmod(full_dir_path, permit)
 
-		for filename in filenames:
-			full_file_path = os.path.join(dirname, filename)
+		for filename in file_names:
+			full_file_path = os.path.join(dir_name, filename)
 			os.chmod(full_file_path, permit)
 
 	os.chmod(path, permit)
@@ -177,10 +150,17 @@ def normalize_query(query_string,
 
 
 def get_query(query_string, search_fields, exact=True):
-	""" Returns a query, that is a combination of Q objects. That combination
-		aims to search keywords within a model by testing the given search fields.
+	""" Returns a query, that is a combination of Q objects.That combination aims to search keywords within a model by testing the given search fields.
+	
+	:param query_string:
+	:type query_string: basestring
+	:param search_fields:
+	:type search_fields: list
+	:param exact:
+	:type exact: bool
+	:return:
+	:rtype: Q
 	"""
-	from breeze.managers import Q
 	query = None  # Query to search for every search term
 	terms = normalize_query(query_string) if query_string else []
 	for term in terms:
@@ -290,11 +270,13 @@ def merge_job_lst(item1, item2):
 
 # 02/06/2015 Clem # FIXME merge into a class with rest of related code
 def view_range(page_index, entries_nb, total):
-	""" Calculate and return a dict with the number of the first and last elements in the current view of the paginator
+	""" Calculate and return a dict with the number of the first and last elements in the
+	
+	current view of the paginator
 
 	:param page_index: number of the current page in the paginator (1 to x)
 	:type page_index: int
-	:param entries_nb: number of elements to be disaplayed in the view
+	:param entries_nb: number of elements to be displayed in the view
 	:type entries_nb: int
 	:param total: total number of elements
 	:type total: int
@@ -309,7 +291,7 @@ def make_http_query(request):
 	""" serialize GET or POST data from a query into a dict string
 
 	:param request: Django Http request object
-	:type request: http.HttpRequest
+	:type request: HttpRequest
 	:return: QueryString
 	:rtype: str
 	"""
@@ -352,7 +334,7 @@ def get_argument(req, arg_name):
 # 10/03/2015 Clem updated 23/06/2016 # FIXME merge into a class with rest of related code
 def report_common(request, v_max=15):
 	"""
-	:type request: django.core.handlers.wsgi.WSGIRequest
+	:type request: HttpRequest
 	:type v_max: int
 	:return: page_index, entries_nb
 		page_index: int
@@ -387,7 +369,7 @@ def fail_with404(request, error_msg=None, log_message=''):
 	Raise no exception so call it with return
 
 	:param request: Django request object
-	:type request: http.HttpRequest
+	:type request: HttpRequest
 	:param error_msg: The message to display on the 404 page, defaults to ''
 	:type error_msg: str | list
 	:param log_message: The message to write in the logs, defaults to error_msg
@@ -633,13 +615,15 @@ def image_embedding(path_to_file, cached_path=None):
 def legacy_request(request):
 	""" Adds back the REQUEST property as dict(self.GET + self.POST) that seems to be missing
 	
-	:type request: WSGIRequest
-	:rtype: WSGIRequest
+	:type request: HttpRequest
+	:rtype: HttpRequest
 	"""
 	
-	assert isinstance(request, WSGIRequest)
+	assert isinstance(request, (WSGIRequest, HttpRequest))
+	# assert isinstance(request, HttpRequest)
 	if not hasattr(request, 'REQUEST'):
-		request.REQUEST = copy.copy(request.GET)
+		# delattr(request, 'REQUEST')
+		setattr(request, 'REQUEST', copy.copy(request.GET))
 		request.REQUEST.update(request.POST)
 	return request
 
@@ -653,7 +637,7 @@ def report_filtering(request, _all):
 		request.REQUEST.get('filt_author', '') + request.REQUEST.get('filt_project', '') + \
 		request.REQUEST.get('access_filter1', '')
 	
-	entry_query = None
+	entry_query = Q()
 	page_index, entries_nb = report_common(request)
 	owned_filter = False
 	
@@ -667,13 +651,30 @@ def report_filtering(request, _all):
 	found_entries = Report.objects.f.get_done(False, False).order_by(sorting)
 	
 	if search.strip() != '' and not request.REQUEST.get('reset'):
-		def query_concat(request, entry_query, rq_name, cols, user_name=False, exact=True):
+		def query_concat(request2, entry_query2, rq_name, cols, user_name=False, exact=True):
+			""" Auto concatenation of filtering query
+			
+			:param request2:
+			:type request2: HttpRequest
+			:param entry_query2:
+			:type entry_query2: Q
+			:param rq_name:
+			:type rq_name: basestring
+			:param cols:
+			:type cols: list
+			:param user_name:
+			:type user_name: bool
+			:param exact:
+			:type exact: bool
+			:return:
+			:rtype: Q
+			"""
 			# like_a = '%' if like else ''
-			query_type = (request.REQUEST.get(rq_name, '') if not user_name else request.user.id)
+			query_type = (request2.REQUEST.get(rq_name, '') if not user_name else request2.user.id)
 			tmp_query = get_query(query_type, cols, exact)
 			if not tmp_query:
-				return entry_query
-			return (entry_query & tmp_query) if entry_query else tmp_query
+				return entry_query2
+			return (entry_query2 & tmp_query) if entry_query2 else tmp_query
 		
 		# TODO make a sub function to reduce code duplication
 		# filter by report name
@@ -693,7 +694,6 @@ def report_filtering(request, _all):
 			elif request.REQUEST['access_filter1'] == 'accessible':
 				entry_query = query_concat(request, entry_query, 'access_filter1', ['author_id', 'shared'], True)
 			elif request.REQUEST['access_filter1'] == 'shared':
-				# entry_query = query_concat(request, entry_query, 'access_filter1', ['shared'], True)
 				found_entries = Report.objects.get_shared_with_user_all(request.user, found_entries)
 
 	# if some filters apply, filter the original query

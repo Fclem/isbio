@@ -22,10 +22,9 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User  # , Group # replaced with breeze.models.User overload
 from django.core.files import File
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.core.handlers.wsgi import WSGIRequest
 from django.core.urlresolvers import reverse
 from django.db.models.query_utils import Q
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponsePermanentRedirect
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponsePermanentRedirect #, HttpRequest
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.template import loader
@@ -35,6 +34,7 @@ from django.views.decorators.csrf import csrf_exempt
 from mimetypes import MimeTypes
 from breeze.legacy import get_report_path, get_report_path_test
 from breeze.b_exceptions import *
+from breeze.utils import HttpRequest
 import hashlib
 import sys
 
@@ -991,57 +991,54 @@ def db_policy(request):
 
 @csrf_exempt
 @allow_guest
-def report_overview(request, rtype, iname=None, iid=None, mod=None):
+def report_overview(request, type_id, iname=None, iid=None, mod=None):
 	from django.http import HttpResponseServerError
-	tags_data_list = list()
-	files = None
 	title = None
 	report = None
-
+	
 	if mod == 'reload':
 		try:
 			report = Report.objects.secure_get(id=iid, user=request.user)
+			rtype = str(report.type)
+			iname = report.get_repeat_name()
+			iid = report.rora_id
+			data = pickle.loads(report.conf_params) if report.conf_params is not None and len(
+				report.conf_params) > 0 else None
+			files = json.loads(report.conf_files) if report.conf_files is not None and len(
+				report.conf_files) > 0 else None
+			title = 'ReRun report ' + report.name
+			report_type = report.type
 		except ObjectDoesNotExist:
 			return aux.fail_with404(request, 'There is no report with id ' + iid + ' in database')
-		rtype = str(report.type)
-		iname = report.get_repeat_name()
-		iid = report.rora_id
-		try:
-			# filter tags according to report type (here we pick non-draft tags):
-			# TODO : use a manager
-			tags = Rscripts.objects.filter(draft="0").filter(istag="1").filter(
-				report_type=ReportType.objects.get(id=report.type.id)).order_by('order')
-		except ObjectDoesNotExist:
-			return aux.fail_with404(request, 'There is ReportType with id ' + str(report.type_id) + ' in database')
-		data = pickle.loads(report.conf_params) if report.conf_params is not None and len(report.conf_params) > 0 else None
-		files = json.loads(report.conf_files) if report.conf_files is not None and len(report.conf_files) > 0 else None
-		title = 'ReRun report ' + report.name
 	else:
-		try:
-			# filter tags according to report type (here we pick non-draft tags):
-			tags = Rscripts.objects.filter(draft="0").filter(istag="1").filter(
-				report_type=ReportType.objects.get(type=rtype)).order_by('order')
-		except ObjectDoesNotExist:
-			return aux.fail_with404(request, 'There is ReportType with id ' + str(rtype) + ' in database')
 		data = request.POST
 		files = request.FILES if request.FILES else None
-
+		try:
+			report_type = ReportType.objects.get(pk=type_id)
+		except ObjectDoesNotExist:
+			return aux.fail_with404(request, 'Unable to find the matching ReportType.')
+	
+	try:
+		# filter tags according to report type (here we pick non-draft tags):
+		tags = Rscripts.objects.get_tags_for_report_type(report_type)
+	except ObjectDoesNotExist:
+		return aux.fail_with404(request, 'Unable to find tags related to this ReportType.')
+		
 	overview = dict()
-	overview['report_type'] = rtype
+	overview['report_type'] = report_type.type
 	overview['instance_name'] = iname
-	request.rtype = rtype
+	request.rtype = report_type.type
 	overview['instance_id'] = iid
-	overview['details'] = rshell.get_report_overview(rtype, iname, iid)
-	manual = str(ReportType.objects.get(type=rtype).manual) or None
+	overview['details'] = rshell.get_report_overview(report_type.type, iname, iid)
+	# manual = str(ReportType.objects.get(type=rtype).manual) or None
+	manual = str(ReportType.objects.get(type=report_type).manual) or None
 	overview['manual'] = None
 	if manual is not None:
 		overview['manual'] = settings.MEDIA_URL + manual
 
 	if request.method == 'POST':
-		# pprint.pprint(request.POST)
 		# Validates input info and creates (submits) a report
 		property_form = breezeForms.ReportPropsForm(request.POST, request=request)
-		# property_form = breezeForms.ReportPropsForm(request=request)
 		try:
 			tags_data_list = breezeForms.validate_report_sections(tags, request)
 		except RRuntimeError:
@@ -1063,7 +1060,6 @@ def report_overview(request, rtype, iname=None, iid=None, mod=None):
 		# Renders report overview and available tags
 		if mod == 'reload' and report:
 			property_form = breezeForms.ReportPropsFormRE(instance=report, request=request)
-			# loc = str(settings.MEDIA_ROOT) + report._home_folder_rel
 			loc = report.home_folder_full_path
 			try:
 				tags_data_list = breezeForms.create_report_sections(tags, request, data, files, path=loc)
@@ -1111,7 +1107,7 @@ def showdetails(request, sid=None):
 	}))
 
 
-@allow_guest
+@allow_guest # FIXME TOTALY oboslete
 def search(request, what=None):
 	report_type_lst = ReportType.objects.filter(search=True)
 	ds = DataSet.objects.all()
@@ -1143,7 +1139,7 @@ def search(request, what=None):
 				# if not searchable - redirects directly to overview
 				if len(query_val) == 0:
 					query_val = "Noname"
-				res = '/reports/overview/%s-%s-00000' % (report_type, query_val) # FIXME hardcoded url
+				res = reverse(report_overview, kwargs={'type_id': rtype.id, 'iname': query_val})
 				return HttpResponseRedirect(res)
 
 		# search for DATASETS (left bar)
@@ -1667,13 +1663,10 @@ def edit_report_access(request, rid):
 	}))
 
 
-@login_required(login_url='/')
+@login_required(login_url='/') # TODO test
 def delete_project(request, pid):
-	project = Project.objects.get(id=pid)
-	# Enforce access rights
-	if project.author != request.user:
-		raise PermissionDenied(request=request)
-	aux.delete_project(project)
+	project = Project.objects.owner_get(request, pid) # Enforce access rights
+	project.delete()
 
 	return HttpResponseRedirect('/home/projects')  # FIXME hardcoded url
 
@@ -1695,7 +1688,7 @@ def read_descr(request, sid=None):
 # Wrapper for report edition/ReRunning
 @allow_guest
 def edit_report(request, jid=None, mod=None):
-	return report_overview(request, rtype=None, iid=jid, mod='reload')
+	return report_overview(request, type_id=None, iid=jid, mod='reload')
 
 
 @login_required(login_url='/')
@@ -2385,7 +2378,7 @@ def report_file_server_sub(request, rid, category, report_inst, fname=None):
 		SECURITY (ACL/ARM) has to be dealt with by the caller
 		
 		:param request: request object
-		:type request: WSGIRequest
+		:type request: HttpRequest
 		:param rid: a Report id
 		:type rid: int
 		:param category: the category
@@ -2644,15 +2637,14 @@ def new_group_dialog(request):
 		This view provides a dialog to create a new Group in DB.
 	"""
 	__self__ = this_function_name()  # instance to self
-	group_form = breezeForms.GroupForm(request.POST or None, author=request.user)
+	group_form = breezeForms.GroupForm(request.POST or None, request=request)
 
 	if group_form.is_valid():
-		# aux.save_new_group(group_form, request.user, request.POST)
-		if Group.new(group_form, request.user, request.POST):
+		if Group.new(group_form.cleaned_data.get('name', None), request.user, request.POST.getlist('group_team')):
 			return HttpResponseRedirect(reverse(home, kwargs={ 'state': 'groups' }))
+		logger.error("Operation has failed with an unspecified error")
+		# FIXME doesn't work
 		group_form.add_error(None, "Operation has failed with an unspecified error")
-	else:
-		print group_form
 
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': group_form,
@@ -2707,14 +2699,11 @@ def edit_group_dialog(request, gid):
 	if request.method == 'POST':
 		group_form = breezeForms.EditGroupForm(request.POST, request=request)
 		if group_form.is_valid():
-			aux.edit_group(group_form, group_data, request.POST)
-			return HttpResponseRedirect(reverse(home, kwargs={'state': 'groups'}))
+			if group_data.edit_team(request.POST.getlist('group_team')):
+				return HttpResponseRedirect(reverse(home, kwargs={'state': 'groups'}))
+			logger.error('Updating group members failed')
 	else:
-		team = {}
-		for arr in group_data.team.all():
-			team[arr.id] = True
-
-		group_form = breezeForms.EditGroupForm(initial={'group_team': team}, request=request)
+		group_form = breezeForms.EditGroupForm(initial={'group_team': group_data.team_dict}, request=request)
 
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': group_form,
