@@ -1026,6 +1026,7 @@ def report_overview(request, type_id, iname=None, iid=None, mod=None):
 		
 	overview = dict()
 	overview['report_type'] = report_type.type
+	overview['report_type_id'] = report_type.type.id
 	overview['instance_name'] = iname
 	request.rtype = report_type.type
 	overview['instance_id'] = iid
