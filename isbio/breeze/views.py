@@ -1026,9 +1026,10 @@ def report_overview(request, type_id, iname=None, iid=None, mod=None):
 		
 	overview = dict()
 	overview['report_type'] = report_type.type
+	overview['report_type_id'] = report_type.id
 	overview['instance_name'] = iname
 	request.rtype = report_type.type
-	overview['instance_id'] = iid
+	overview['instance_id'] = iid or 0
 	overview['details'] = rshell.get_report_overview(report_type.type, iname, iid)
 	# manual = str(ReportType.objects.get(type=rtype).manual) or None
 	manual = str(ReportType.objects.get(type=report_type).manual) or None
