@@ -28,6 +28,7 @@
         <li><a href="#overview"><strong> Overview </strong></a></li>
         <li><a href="#BreezeToolList"><strong> Breeze sources </strong></a></li>
         <li><a href="#techs"><strong> Technologies </strong></a></li>
+        <li><a href="#modules"><strong> Python and Django modules </strong></a></li>
       </ul>
     </div>
   </div>
@@ -67,7 +68,7 @@
 			
 			  <li><a href="" target="_blank"></a></li>
 		  </ul>
-	  </section>
+    </section>
     <section id="techs">
 	    <div class="page-header"><h3>Technologies used in Breeze :</h3></div>
 	    <ul> System, and infrastructure
@@ -127,8 +128,10 @@
 			    <a href="https://jqueryui.com/">jQuery-UI</a>
 		    </li>
 	    </ul>
+    </section>
+    <section id="modules">
 	    <div class="page-header"><h3>Python and Django modules :</h3></div>
-	    <ul> TODO
+	    <ul>
 		    {% for package in packages %}
 			    <li><a href="{{ package.url }}" target="_blank">{{ package.name }}</a>
 				    {% if package.version != '' %}v{{ package.version }}{% endif %}
