@@ -91,3 +91,7 @@
 		.navbar-inverse .nav > li.disabled > a:focus{
 			color: #999999; !important;
 		}
+
+		.page-header{
+			padding-top: 40px;
+		}
