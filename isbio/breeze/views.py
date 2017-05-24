@@ -1282,7 +1282,11 @@ def manage_pipes(request):
 def dochelp(request):
 	user_profile = UserProfile.get(request)
 	db_access = user_profile.db_agreement
-	return render_to_response('help.html', RequestContext(request, {'help_status': 'active', 'db_access': db_access}))
+	return render_to_response('help.html', RequestContext(request, {
+		'help_status': 'active',
+		'db_access': db_access,
+		'packages': utils.PyPackageLister.get_packages_list()
+	}))
 
 
 @login_required(login_url='/')
@@ -3161,3 +3165,9 @@ def custom_list(request):
 @login_required(login_url='/')
 def news_page(request):
 	return render_to_response('news.html', RequestContext(request))
+
+
+# clem 24/05/2017
+@login_required
+def tools(request):
+	return render_to_response('tools.html', RequestContext(request, {'tools_status': 'active'}))

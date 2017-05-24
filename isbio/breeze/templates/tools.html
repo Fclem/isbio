@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load bootstrap_toolkit %}
+{% block title %}Tools and usefull ressources{% endblock %}
+{% block content %}
+<div class="row-fluid">
+	<!-- site map bar -->
+	<div class="row-fluid">
+		<div class="span10 offset1">
+			<ul class="breadcrumb pull-left" style="background-color: transparent;">
+				<li><a href="/home/">Breeze</a> <span class="divider">/</span></li>
+				<li class="active"> Tools</li>
+			</ul>
+		</div>
+	</div>
+	<!-- page content -->
+	<div class="span10 offset1">
+		<!-- FIMM list -->
+		<section id="FimmToolList">
+			<div class="page-header"> <h3>FIMM's made</h3> </div>
+			<ul>
+				<li><a href="https://synergyfinder.fimm.fi/" target="_blank">Synergy Finder</a> :<br>
+					An interactive tool for analyzing drug combination dose-response data.
+				</li>
+				<li><a href="https://tbd.fimm.fi/" target="_blank">The DB</a></li>
+				<li><a href="https://drugtargetcommons.fimm.fi/" target="_blank">Drug Target Common</a> :<br>
+					Drug Target Commons (DTC) is a crowd-sourcing platform to improve the consensus and use of
+						drug-target interactions.<br>
+					The end users can search, view and download bioactivity data using various compound, target and
+						publications identifiers.<br>
+					Expert users may also submit suggestions to edit and upload new bioactivity data, as well as
+						participate in the assay annotation and data curation processes.
+				</li>
+				<li><a href="https://cspade.fimm.fi/" target="_blank">C-SPADE</a> :<br>
+					C-SPADE web-application serves as an interactive and innovative visualization tool for drug
+						screening data. <br>
+					It reterives compounds structural information and clusters them based on their structural
+						similarties, which is later visualized as a dendrogram of compounds augmented with their
+						bioactivity values and other compound annotations. <br>
+					Additionally, it allows a real-time comparison of investigational compounds against a screening
+						panel for drug development or repurposing applications. <br>
+					C-SPADE deals with various types of drug screening assays (biochemical, cell-based, cell-free). <br>
+					Tailored to be accessible to researchers with little to no chemoinformatics skills, it requires only
+						the raw drug screening data as input and automatically calculates the structural information
+						required for compound clustering, thereby significantly reducing the manual time required for
+						such analysis.
+				</li>
+			</ul>
+		</section>
+		<!-- External list -->
+		<section id="OthersToolList">
+			<div class="page-header"> <h3>External</h3> </div>
+			<ul>
+				<li><a href="http://biit.cs.ut.ee/clustvis/" target="_blank">ClustVist</a> : <br>
+					A web tool for visualizing clustering of multivariate data
+				</li>
+			</ul>
+		</section>
+		
+		
+	</div>
+</div>
+{% endblock %}

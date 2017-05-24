@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Welcome to Cloud Breeze</title>
-
+	{% block extra_head %}{% endblock %}
 	<!-- AUTH0 include & init -->
 	{% include "hello_auth/auth0.html" %}
 	<!-- general style -->
@@ -89,6 +89,13 @@
 			padding: 2px 16px;
 			background-color: #5cb85c;
 			color: white;
+		}
+	</style>
+	<!-- Footer style -->
+	<link href="/static/css/footer.css" rel="stylesheet">
+	<style>
+		footer {
+			border-top: 0px; !important;
 		}
 	</style>
 </head>
@@ -179,5 +186,6 @@
 			</script>
 		{% endif %}
 	{% endif %}
+	{% include "footer.html" %}
 </body>
 </html>

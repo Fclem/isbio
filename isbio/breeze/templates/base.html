@@ -7,22 +7,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="">
 	<meta name="author" content="">
-	<!--
-
-		<link rel="shortcut icon" href="/static/img/logo.ico">
-		-->
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
-
-	<link href="/static/css/bootstrap.css" rel="stylesheet">
-	<link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
-	<link href="/static/css/jquery-ui-1.9.2.custom.css" rel="stylesheet">
-
-
-	<!-- <link href="/static/third-party/jQuery-UI-Date-Range-Picker/css/ui.daterangepicker.css" rel="stylesheet"> -->
-	<link href="/static/third-party/jQuery-UI-FileInput/css/enhanced.css" rel="stylesheet">
-	<!-- <link href="/static/third-party/wijmo/jquery.wijmo-open.1.5.0.css" rel="stylesheet"> -->
-
-	<script>
+	
+	<!-- Rollbar -->
+	<script type="text/javascript">
 		var _rollbarConfig = {
 			accessToken: "5a228b54d0074cdda7951cd590d4fd74",
 			captureUncaught: true,
@@ -32,28 +20,28 @@
 		};
 	</script>
 	<script src="/static/js/rollbar.js"></script>
-
+	<!-- jQuery -->
 	<script src="/static/js/jquery.js"></script>
 	<script src="/static/js/jquery-1.8.3.min.js"></script>
+	
+	<!-- Bootstrap -->
 	<script src="/static/js/bootstrap.min.js"></script>
 	<script src="/static/js/bootbox.min.js"></script>
-
+	<link href="/static/css/bootstrap.css" rel="stylesheet">
+	<link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+	
+	<!-- jQuery ui -->
 	<script src="/static/js/jquery-ui-1.9.2.custom.min.js"></script>
+	<link href="/static/css/jquery-ui-1.9.2.custom.css" rel="stylesheet">
+	
+	<!-- jQuery modules -->
 	<script src="/static/js/jquery.ajaxfileupload.js"></script>
 	<script src="/static/js/jquery.MultiFile.js"></script>
 
-	<!-- FileInput -->
+	<!-- jQuery FileInput -->
 	<script src="/static/third-party/jQuery-UI-FileInput/js/enhance.min.js" type="text/javascript"></script>
 	<script src="/static/third-party/jQuery-UI-FileInput/js/fileinput.jquery.js" type="text/javascript"></script>
-
-	<!--daterangepicker-->
-	<!-- <script type="text/javascript" src="/static/third-party/wijmo/jquery.bgiframe-2.1.3-pre.js"></script> -->
-	<!-- <script type="text/javascript" src="/static/third-party/wijmo/jquery.wijmo-open.1.5.0.min.js"></script> -->
-	<!-- <script type="text/javascript" src="/static/third-party/jQuery-UI-Date-Range-Picker/js/daterangepicker.jQuery.js"></script> -->
-	<!-- <script type="text/javascript" src="/static/third-party/jQuery-UI-Date-Range-Picker/js/date.js"></script> -->
-
-	<!-- HighCharts -->
-	<!-- <script type="text/javascript" src="/static/third-party/highcharts/js/highcharts.js"></script> -->
+	<link href="/static/third-party/jQuery-UI-FileInput/css/enhanced.css" rel="stylesheet">
 
 	<!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
 	<!--[if lt IE 9]>
@@ -68,130 +56,29 @@
     {% bootstrap_javascript_tag "affix" %}
     {% bootstrap_javascript_tag "popover" %} -->
 
-	<style type="text/css">
-		/* Override some defaults */
-		html, body {
-			background: url('/static/wall.png');
-			height: 100%;
-			background-repeat: repeat;
-			margin:0;
-			padding:0;
-		}
-		body {
-			overflow-y: scroll; /* prevents stretching effect of centered layout when content dynamically overflow-y */
-		}
-		/* Customized */
-		#popup_message_container{
-			position: fixed;
-			top: 66px;
-			width: 100%;
-			z-index:102;
-		}
-		#error_msg{
-			width: 400px;
-			z-index:103;
-			margin-left:auto;
-			margin-right:auto;
-			opacity: 0.85;
-			filter: alpha(opacity=85); /* For IE8 and earlier */
-		}
-		/* Managing the footnote to always be at the bottom even if page content is not as tall as the viewport
-						cf. http://www.cssreset.com/how-to-keep-footer-at-bottom-of-page-with-css/
-						*/
-		#wrapper {
-			min-height:100%;
-			position:relative;
-		}
-		#content {
-			/* padding:10px; */
-			padding-top:  50px;
-			padding-bottom:80px;   /* Height of the footer element */
-		}
-		#footer {
-			width:100%;
-			height:80px;
-			position:absolute;
-			bottom:0;
-			left:0;
-		}
-		input[type="text"]{
-			color:#2E2E2E !important;
-		}
-		.modal-body {
-			overflow-x: hidden;
-		}
-
-		#Send .modal-body, #Edit .modal-body, .has_dropdown .modal-body{
-			overflow-x: visible !important;
-			overflow-y: visible !important;
-		}
-		.multiselect-container{
-			overflow-x: hidden;
-			position: fixed;
-			top: inherit;
-			left: inherit;
-		}
-		input.form-control.multiselect-search{
-			width:95%;
-			/* margin-right: 14px; */
-		}
-		.modal{
-			background: url('/static/nail.png');
-		}
-		#form_modal_apply{
-			margin-bottom: 0px;
-		}
-
-		.open > .dropdown-menu {
-			display: block;
-			position: absolute;
-		}
-
-		.table.table-condensed tr{
-			overflow-y: visible;
-			height: auto;
-		}
-
-		.table.table-condensed tr td{
-			overflow-y: visible ! important;
-		}
-
-		.over {
-			overflow: visible ! important;
-		}
-
-		th[onclick] {
-			cursor: pointer;
-		}
-		
-		.navbar-inverse .nav > li.disabled > a:hover,
-		.navbar-inverse .nav > li.disabled > a:focus{
-			color: #999999; !important;
-		}
-	</style>
+	<link href="/static/css/breeze-base.css" rel="stylesheet">
+	<link href="/static/css/footer.css" rel="stylesheet">
 	<!--[if lt IE 7]>
     <style type="text/css">
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
     </style>
     <![endif]-->
-	
 	<!-- AUTH0 include & init -->
 	{% include "hello_auth/auth0.html" %}
 	<script type="text/javascript">
 		function logout_login() {
 			$.get('/logout/login', function () {
-				//lock.show();
-				// showLock();
 				location.href = '/login_page?show_login';
 			});
 			
 			return event.preventDefault();
 		}
 	</script>
-			{% block extra_head %}{% endblock %}
-	
+	<!-- bootstrap-tour -->
 	<link href="/static/css/bootstrap-tour.min.css" rel="stylesheet">
 	<script src="/static/js/bootstrap-tour.min.js"></script>
+	<!-- Extra head container, to be overriden by child pages -->
+	{% block extra_head %}{% endblock %}
 </head>
 <body>
 <div id="wrapper">
@@ -271,17 +158,17 @@
 								<i class=" icon-cog"></i>
 								Markets </a>
 						</li>
+						<li class="{{ tools_status }}">
+							<a href="/tools/" id="tools">
+								<i class="icon-question-sign"></i>
+								Tools</a>
+						</li>
 						<li class="{{ help_status }}">
 							<a href="/help/" id="help">
 								<i class="icon-question-sign"></i>
 								Help</a>
 						</li>
-						<li>
-
-						</li>
-						<!--
-						<ul class="nav nav-tabs"></ul>
-						<ul class="nav pull-right"></ul>-->
+						<li> </li>
 					</ul>
 					{% endif %}
 				</div>
@@ -325,18 +212,7 @@
 	</div>
 	<!-- /global container -->
 
-	<!-- footer container -->
-	<div id="footer" >
-		{% block footer %}
-			<hr>
-			<footer>
-				<div class="container">
-					<p align="center">&middot; &copy; FIMM 2013-{{ now|date:"Y" }} &middot;</p>
-				</div>
-			</footer>
-		{% endblock %}
-	</div>
-	<!-- /footer container -->
+	{% include "footer.html" %}
 	<!-- template : {{db_access}} -->
 	<!--
 	<div id="db_access" data-para="{{db_access}}">
