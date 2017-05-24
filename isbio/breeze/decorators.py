@@ -29,7 +29,7 @@ def __users_all_authenticated(user):
 
 
 def __users_authenticated_not_guest(user):
-	if user.is_guest:
+	if user.is_anonymous or user.is_guest:
 		raise PermissionDenied
 	return user.is_authenticated()
 
