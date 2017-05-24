@@ -26,6 +26,7 @@
       <ul class="nav nav-pills nav-stacked bs-docs-sidenav" style="margin-top: 55px;">
         <li><a href="#intro"><strong> Introduction </strong></a></li>
         <li><a href="#overview"><strong> Overview </strong></a></li>
+        <li><a href="#BreezeToolList"><strong> Breeze sources </strong></a></li>
         <li><a href="#techs"><strong> Technologies </strong></a></li>
       </ul>
     </div>
@@ -43,29 +44,95 @@
         <div class="page-header"> <h2>Overview</h2> </div>
         <p class="lead text-info">Development status: BETA VERSION</p>
     </section>
+	  <!-- Breeze related -->
+	  <section id="BreezeToolList">
+		  <div class="page-header"><h3>Breeze sources</h3></div>
+		  <ul>
+			  <li>Breeze Cloud <a href="https://github.com/Fclem/isbio2" target="_blank">source code</a> on
+				  GitHub
+			  </li>
+			  <li>FIMM's Breeze <a href="https://github.com/findcomrade/isbio" target="_blank">source code</a> on
+				  GitHub
+			  </li>
+			  <li>Breeze's Docker <a href="https://github.com/Fclem/docker-breeze"
+			                         target="_blank">infrastructure sources</a> on GitHub : includes MySql schemas and managements shell scripts and docker build files for Django, Breeze, Nginx.
+			  </li>
+			  <li>R execution environnement <a href="https://github.com/Fclem/docker-Rcompute-env"
+			                                   target="_blank">build sources</a> on GitHub : for R2 and R3 environnements.
+			  </li>
+			  <li>Custom docker building system <a href="https://github.com/Fclem/myDockerBuilder"
+			                                       target="_blank">build sources</a> on GitHub : this builder was created to simplify the building of the various R
+				  environements.
+			  </li>
+			
+			  <li><a href="" target="_blank"></a></li>
+		  </ul>
+	  </section>
     <section id="techs">
-	    <p>Technologies used in Breeze :</p>
-	    <ul>
-		    <li><a href="https://www.python.org/" target="_blank">Python</a> 2.7.11 (default, May 24 2016, 06:39:56)</li>
-		    <li><a href="https://www.djangoproject.com/" target="_blank">Django</a> 1.9.6</li>
-		    <li><a href="" target="_blank">Docker</a>, Docker HUB</li>
-		    <li><a href="" target="_blank">ssh</a></li>
-		    <li><a href="" target="_blank">Ubuntu Linux</a></li>
-		    <li><a href="" target="_blank">Microsoft Azure</a></li>
-		    <li><a href="" target="_blank">CSC</a></li>
-		    <li><a href="" target="_blank">R2</a></li>
-		    
-		    <li><a href="" target="_blank"></a> </li>
-		    
+	    <div class="page-header"><h3>Technologies used in Breeze :</h3></div>
+	    <ul> System, and infrastructure
+		    <li><a href="https://www.python.org/" target="_blank">Python</a> 2.7.11,
+			    <i>programing language</i></li>
+		    <li><a href="https://www.djangoproject.com/" target="_blank">Django</a> 1.9.6,
+			    <i>Python web framework</i></li>
+		    <li><a href="https://www.mysql.com/" target="_blank">MySql</a>,
+			    <i>SQL Database</i></li>
+		    <li><a href="https://www.docker.com/" target="_blank">Docker</a>,
+			    <i>software containerization, i.e. lightweight virtualization</i></li>
+		    <li><a href="https://nginx.org/en/" target="_blank">Nginx</a>,
+			    <i>web server</i></li>
+		    <li><a href="https://www.ubuntu.com/server" target="_blank">Ubuntu</a>,
+			    <i>Linux-Debian based Operating System</i></li>
+		    <li><a href="https://www.centos.org/" target="_blank">CentOS</a>,
+			    <i>Linux-RedHat based Operating System</i></li>
+		    <li><a href="https://azure.microsoft.com/" target="_blank">Microsoft Azure</a>,
+			    <i>PaaS virtualization services</i></li>
+		    <li><a href="https://www.openssh.com/" target="_blank">OpenSSH</a>,
+			    <i>encryption, virtual networking, tunneling, etc</i></li>
+		    <li>CSC's <a href="https://www.csc.fi/-/pouta-pilvipalvelu" target="_blank">Pouta cloud service</a>,
+			    <i>PaaS virtualization services</i></li>
+		    <li>
+			    <a href="https://www.rstudio.com/" target="_blank">R 2.15.3</a> (Security Blanket), R 3.2.1
+			    (World-Famous Astronaut), R 3.3.2
+			    (Sincere Pumpkin Patch),
+			    <i>statistical and bioinformatics programming language</i>
+		    </li>
 	    </ul>
-	    <p>Python and Django modules :</p>
-	    <ul>
+	    <ul> Services
+		    <li><a href="https://hub.docker.com/" target="_blank">Docker HUB</a>,
+			    <i>Docker container public repositories</i></li>
+		    <li><a href="https://auth0.com/" target="_blank">Auth0</a>,
+			    <i>OAuth 3rd party delegated authentication</i></li>
+		    <li><a href="https://github.com/" target="_blank">GitHub</a>,
+			    <i>online source code repository for git versioning tool</i></li>
+		    <li><a href="https://rollbar.com/" target="_blank">Rollbar</a>,
+			    <i>automated bug tracking</i></li>
+		    <li><a href="https://www.datadoghq.com/" target="_blank">DataDog</a>,
+			    <i>infrastructure tracking, analysis and monitoring</i></li>
+		    <li><a href="https://www.zopim.com/" target="_blank">Zendesk Chat</a> (Zopim),
+			    <i>end-user live-chat for user-support</i></li>
+	    </ul>
+	    <ul> Front-end
+		    <li>
+			    <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a>,
+			    <a href="http://bootstraptour.com/" target="_blank">Bootstrap Tour</a>
+		    </li>
+		    <li><a href="https://glyphicons.com/" target="_blank">Glyphicons</a></li>
+		    <li>
+			    <a href="https://shiny.rstudio.com/" target="_blank">Shiny</a>,
+			    <a href="https://rstudio.github.io/shinydashboard/" target="_blank">Shinydashboard</a>
+		    </li>
+		    <li>
+			    <a href="https://jquery.com/" target="_blank">jQuery</a>,
+			    <a href="https://jqueryui.com/">jQuery-UI</a>
+		    </li>
+	    </ul>
+	    <div class="page-header"><h3>Python and Django modules :</h3></div>
+	    <ul> TODO
+		    <!--
 		    <li><a href="" target="_blank"></a></li>
-		    
-		    <li><a href="" target="_blank"></a> </li>
-		    
+		    -->
 	    </ul>
-	    
     </section>
   </div>
 </div>

@@ -3166,4 +3166,4 @@ def news_page(request):
 # clem 24/05/2017
 @login_required
 def tools(request):
-	return render_to_response('tools.html', RequestContext(request))
+	return render_to_response('tools.html', RequestContext(request, {'tools_status': 'active'}))
