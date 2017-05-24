@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load bootstrap_toolkit %}
+{% block title %}Tools and usefull ressources{% endblock %}
+{% block content %}
+<div class="row-fluid">
+	<!-- site map bar -->
+	<div class="row-fluid">
+		<div class="span10 offset1">
+			<ul class="breadcrumb pull-left" style="background-color: transparent;">
+				<li><a href="/home/">Breeze</a> <span class="divider">/</span></li>
+				<li class="active"> Tools</li>
+			</ul>
+		</div>
+	</div>
+	<!-- page content -->
+	<div class="span10 offset1">
+		<!-- FIMM list -->
+		<section id="FimmToolList">
+			<div class="page-header"> <h3>FIMM's made</h3> </div>
+			<ul>
+				<li><a href="https://synergyfinder.fimm.fi/" target="_blank">Synergy Finder</a> :<br>
+					An interactive tool for analyzing drug combination dose-response data.
+				</li>
+				<li><a href="https://tbd.fimm.fi/" target="_blank">The DB</a></li>
+				<li><a href="https://drugtargetcommons.fimm.fi/" target="_blank">Drug Target Common</a> :<br>
+					Drug Target Commons (DTC) is a crowd-sourcing platform to improve the consensus and use of
+						drug-target interactions.<br>
+					The end users can search, view and download bioactivity data using various compound, target and
+						publications identifiers.<br>
+					Expert users may also submit suggestions to edit and upload new bioactivity data, as well as
+						participate in the assay annotation and data curation processes.
+				</li>
+				<li><a href="" target="_blank">C-SPADE </a></li>
+			</ul>
+		</section>
+		<!-- External list -->
+		<section id="OthersToolList">
+			<div class="page-header"> <h3>External</h3> </div>
+			<ul>
+				<li><a href="" target="_blank"></a></li>
+			</ul>
+		</section>
+		<!-- Breeze related -->
+		<section id="BreezeToolList">
+			<div class="page-header"> <h3>Breeze related ressources</h3> </div>
+			<ul>
+				<li><a href="" target="_blank">Breeze source code</a></li>
+				<li><a href="" target="_blank"></a></li>
+			</ul>
+		</section>
+		
+	</div>
+</div>
+{% endblock %}
