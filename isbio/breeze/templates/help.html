@@ -129,9 +129,14 @@
 	    </ul>
 	    <div class="page-header"><h3>Python and Django modules :</h3></div>
 	    <ul> TODO
-		    <!--
-		    <li><a href="" target="_blank"></a></li>
-		    -->
+		    {% for package in packages %}
+			    <li><a href="{{ package.url }}" target="_blank">{{ package.name }}</a>
+				    {% if package.version != '' %}v{{ package.version }}{% endif %}
+				    {% if package.summary != '' %}, <i>{{ package.summary }}</i>{% endif %}
+			    </li>
+		    {% empty %}
+			    err : Nothing to show
+		    {% endfor %}
 	    </ul>
     </section>
   </div>

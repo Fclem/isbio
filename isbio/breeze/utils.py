@@ -275,3 +275,42 @@ class HttpRequest(WSGIRequest):
 	""" Fake class to use as a prototype for better IDE code evaluation """
 	user = AnonymousUser()
 	session = SessionBase()
+
+
+# clem 24/05/2017
+class PyPackageLister(object):
+	import sys
+	import importlib
+	BASE_URL = 'https://pypi.python.org/pypi/%s'
+	JSON_URL = 'https://pypi.python.org/pypi/%s/json'
+	
+	@classmethod
+	def get_summary(cls, module_name):
+		result = json.load(get_http_response(cls.JSON_URL % module_name))
+		return result['info']['summary'] if 'info' in result and 'summary' in result['info'] else ''
+	
+	@classmethod
+	def get_module_version(cls, module_name):
+		try:
+			a_module = cls.sys.modules.get(module_name, None) or cls.importlib.import_module(module_name)
+			if hasattr(a_module, '__version__'):
+				return a_module.__version__
+		except ImportError:
+			pass
+		return ''
+	
+	@classmethod
+	def get_packages_list(cls, with_summary=True, with_version=True):
+		result = list()
+		with open('%srequirements.txt' % settings.SOURCE_ROOT) as requirements_list:
+			for each in requirements_list.readlines():
+				each = SupStr(each.strip()) - '\n'
+				if each[0] != '#':
+					module_name = each.split('>=')[0]
+					result.append({
+						'name': module_name,
+						'version': cls.get_module_version(module_name) if with_version else '',
+						'url': cls.BASE_URL % module_name,
+						'summary': cls.get_summary(module_name).strip() if with_summary else ''
+					})
+		return result
