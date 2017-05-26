@@ -2203,7 +2203,7 @@ class Jobs(Runnable):
 		db_table = 'breeze_jobs'
 
 		
-class Report(Runnable, AutoJSON):
+class Report(Runnable, AutoJSON, MethodsAsProps):
 	def __init__(self, *args, **kwargs):
 		super(Report, self).__init__(*args, **kwargs)
 		allowed_keys = Trans.translation.keys() + ['shared', 'title', 'project', 'rora_id']
@@ -2546,7 +2546,7 @@ class Report(Runnable, AutoJSON):
 		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	
-	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']
+	_serialize_keys = ['id', 'name', 'author', 'type', 'created', 'project', 'target']
 	_serialize_recur = False
 
 	# clem 24/03/2017
