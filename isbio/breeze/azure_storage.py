@@ -3,7 +3,7 @@ from blob_storage_module import * # import interface, already has os, sys and ab
 from azure.common import AzureMissingResourceHttpError as MissingResException
 from azure.storage.blob import BlockBlobService
 
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 __author__ = 'clem'
 
 
@@ -26,7 +26,7 @@ class NoProgressException(BaseException):
 	pass
 
 
-class BlockingTransfer:
+class BlockingTransfer(object):
 	import time
 	_completed = False
 	_per100 = 0.

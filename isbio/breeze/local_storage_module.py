@@ -27,7 +27,7 @@ __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
 
-class StorageModule:
+class StorageModule(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	_interface = None # as to be defined as a BlobStorageObject that support argument list : (account_name=self

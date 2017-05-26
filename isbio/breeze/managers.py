@@ -672,6 +672,13 @@ class ProjectManager(ObjectsWithAuth):
 				pass
 		return super(ProjectManager, self).filter(
 			org_Q(author__exact=user) or org_Q(collaborative=1)).order_by("name")
+		
+	# clem 26/05/2017
+	def get_test_project(self):
+		try:
+			return self.get(name='Test')
+		except ObjectDoesNotExist:
+			return None
 
 
 # clem 20/10/2016
@@ -724,6 +731,13 @@ class CompTargetsManager(CustomManager):
 		"""
 		return self._target_objects(only_ready=True)
 
+	# clem 26/05/2017
+	def get_default(self):
+		try:
+			return self.safe_get(pk=settings.DEFAULT_TARGET_ID)
+		except ObjectDoesNotExist:
+			return None
+	
 
 # clem 26/10/2016
 class BreezeUserManager(UserManager):

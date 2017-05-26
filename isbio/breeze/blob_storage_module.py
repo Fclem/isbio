@@ -140,7 +140,7 @@ class Bcolors(object):
 
 
 # clem 14/04/2016
-class StorageModule:
+class StorageModule(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	_blob_service = None

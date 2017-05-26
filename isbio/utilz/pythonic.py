@@ -123,7 +123,7 @@ class MagicAutoConstEnum(object):
 
 
 # clem 15/12/2016
-class Struct:
+class Struct(object):
 	def __init__(self, **entries):
 		self.__dict__.update(entries)
 

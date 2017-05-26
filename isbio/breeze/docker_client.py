@@ -29,7 +29,7 @@ class CannotConnectToDaemon(DaemonNotConnected):
 
 
 # clem 10/03/2016
-class DockerVolume:
+class DockerVolume(object):
 	path = ''
 	mount_point = ''
 	mode = ''
@@ -55,7 +55,7 @@ class DockerVolume:
 
 
 # clem 10/03/2016
-class DockerRun:
+class DockerRun(object):
 	image_full_name = ''
 	_image = None
 	cmd = ''
@@ -161,7 +161,7 @@ class DockerRun:
 
 
 # clem 10/03/2016
-class DockerRepo:
+class DockerRepo(object):
 	# url = ''
 	login = ''
 	pwd = ''
@@ -187,7 +187,7 @@ class DockerRepo:
 
 
 # clem 09/03/2016
-class DockerImage:
+class DockerImage(object):
 	Created = 0
 	Labels = dict()
 	VirtualSize = 0
@@ -283,7 +283,7 @@ class DockerImage:
 
 
 # clem 09/03/2016
-class DockerContainer:
+class DockerContainer(object):
 
 	RestartCount = 0
 	Labels = dict()
@@ -566,7 +566,7 @@ class DockerContainer:
 
 
 # clem 15/03/2016
-class DockerEventCategories:
+class DockerEventCategories(object):
 	CREATE = 's:create'
 	START = 's:start'
 	DIE = 's:die'
@@ -593,7 +593,7 @@ class DockerEventCategories:
 
 
 # clem 14/03/2016
-class DockerEvent:
+class DockerEvent(object):
 	status = u''
 	Action = u''
 	Type = u''
@@ -728,7 +728,7 @@ class DockerEvent:
 
 
 # clem 31/03/2016
-class DockerInfo:
+class DockerInfo(object):
 	ContainersPaused = 0
 	Labels = None
 	ContainersRunning = 0
@@ -811,13 +811,13 @@ class DockerInfo:
 
 
 # clem 29/03/2016
-class TermStreamer:
+class TermStreamer(object):
 	"""
 	use "with TermStreamer() as stream:" instantiation method rather than direct instantiation
 	"""
 	stdscr = None
 
-	class ProgressObj:
+	class ProgressObj(object):
 		_done = None
 		_total = None
 		_progress = None
@@ -898,7 +898,7 @@ class TermStreamer:
 
 
 # clem 08/03/2016
-class DockerClient:
+class DockerClient(object):
 	RAISE_ERR = False
 	DEV = False
 	DEBUG = True

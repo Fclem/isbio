@@ -18,7 +18,7 @@ class IdleExpiredCacheObject(ExpiredCacheObject):
 
 
 # clem 16/05/2016
-class CachedObject:
+class CachedObject(object):
 	__created = 0.
 	__last_access = 0.
 	access_counter = 0

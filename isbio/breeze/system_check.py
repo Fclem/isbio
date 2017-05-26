@@ -341,30 +341,27 @@ def run_system_test():
 ##
 
 
-# clem 10/09/2015
+# clem 10/09/2015 #
 def gen_test_report(the_user, gen_number=10, job_duration=30, time_break=1):
 	from breeze.views import report_overview
 	from breeze import models
+	from django.utils.datastructures import MultiValueDict
 	import time
 
-	posted = dict()
-	posted["project"] = 1
-	posted["Section_dbID_9"] = 0
-	posted["9_opened"] = 'False'
+	posted = MultiValueDict()
+	posted["project"] = models.Project.objects.get_test_project().id
 	posted["Dropdown"] = 'Enter'
 	posted["Textarea"] = ''
-	posted["Section_dbID_81"] = 0
-	posted["81_opened"] = 'False'
-	posted["Section_dbID_118"] = '1'
-	posted["118_opened"] = 'True'
-	posted["sleep duration"] = str(job_duration)
-	posted["sleep_duration"] = str(job_duration)
-	posted["wait_time"] = str(job_duration)
-	posted["Groups"] = ''
-	posted["Individuals"] = ''
-
+	posted["target"] = models.ComputeTarget.objects.get_default().id
+	
+	posted["Section_dbID_8"] = '1'
+	posted["8_opened"] = 'True'
+	posted["Sleep duration"] = job_duration
+	
+	posted.setlist("Groups", list())
+	posted.setlist("Individuals", list())
+	
 	rq = HttpRequest()
-	# del rq.POST
 	rq.POST = posted
 	rq.user = the_user
 	rq.method = 'POST'
@@ -372,7 +369,7 @@ def gen_test_report(the_user, gen_number=10, job_duration=30, time_break=1):
 	for i in range(1, gen_number + 1):
 		name = 'SelfTest%s' % i
 		print name
-		test_type = models.ReportType.objects.get(type='TestPipe') # TODO test
+		test_type = models.ReportType.objects.get(type='TestPipe')
 		report_overview(rq, test_type.id, name, '00000')
 		time.sleep(time_break)
 

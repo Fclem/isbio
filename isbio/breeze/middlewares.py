@@ -105,7 +105,7 @@ class JobKeeper(object):
 			self.__init__()
 
 
-class BreezeAwake:
+class BreezeAwake(object):
 	def __init__(self):
 		update_state()
 
@@ -118,7 +118,7 @@ if settings.ENABLE_DATADOG:
 	from datadog import statsd
 
 
-	class DataDog:
+	class DataDog(object):
 		def __init__(self):
 			# Increment a counter.
 			statsd.increment('python.breeze.reload')

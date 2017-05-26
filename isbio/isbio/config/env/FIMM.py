@@ -23,3 +23,5 @@ STATICFILES_DIRS = (
 	# Don't forget to use absolute paths, not relative paths.
 	"%s/static_source" % PROJECT_FOLDER,
 )
+
+BREEZE_TARGET_ID = 3
