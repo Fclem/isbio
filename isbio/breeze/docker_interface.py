@@ -8,7 +8,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -871,29 +871,32 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		assert isinstance(cont, DockerContainer)
 		self._set_global_status(self.js.GETTING_RESULTS)
 		self.log.info('Died code %s. Total execution time : %s' % (cont.exit_code, cont.delta_display))
-		get_res = self.get_results()
-		# ex_code = cont.status_obj.ExitCode
-		ex_code = cont.exit_code
-		self._save_container_log()
-
-		if self.auto_remove:
-			cont.remove_container()
-
-		if ex_code > 0:
-			if not self.job_has_failed:
-				self.log.warning('Failure ! (container failed)')
-			else:
-				self.log.warning('Failure ! (script failed)')
-			self._set_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, ex_code)
-			return False
-		elif get_res:
-			self.log.debug('Success, job completed !')
-			self._check_container_logs()
-			self._set_status(self.js.SUCCEED)
-			self._runnable.manage_run_success(0)
-			return True
-		self.log.warning('Failure ! (script failed)')
+		try:
+			get_res = self.get_results()
+			# ex_code = cont.status_obj.ExitCode
+			ex_code = cont.exit_code
+			self._save_container_log()
+	
+			if self.auto_remove:
+				cont.remove_container()
+	
+			if ex_code > 0:
+				if not self.job_has_failed:
+					self.log.warning('Failure ! (container failed)')
+				else:
+					self.log.warning('Failure ! (script failed)')
+				self._set_status(self.js.FAILED)
+				self._runnable.manage_run_failed(1, ex_code)
+				return False
+			elif get_res:
+				self.log.debug('Success, job completed !')
+				self._check_container_logs()
+				self._set_status(self.js.SUCCEED)
+				self._runnable.manage_run_success(0)
+				return True
+		except Exception as e:
+			self.log.exception(e)
+		self.log.warning('Failure ! (breeze failed while getting back results)')
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(0, 999)
 		return False
