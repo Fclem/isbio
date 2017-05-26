@@ -47,7 +47,7 @@ import os, stat
 from cStringIO import StringIO
 
 
-class Callable:
+class Callable(object):
 	def __init__(self, anycallable):
 		self.__call__ = anycallable
 

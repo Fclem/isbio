@@ -11,7 +11,7 @@ def human_readable_byte_size(num, suffix='B'):
 	return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-class CranArchiveDownloader: # special purpose light FTP downloader
+class CranArchiveDownloader(object): # special purpose light FTP downloader
 	name = str
 	# http_url = 'http://cran.r-project.org/src/contrib/Archive/'
 	ftp_server = 'cran.r-project.org'

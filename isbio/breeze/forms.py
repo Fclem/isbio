@@ -333,7 +333,7 @@ class GroupForm(ReportPropsFormMixin, forms.Form):
 		# raise forms.ValidationError("You already have a group with this name !")
 	"""
 	
-	class Meta:
+	class Meta(object):
 		model = breeze.models.Group
 
 
@@ -367,11 +367,11 @@ class SendReportTo(forms.Form):
 			)
 		)
 
-	class Meta:
+	class Meta(object):
 		model = breeze.models.OffsiteUser
 """
 class AddOffsiteUserDialog(forms.ModelForm):
-	class Meta:
+	class Meta(object):
 		model = breeze.models.OffsiteUser
 		fields = ('email', )
 
@@ -417,7 +417,7 @@ class AddOffsiteUser(forms.ModelForm):
 		# self.fields['shiny_access'].queryset = self.fields['shiny_access'].queryset = \
 		# breeze.models.Report.objects.filter(type__type='ScreenReport', author_id=user.id)
 
-	class Meta:
+	class Meta(object):
 		model = breeze.models.OffsiteUser
 		exclude = ['belongs_to', 'user_key', 'added_by', 'shiny_access']
 
@@ -450,7 +450,7 @@ class EditReportSharing(ReportPropsFormMixin, forms.ModelForm):
 				attrs={'class': 'multiselect', }, )
 		}
 	
-	class Meta:
+	class Meta(object):
 		model = breeze.models.Report
 		fields = ('shared', 'shared_g')
 	
@@ -496,7 +496,7 @@ class ReportPropsFormRE(ReportPropsFormMixinWrapperTwo):
 			kwargs['initial'] = {self.FIELD_SHARED: kwargs['instance'].shared_data_in_form_format}
 		super(ReportPropsFormRE, self).__init__(*args, **kwargs)
 
-	class Meta:
+	class Meta(object):
 		model = breeze.models.Report
 		fields = ()
 
@@ -518,7 +518,7 @@ class RegistrationForm(forms.ModelForm):
 	password = forms.CharField(label=u'Password', widget=forms.PasswordInput())
 	password1 = forms.CharField(label=u'Verify Password', widget=forms.PasswordInput())
 
-	class Meta:
+	class Meta(object):
 		model = breeze.models.UserProfile
 		exclude = ('user', 'logo')
 
@@ -944,7 +944,7 @@ class NewScriptDialog(forms.Form):
 
 
 class NewRepTypeDialog(forms.ModelForm):
-	class Meta:
+	class Meta(object):
 		model = breeze.models.ReportType
 		fields = ('type', 'description', 'search', 'access', 'manual')
 		# widgets = {'access': forms.CheckboxSelectMultiple( attrs = {'class': 'multiselect', })}
@@ -1042,7 +1042,7 @@ class ScriptDescription(forms.Form):
 
 
 class ScriptAttributes(forms.ModelForm):
-	class Meta:
+	class Meta(object):
 		model = breeze.models.Rscripts
 		fields = ('author', 'category', 'draft', 'istag', 'report_type')
 
@@ -1053,7 +1053,7 @@ class ScriptLogo(forms.Form):
 
 # ## old implementation ###
 class ScriptMainForm(forms.ModelForm):
-	class Meta:
+	class Meta(object):
 		model = breeze.models.Rscripts
 		fields = ('name', 'inln', 'category', 'details', 'logo')
 

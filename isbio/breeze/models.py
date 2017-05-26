@@ -58,7 +58,7 @@ class CustomModel(CustomModelAbstract):
 	institute = models.ForeignKey(Institute, default=Institute.default)
 	""" Store the institute which own this object, to efficiently segregate data """
 	
-	class Meta:
+	class Meta(object):
 		abstract = True
 
 	
@@ -277,7 +277,7 @@ class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 	def has_admin_access(self, user):
 		return self.admin_override_param(user) or self.has_access(user)
 	
-	class Meta:
+	class Meta(object):
 		abstract = True
 
 
@@ -966,7 +966,7 @@ class ReportType(FolderObj, CustomModel, AutoJSON):
 			a_dict[each._author] = 1 + a_dict.get(each._author, 0)
 		return a_dict
 
-	class Meta:
+	class Meta(object):
 		ordering = ('type',)
 		abstract = False
 		db_table = 'breeze_reporttype'
@@ -986,7 +986,7 @@ class ScriptCategories(CustomModelAbstract):
 	def __unicode__(self):
 		return self.category
 
-	class Meta:
+	class Meta(object):
 		db_table = 'breeze_script_categories'
 
 
@@ -997,7 +997,7 @@ class UserDate(CustomModelAbstract):
 	def __unicode__(self):
 		return self.user.username
 
-	class Meta:
+	class Meta(object):
 		db_table = 'breeze_user_date'
 
 
@@ -1111,7 +1111,7 @@ class Rscripts(FolderObj, CustomModelAbstract):
 		# do the substitution
 		return src.substitute(d)
 
-	class Meta:
+	class Meta(object):
 		ordering = ["name"]
 		abstract = False
 		db_table = 'breeze_rscripts'
@@ -1131,7 +1131,7 @@ class CartInfo(CustomModelAbstract):
 	def __unicode__(self):
 		return self.product.name
 	
-	class Meta:
+	class Meta(object):
 		ordering = ["active"]
 
 
@@ -2047,7 +2047,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 	def __unicode__(self): # Python 3: def __str__(self):
 		return u'%s' % self.text_id
 
-	class Meta:
+	class Meta(object):
 		abstract = True
 
 
@@ -2634,7 +2634,7 @@ class OffsiteUser(CustomModelAbstract):
 	def fullname(self):
 		return self.full_name
 
-	class Meta:
+	class Meta(object):
 		ordering = ('first_name',)
 
 	# 04/06/2015

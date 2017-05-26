@@ -615,7 +615,7 @@ class ShinyReport(CustomModel):
 			shutil.rmtree(self.__folder_path_base_gen(True), ignore_errors=True)
 		super(ShinyReport, self).delete(using=using) # Call the "real" delete() method.
 
-	class Meta:
+	class Meta(object):
 		ordering = ('created',)
 
 	def __unicode__(self):
@@ -845,7 +845,7 @@ class ShinyTag(CustomModel):
 		shutil.rmtree(self.folder_name[:-1], ignore_errors=True)
 		super(ShinyTag, self).delete(using=using, keep_parents=keep_parents) # Call the "real" delete() method.
 
-	class Meta:
+	class Meta(object):
 		ordering = ('order',)
 
 	def __repr__(self):

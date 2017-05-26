@@ -1,4 +1,4 @@
-class Trans:
+class Trans(object):
 	"""
 	Translate property names for Jobs and Reports to a unified model.
 	Used in manager to access similar properties from both Jobs and Reports using the same name

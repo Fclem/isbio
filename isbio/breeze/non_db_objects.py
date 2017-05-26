@@ -588,7 +588,7 @@ class FolderObj(object):
 		super(FolderObj, self).delete(using=using)
 		return True
 
-	class Meta:
+	class Meta(object):
 		abstract = True
 
 
@@ -1308,7 +1308,7 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 			return super(CustomModelAbstract, self).delete(using)
 		return False
 	
-	class Meta:
+	class Meta(object):
 		abstract = True
 
 
@@ -1567,7 +1567,7 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 			logger.error(str(e))
 		return False
 	
-	class Meta:
+	class Meta(object):
 		proxy = True
 		# pass
 	
@@ -1584,7 +1584,7 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}
 class OrderedUser(BreezeUser):
-	class Meta:
+	class Meta(object):
 		ordering = ["username", ]
 		# ordering = ["last_name", "first_name"]
 		proxy = True
@@ -1594,7 +1594,7 @@ class OrderedUser(BreezeUser):
 # 23/11/2015 # FIXME
 # class CustomUser(OrderedUser, AutoJSON):
 class CustomUser(BreezeUser):
-	class Meta:
+	class Meta(object):
 		ordering = ["username"]
 		proxy = True
 		auto_created = True # FIXME Hack

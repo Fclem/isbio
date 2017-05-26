@@ -15,7 +15,7 @@ REMOTE_KEY = "AAAAB3NzaC1yc2EAAAADAQABAAABAQC/RWm8040HWNOr/B0CfXgr3ZxXZPbwhrpxum
 
 
 # clem 08/03/2016
-class CommandOut:
+class CommandOut(object):
 	_output = None
 
 	def __init__(self, (stdin, stdout, stderr), command, exec_time):
@@ -81,7 +81,7 @@ class CommandOut:
 
 
 # clem 08/03/2016
-class Server:
+class Server(object):
 	_server_url = None
 	_server_pub_key = None
 	_ssh_client = None
