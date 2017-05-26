@@ -1177,14 +1177,13 @@ def resources(request):
 			'legend': 'This is an example of another graph', }
 	)
 	usage_graph = ()
-	
-	# print advanced_pretty_print(ObjectCache.dump())
 
 	return render_to_response('resources.html', RequestContext(request, {
 		'resources_status': 'active',
 		'usage_graph': usage_graph,
 		'resources': get_template_check_list(),
-		'cache': ObjectCache.dump()
+		'cache': ObjectCache.dump(),
+		'reports': list(Report.objects.f.get_active()) + list(Report.objects.f.get_run_wait())
 	}))
 
 
@@ -2430,7 +2429,7 @@ def report_file_server_sub(request, rid, category, report_inst, fname=None):
 
 
 # Clem on 22/09/2015
-@allow_guest(login_url='/')
+@allow_guest
 def update_jobs_json(request, jid, item):
 	if item == 'script':
 		obj = Jobs.objects.get(id=jid)
@@ -2453,10 +2452,27 @@ def update_jobs(request, jid, item):
 	return HttpResponse(simplejson.dumps(response), content_type=c_t.JSON)
 
 
+# clem 26/05/2017
+@login_required
+def update_jobs_json_resource(request, jid, item):
+	# serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created', 'created'),
+	#  	'project', 'target', 'get_status']
+	# obj = Report.objects.get(id=jid)
+	# return obj.to_json(_serialize_keys)
+	return Report.objects.get(id=jid).to_json(Report._serialize_keys + [('get_status', 'status'), 'md5'])
+
+
+# clem 26/05/2017
+@login_required
+def jobs_resource_view(request, jid, item):
+	return HttpResponse(simplejson.dumps(update_jobs_json_resource(request, jid, item)), content_type=c_t.JSON)
+
+
 @allow_guest
-def update_jobs_lp(request, jid, item, md5_t=None):
+def update_jobs_lp(request, jid, item, md5_t=None, callback=update_jobs):
+	assert callable(callback)
 	if md5_t is None:
-		return update_jobs(request, jid, item)
+		return callback(request, jid, item)
 	from time import sleep
 	refresh_time = 0.5
 
@@ -2477,7 +2493,7 @@ def update_jobs_lp(request, jid, item, md5_t=None):
 		# forced refresh
 		obj = a_class.objects.get(id=jid)
 
-	return update_jobs(request, jid, item)
+	return callback(request, jid, item)
 
 
 @login_required(login_url='/')
