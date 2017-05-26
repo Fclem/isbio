@@ -2454,18 +2454,9 @@ def update_jobs(request, jid, item):
 
 # clem 26/05/2017
 @login_required
-def update_jobs_json_resource(request, jid, item):
-	# serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created', 'created'),
-	#  	'project', 'target', 'get_status']
-	# obj = Report.objects.get(id=jid)
-	# return obj.to_json(_serialize_keys)
-	return Report.objects.get(id=jid).to_json(Report._serialize_keys + [('get_status', 'status'), 'md5'])
-
-
-# clem 26/05/2017
-@login_required
-def jobs_resource_view(request, jid, item):
-	return HttpResponse(simplejson.dumps(update_jobs_json_resource(request, jid, item)), content_type=c_t.JSON)
+def jobs_resource_view(request, jid, _):
+	j_dumps = simplejson.dumps
+	return HttpResponse(j_dumps(Report.objects.secure_get(id=jid, user=request.user).json_info), content_type=c_t.JSON)
 
 
 @allow_guest
