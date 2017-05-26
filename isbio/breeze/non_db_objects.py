@@ -1355,21 +1355,27 @@ class AutoJSON(object):
 			return json_name, split[0], split[1]
 		else:
 			return json_name, ('_' + name if not hasattr(self, name) and hasattr(self, '_' + name) else name), ''
-		
+	
+	# clem 26/05/2017
+	@staticmethod
+	def __attr_rooter(obj):
+		return obj.__getattr__ if hasattr(obj, '__getattr__') else obj.__getattribute__
+	
 	# clem 27/03/2017
-	def __attr_parser(self, attr_path):
+	def __attr_parser_sub(self, attr_path, top_object=None):
+		top_object = top_object or self
 		json_name, root, sub = self.__internal_attr_name(attr_path)
-		if sub:
-			attr_name = sub
-			# parent_object = self.__getattribute__(root)
-			parent_object = self.__getattr__(root)
-		else:
-			attr_name = root
-			parent_object = self
-		# attribute = parent_object.__getattribute__(attr_name)
-		attribute = parent_object.__getattr__(attr_name)
+		attribute = self.__attr_rooter(top_object)(root)
+		
+		return attribute, json_name, sub
+	
+	# clem 26/05/2017
+	def __attr_parser(self, attr_path):
+		attribute, json_name, sub = self.__attr_parser_sub(attr_path)
+		while sub != '': # recurse through dotted path
+			attribute, _, sub = self.__attr_parser_sub(sub, attribute)
 		if callable(attribute): # and attribute.im_func.func_code.co_argcount == 1:
-			try:
+			try: # access an argument-less method
 				attribute = attribute()
 			except Exception as e:
 				logger.warning('AutoJson failed : %s' % e)
@@ -1380,7 +1386,7 @@ class AutoJSON(object):
 		return hasattr(attribute, 'to_json') and callable(attribute.to_json) \
 			and (not hasattr(self, '_serialize_recur') or self._serialize_recur)
 	
-	def to_json(self, serialize_key_list=None):
+	def to_json(self, serialize_key_list=None, add_extra=True):
 		""" Returns a dict ready to be converted into json.
 		
 		By default uses the list of key to serialize defined in the object as __serialize_keys but
@@ -1390,8 +1396,9 @@ class AutoJSON(object):
 		['property_name' | ('property_name', 'property display name'), ...]
 		
 		:param serialize_key_list: optional list of keys to use
-		:type serialize_key_list: list[tuple[basestring, basestring] | basestring] | tuple[basestring, basestring]
-		basestring
+		:type serialize_key_list: list[tuple[str, str] | str] | tuple[str, str] | str | None
+		:param add_extra: wether to call the delegated '_extra_json' method if present in the class or not
+		:type add_extra: bool | None
 		:return:
 		:rtype: dict
 		"""
@@ -1412,8 +1419,7 @@ class AutoJSON(object):
 				if value == 'None':
 					value = None
 			a_dict.update({json_name: value})
-		
-		if hasattr(self, '_extra_json') and callable(self._extra_json):
+		if add_extra and hasattr(self, '_extra_json') and callable(self._extra_json):
 			a_dict.update(self._extra_json())
 		
 		return a_dict
