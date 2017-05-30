@@ -58,6 +58,11 @@
 
 	<link href="/static/css/breeze-base.css" rel="stylesheet">
 	<link href="/static/css/footer.css" rel="stylesheet">
+	<style>
+		.nav.pull-right .btn-group{
+			margin-left: 20px;
+		}
+	</style>
 	<!--[if lt IE 7]>
     <style type="text/css">
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
@@ -74,11 +79,55 @@
 			return event.preventDefault();
 		}
 	</script>
-	<!-- bootstrap-tour -->
-	<link href="/static/css/bootstrap-tour.min.css" rel="stylesheet">
-	<script src="/static/js/bootstrap-tour.min.js"></script>
-	<!-- Extra head container, to be overriden by child pages -->
+	
+	
+	<!-- Extra head container, to be overridden by child pages -->
 	{% block extra_head %}{% endblock %}
+	
+	<!-- bootstrap-tour -->
+	<!--<link href="/static/css/bootstrap-tour.min.css" rel="stylesheet">-->
+	<link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
+	<!--<link href="/static/css/bootstrap-tour-standalone.min.css" rel="stylesheet">-->
+	<script src="/static/js/bootstrap-tour.min.js"></script>
+	<!--<script src="/static/js/bootstrap-tour-standalone.min.js"></script>-->
+	<!-- My tour for logged-in users -->
+	<script type="text/javascript">
+		var tourUsed = 0;
+		var tour = new Tour({
+			storage: false,
+			orphan : true,
+			onEnd  : function (tour) {
+				var aaa = Math.round((new Date).getTime() / 1e3);
+				//Shiny.onInputChange("endtour", {aaa});
+				$("#wraptour").show();
+			}
+		});
+		
+		$(document).ready(function () {
+			tour.addSteps([
+				{
+					element: "#tour-button",
+					title  : "Welcome !",
+					content: "Welcome to Breeze introduction tour.\n" +
+					"It will introduce you to the Breeze platform\n" +
+					"by walking through it step by step."
+				},
+				{
+					element: "#my-other-element",
+					title  : "Title of my step",
+					content: "Content of my step"
+				}
+			]);
+			
+			// Initialize the tour
+			tour.init();
+			
+			document.getElementById("tour-button").addEventListener("click", function () {
+				!tourUsed ? tour.start() : tour.restart();
+				tourUsed++;
+			}, false);
+		});
+	</script>
 </head>
 <body>
 <div id="wrapper">
@@ -102,6 +151,13 @@
 				<div class="navbar-content" id="navbar-content">
 					{% if user.is_authenticated %}
 					<ul class="nav pull-right">
+						<li>
+							<div class="btn-group pull-right">
+								<a id="tour-button" class="btn btn-inverse" href="#">
+									<i class="icon-play icon-white"></i> Take the tour
+								</a>
+							</div>
+						</li>
 						<li>
 							<div class="btn-group pull-right">
 								<a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
