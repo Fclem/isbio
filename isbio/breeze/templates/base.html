@@ -10,6 +10,7 @@
 	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
 	
 	<!-- Rollbar -->
+	<!--
 	<script type="text/javascript">
 		var _rollbarConfig = {
 			accessToken: "5a228b54d0074cdda7951cd590d4fd74",
@@ -20,8 +21,8 @@
 		};
 	</script>
 	<script src="/static/js/rollbar.js"></script>
+	-->
 	<!-- jQuery -->
-	<script src="/static/js/jquery.js"></script>
 	<script src="/static/js/jquery-1.8.3.min.js"></script>
 	
 	<!-- Bootstrap -->
@@ -55,7 +56,6 @@
     {% bootstrap_javascript_tag "tab" %}
     {% bootstrap_javascript_tag "affix" %}
     {% bootstrap_javascript_tag "popover" %} -->
-
 	<link href="/static/css/breeze-base.css" rel="stylesheet">
 	<link href="/static/css/footer.css" rel="stylesheet">
 	<style>
@@ -68,6 +68,7 @@
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
     </style>
     <![endif]-->
+
 	<!-- AUTH0 include & init -->
 	{% include "hello_auth/auth0.html" %}
 	<script type="text/javascript">
@@ -80,54 +81,67 @@
 		}
 	</script>
 	
-	
 	<!-- Extra head container, to be overridden by child pages -->
 	{% block extra_head %}{% endblock %}
 	
+	{% if not request.user.is_guest %}
 	<!-- bootstrap-tour -->
-	<!--<link href="/static/css/bootstrap-tour.min.css" rel="stylesheet">-->
 	<link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
-	<!--<link href="/static/css/bootstrap-tour-standalone.min.css" rel="stylesheet">-->
 	<script src="/static/js/bootstrap-tour.min.js"></script>
-	<!--<script src="/static/js/bootstrap-tour-standalone.min.js"></script>-->
+	
 	<!-- My tour for logged-in users -->
 	<script type="text/javascript">
-		var tourUsed = 0;
-		var tour = new Tour({
-			storage: false,
-			orphan : true,
-			onEnd  : function (tour) {
-				var aaa = Math.round((new Date).getTime() / 1e3);
-				//Shiny.onInputChange("endtour", {aaa});
-				$("#wraptour").show();
-			}
-		});
-		
-		$(document).ready(function () {
-			tour.addSteps([
-				{
-					element: "#tour-button",
-					title  : "Welcome !",
-					content: "Welcome to Breeze introduction tour.\n" +
-					"It will introduce you to the Breeze platform\n" +
-					"by walking through it step by step."
+		$(function () {
+			var tourUsed = 0;
+			var tour = new Tour({
+				orphan: true,
+				//storage: false,
+				onEnd : function (tour) {
+					document.getElementById("tour-button").classList.remove('disabled');
 				},
-				{
-					element: "#my-other-element",
-					title  : "Title of my step",
-					content: "Content of my step"
-				}
-			]);
+				steps : [
+					{
+						element  : "#tour-button",
+						placement: "bottom",
+						path     : "/home",
+						title    : "Welcome !",
+						content  : "Welcome to Breeze introduction tour.<br>" +
+						"It will introduce you to the Breeze platform<br>" +
+						"by walking through it step by step."
+					},
+					{
+						title  : "Main page",
+						path   : "/home",
+						orphan : true,
+						content: "This is the main page, here you will find updates about pipelines<br>" +
+						"and find all the customizations options of the platform"
+					},
+					{
+						title  : "Report page",
+						path   : "/reports/",
+						reflex : true,
+						orphan : true,
+						content: "This is the report page"
+					}
+				]
+			});
 			
-			// Initialize the tour
 			tour.init();
+			{% if request.path == '/home/' %}
+			var tourBouton = document.getElementById("tour-button");
 			
-			document.getElementById("tour-button").addEventListener("click", function () {
-				!tourUsed ? tour.start() : tour.restart();
+			tourBouton.addEventListener("click", function () {
+				//tour.start();
+				//tour.setCurrentStep(0);
+				//!tourUsed ? tour.start() : tour.restart();
+				tour.restart();
 				tourUsed++;
+				tourBouton.classList.add('disabled');
 			}, false);
+			{% endif %}
 		});
 	</script>
+	{% endif %}
 </head>
 <body>
 <div id="wrapper">
@@ -151,14 +165,16 @@
 				<div class="navbar-content" id="navbar-content">
 					{% if user.is_authenticated %}
 					<ul class="nav pull-right">
-						<li>
+						{% if request.path == '/home/' %}
+						<li><!-- tour button -->
 							<div class="btn-group pull-right">
 								<a id="tour-button" class="btn btn-inverse" href="#">
 									<i class="icon-play icon-white"></i> Take the tour
 								</a>
 							</div>
 						</li>
-						<li>
+						{% endif %}
+						<li><!-- user menu -->
 							<div class="btn-group pull-right">
 								<a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
 									<i class="icon-user icon-white"></i> {{ user.username }} <span
@@ -269,14 +285,6 @@
 	<!-- /global container -->
 
 	{% include "footer.html" %}
-	<!-- template : {{db_access}} -->
-	<!--
-	<div id="db_access" data-para="{{db_access}}">
-		<div class="modal hide fade" id="db_policy"  role="dialog" aria-hidden="true" style="background: url('/static/nail.png');">
-			{% include "db_policy.html" %}
-		</div>
-	</div>
-	-->
 </div>
 {% if not disable_zopim %}
 	{% block zopim %}
@@ -312,7 +320,7 @@
 {% if not disable_google_analytics %}
 	{% block google_analytics %}
 		<!--Start of Google Analytics-->
-		<script>
+		<script type="text/javascript">
 			(function (i, s, o, g, r, a, m) {
 				i['GoogleAnalyticsObject'] = r;
 				i[r] = i[r] || function () {
@@ -332,13 +340,13 @@
 	{% endblock %}
 {% endif %}
 <script type="text/javascript">
-	//Diplays floating disposable error message box
+	//Displays floating disposable error message box
 	function ShowError(HtmlContent) {
 		$("#error_msg").removeClass("hidden");
-//$("#error_msg").innerHTML = HtmlContent;
-		if (HtmlContent != "") {
+		//$("#error_msg").innerHTML = HtmlContent;
+		if (HtmlContent !== "") {
 			var x = document.getElementById("error_msg_holder");
-			if (x != undefined) {
+			if (x !== undefined) {
 				x.innerHTML = HtmlContent;
 			}
 		}
@@ -346,10 +354,9 @@
 
 	$(document).ready(function () {
 		var x = document.getElementById("error_msg_holder");
-		if (x.innerHTML != "" && x.innerHTML != "<p></p>") {
+		if (x.innerHTML !== "" && x.innerHTML !== "<p></p>") {
 			ShowError("");
 		}
-
 	});
 
 	function fixDropDownSub(item) {
@@ -358,7 +365,7 @@
 
 	function fixDropDown() {
 		//drop down
-		var el=$('button.dropdown-toggle')
+		var el=$('button.dropdown-toggle');
 		for (var i = 0; i < el.length; i++) {
 			el.eq(i).on("click", function () {
 				var tg = $(this);
@@ -372,28 +379,23 @@
 				}
 			});
 		}
-
-
-
-
 	}
-
 
 	// prevents click on a submit button
 	function disableObj(name) {
 		clkBtn = $('#' + name + '')[0];
-//protect from double submission while sending
-		if (clkBtn != undefined) clkBtn.disabled = true;
+		//protect from double submission while sending
+		if (clkBtn !== undefined) clkBtn.disabled = true;
 	}
 
 	function enableObj(name) {
 		clkBtn = $('#' + name + '')[0];
-		if (clkBtn != undefined) clkBtn.disabled = false;
+		if (clkBtn !== undefined) clkBtn.disabled = false;
 	}
 
 	function switchObj(name) {
 		clkBtn = $('#' + name + '')[0];
-		if (clkBtn != undefined) clkBtn.disabled = !clkBtn.disabled;
+		if (clkBtn !== undefined) clkBtn.disabled = !clkBtn.disabled;
 	}
 </script>
 </body>

@@ -1284,7 +1284,9 @@ def dochelp(request):
 	return render_to_response('help.html', RequestContext(request, {
 		'help_status': 'active',
 		'db_access': db_access,
-		'packages': utils.PyPackageLister.get_packages_list()
+		'xhr_package_summary': True,
+		'xhr_base_url': PyPackage.JSON_URL,
+		'packages': utils.PyPackageLister.get_packages_list(False, False)
 	}))
 
 
