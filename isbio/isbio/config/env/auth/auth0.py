@@ -1,5 +1,5 @@
 from utilz import get_key
-from isbio.settings import INSTALLED_APPS, TEMPLATES, AUTH0_CUSTOM_BACKEND_PY_PATH
+from isbio.settings import INSTALLED_APPS, TEMPLATES, AUTH0_CUSTOM_BACKEND_PY_PATH, DomainList
 from isbio.config import ConfigAuthMethods
 
 AUTHENTICATION_BACKENDS = (
