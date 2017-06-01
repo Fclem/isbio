@@ -1,0 +1,117 @@
+<!-- bootstrap-tour -->
+<link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
+<script src="/static/js/bootstrap-tour.min.js"></script>
+
+<!-- fix z-index of modals forms when bootstrap tour is used along with it -->
+<style>
+	.modal {
+		z-index: 1110;
+	}
+</style>
+
+<!-- My tour for logged-in users -->
+<script type="text/javascript">
+	$(function () {
+		function switchToProjects() {
+			$('#preferencesMenuLink').click();
+			$('#projectsTabHeader').click();
+		}
+		
+		function switchToGroups() {
+			$('#preferencesMenuLink').click();
+			$('#groupsTabHeader').click();
+		}
+		
+		function switchToFeed() {
+			$('#feedMenuLink').click();
+		}
+		
+		var tourUsed = 0;
+		var tour = new Tour({
+			orphan: true,
+			//storage: false,
+			onEnd : function (tour) {
+				document.getElementById("tour-button").classList.remove('disabled');
+			},
+			steps : [
+				{
+					title    : "Welcome !",
+					element  : "#tour-button",
+					placement: "bottom",
+					path     : "/home",
+					content  : "Welcome to Breeze introduction tour.<br>" +
+					"It will introduce you to the Breeze platform<br>" +
+					"by walking you through it, step by step."
+				},
+				{
+					title  : "Main page",
+					path   : "/home",
+					orphan : true,
+					content: "This is the main page, here you will find updates about pipelines<br>" +
+					"as well as all the customizations options of the platform"
+				},
+				{
+					title    : "Personal information",
+					path     : "/home",
+					element  : "#userInfoDiv",
+					placement: "bottom",
+					backdrop : true,
+					content  : "If you haven't done so yet, you can click here<br>to update your personal " +
+					"information"
+				},
+				{
+					title    : "Preferences",
+					path     : "/home",
+					element  : "#preferencesMenuLink",
+					placement: "right",
+					content  : "You may go here to use some customization features",
+					duration : 4000,
+					backdrop : true,
+					onShow   : switchToFeed,
+					onNext   : switchToProjects
+				},
+				{
+					title    : "Projects",
+					path     : "/home",
+					element  : "#projects_tab",
+					placement: "bottom",
+					content  : "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
+					+ "reports for your own convenience.",
+					backdrop : true,
+					onPrev   : switchToFeed,
+					onShow   : switchToProjects,
+					onNext   : switchToGroups
+				},
+				{
+					title    : "Groups",
+					path     : "/home",
+					element  : "#usergroups_tab",
+					placement: "bottom",
+					content  : "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
+					+ "reports for your own convenience.",
+					backdrop : true,
+					onPrev   : switchToProjects,
+					onShow   : switchToGroups
+				},
+				{
+					title  : "Report page",
+					path   : "/reports/",
+					reflex : true,
+					orphan : true,
+					content: "This is the report page"
+				}
+			]
+		});
+		
+		tour.init();
+		{% if request.path == '/home/' %}
+			var tourBouton = document.getElementById("tour-button");
+			
+			tourBouton.addEventListener("click", function () {
+				tour.restart();
+				tourUsed++;
+				tourBouton.classList.add('disabled');
+			}, false);
+		{% endif %}
+	});
+</script>

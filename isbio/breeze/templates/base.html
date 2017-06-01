@@ -55,9 +55,6 @@
 		.nav.pull-right .btn-group{
 			margin-left: 20px;
 		}
-		.modal{
-			z-index: 1110;
-		}
 	</style>
 	
 	<!-- Footnote as a real footer compatibility for IE<7 -->
@@ -83,114 +80,7 @@
 	{% block extra_head %}{% endblock %}
 	
 	{% if not request.user.is_guest %}
-	<!-- bootstrap-tour -->
-	<link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
-	<script src="/static/js/bootstrap-tour.min.js"></script>
 	
-	<!-- My tour for logged-in users -->
-	<script type="text/javascript">
-		$(function () {
-			function switchToProjects(){
-				$('#preferencesMenuLink').click();
-				$('#projectsTabHeader').click();
-			}
-			function switchToGroups(){
-				$('#preferencesMenuLink').click();
-				$('#groupsTabHeader').click();
-			}
-			function switchToFeed () {
-				$('#feedMenuLink').click();
-			}
-			
-			var tourUsed = 0;
-			var tour = new Tour({
-				orphan: true,
-				//storage: false,
-				onEnd : function (tour) {
-					document.getElementById("tour-button").classList.remove('disabled');
-				},
-				steps : [
-					{
-						title: "Welcome !",
-						element  : "#tour-button",
-						placement: "bottom",
-						path     : "/home",
-						content  : "Welcome to Breeze introduction tour.<br>" +
-						"It will introduce you to the Breeze platform<br>" +
-						"by walking you through it, step by step."
-					},
-					{
-						title  : "Main page",
-						path   : "/home",
-						orphan : true,
-						content: "This is the main page, here you will find updates about pipelines<br>" +
-						"as well as all the customizations options of the platform"
-					},
-					{
-						title  : "Personal information",
-						path   : "/home",
-						element: "#userInfoDiv",
-						placement: "bottom",
-						backdrop: true,
-						content: "If you haven't done so yet, you can click here<br>to update your personal " +
-						"information"
-					},
-					{
-						title  : "Preferences",
-						path   : "/home",
-						element: "#preferencesMenuLink",
-						placement: "right",
-						content: "You may go here to use some customization features",
-						duration: 4000,
-						backdrop: true,
-						onShow: switchToFeed,
-						onNext: switchToProjects
-					},
-					{
-						title  : "Projects",
-						path   : "/home",
-						element: "#projects_tab",
-						placement: "bottom",
-						content: "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
-						+ "reports for your own convenience.",
-						backdrop: true,
-						onPrev: switchToFeed,
-						onShow: switchToProjects,
-						onNext: switchToGroups
-					},
-					{
-						title  : "Groups",
-						path   : "/home",
-						element: "#usergroups_tab",
-						placement: "bottom",
-						content: "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
-						+ "reports for your own convenience.",
-						backdrop: true,
-						onPrev: switchToProjects,
-						onShow: switchToGroups
-					},
-					{
-						title  : "Report page",
-						path   : "/reports/",
-						reflex : true,
-						orphan : true,
-						content: "This is the report page"
-					}
-				]
-			});
-			
-			tour.init();
-			{% if request.path == '/home/' %}
-			var tourBouton = document.getElementById("tour-button");
-			
-			tourBouton.addEventListener("click", function () {
-				tour.restart();
-				tourUsed++;
-				tourBouton.classList.add('disabled');
-			}, false);
-			{% endif %}
-		});
-	</script>
 	{% endif %}
 </head>
 <body>
@@ -219,7 +109,7 @@
 		<!-- show messages here -->
 		<ul class="messages">
 			{% for message in messages %}
-				<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+			<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
 			{% endfor %}
 		</ul>
 		{% endif %}
@@ -249,62 +139,65 @@
 		{% block content %}{% endblock %}
 	</div>
 	<!-- /global container -->
-
+	
+	<!-- footer -->
 	{% include "footer.html" %}
+	<!-- /footer -->
 </div>
 {% if not disable_zopim %}
-	{% block zopim %}
-		<!--Start of Zopim Live Chat Script-->
-		<script type="text/javascript">
-			window.$zopim || (function (d, s) {
-				var z = $zopim = function (c) {z._.push(c)}, $ = z.s =
-				  d.createElement(s), e = d.getElementsByTagName(s)[0];
-				z.set = function (o) {
-					z.set.
-					  _.push(o)
-				};
-				z._ = [];
-				z.set._ = [];
-				$.async = !0;
-				$.setAttribute("charset", "utf-8");
-				$.src = "//v2.zopim.com/?2fQMyVQQ1GO74NehJsG5a8uf8RiZXHfV";
-				z.t = +new Date;
-				$.
-				  type = "text/javascript";
-				e.parentNode.insertBefore($, e)
-			})(document, "script");
-			{% if user.is_authenticated %}
-				$zopim(function () {
-					$zopim.livechat.setName('{{ user.get_full_name }}');
-					$zopim.livechat.setEmail('{{ user.email }}');
-				});
-			{% endif %}
-		</script>
-		<!--End of Zopim Live Chat Script-->
-	{% endblock %}
+{% block zopim %}
+<!--Start of Zopim Live Chat Script-->
+<script type="text/javascript">
+	window.$zopim || (function (d, s) {
+		var z = $zopim = function (c) {z._.push(c)}, $ = z.s =
+		  d.createElement(s), e = d.getElementsByTagName(s)[0];
+		z.set = function (o) {
+			z.set.
+			  _.push(o)
+		};
+		z._ = [];
+		z.set._ = [];
+		$.async = !0;
+		$.setAttribute("charset", "utf-8");
+		$.src = "//v2.zopim.com/?2fQMyVQQ1GO74NehJsG5a8uf8RiZXHfV";
+		z.t = +new Date;
+		$.
+		  type = "text/javascript";
+		e.parentNode.insertBefore($, e)
+	})(document, "script");
+	{% if user.is_authenticated %}
+		$zopim(function () {
+			$zopim.livechat.setName('{{ user.get_full_name }}');
+			$zopim.livechat.setEmail('{{ user.email }}');
+		});
+	{% endif %}
+</script>
+<!--End of Zopim Live Chat Script-->
+{% endblock %}
 {% endif %}
 {% if not disable_google_analytics %}
-	{% block google_analytics %}
-		<!--Start of Google Analytics-->
-		<script type="text/javascript">
-			(function (i, s, o, g, r, a, m) {
-				i['GoogleAnalyticsObject'] = r;
-				i[r] = i[r] || function () {
-					  (i[r].q = i[r].q || []).push(arguments)
-				  }, i[r].l = 1 * new Date();
-				a = s.createElement(o),
-				  m = s.getElementsByTagName(o)[0];
-				a.async = 1;
-				a.src = g;
-				m.parentNode.insertBefore(a, m)
-			})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-			ga('create', 'UA-86239311-1', 'auto');
-			ga('require', 'linkid');
-			ga('send', 'pageview');
-		</script>
-		<!--End of Google Analytics-->
-	{% endblock %}
+{% block google_analytics %}
+<!--Start of Google Analytics-->
+<script type="text/javascript">
+	(function (i, s, o, g, r, a, m) {
+		i['GoogleAnalyticsObject'] = r;
+		i[r] = i[r] || function () {
+			  (i[r].q = i[r].q || []).push(arguments)
+		  }, i[r].l = 1 * new Date();
+		a = s.createElement(o),
+		  m = s.getElementsByTagName(o)[0];
+		a.async = 1;
+		a.src = g;
+		m.parentNode.insertBefore(a, m)
+	})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+	ga('create', 'UA-86239311-1', 'auto');
+	ga('require', 'linkid');
+	ga('send', 'pageview');
+</script>
+<!--End of Google Analytics-->
+{% endblock %}
 {% endif %}
+<!-- global functions -->
 <script type="text/javascript">
 	//Displays floating disposable error message box
 	function ShowError(HtmlContent) {
@@ -364,5 +257,6 @@
 		if (clkBtn !== undefined) clkBtn.disabled = !clkBtn.disabled;
 	}
 </script>
+<!-- /global functions -->
 </body>
 </html>
