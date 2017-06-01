@@ -209,108 +209,24 @@
 
 	<!-- main navigation bar -->
 	<div class="navbar navbar-inverse navbar-fixed-top">
-		<div class="navbar-inner">
-			<div class="container-fluid">
-				<a class="brand" href="/breeze/">{{ site_title }}</a>
-				<div class="navbar-content" id="navbar-content">
-					{% if user.is_authenticated %}
-					<ul class="nav pull-right">
-						{% if request.path == '/home/' %}
-						<li><!-- tour button -->
-							<div class="btn-group pull-right">
-								<a id="tour-button" class="btn btn-inverse" href="#">
-									<i class="icon-play icon-white"></i> Take the tour
-								</a>
-							</div>
-						</li>
-						{% endif %}
-						<li><!-- user menu -->
-							<div class="btn-group pull-right">
-								<a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
-									<i class="icon-user icon-white"></i> {{ user.username }} <span
-								  class="caret"> </span>
-								</a>
-								<ul class="dropdown-menu">
-									{% if user.is_guest %}
-									<li><a href="#" onclick="logout_login();"> Log in <i class="icon-share"></i></a></li>
-									<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
-									{% else %}
-									<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
-									{% endif %}
-								</ul>
-							</div>
-						</li>
-					</ul>
-
-					<ul class="nav" >
-						<li class="{{ home_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/home/"{% endif %}>
-								<i class="icon-home"></i>
-								Home</a>
-						</li>
-						<li class="{{ jobs_status }}">
-							<a href="/jobs/" id="dash">
-								<i class="icon-tasks"></i>
-								Dash</a>
-						</li>
-						<li class="{{ scripts_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/scripts/"{% endif %} id="scripts">
-								<i class="icon-list-alt"></i>
-								Scripts</a>
-						</li>
-						<li class="{{ reports_status }}">
-							<a href="/reports/" id="reports">
-								<i class="icon-th"></i>
-								Reports</a>
-						</li>
-						<li class="{{ dbviewer_status }} disabled">
-							<a href="#" id="db" disabled="disabled">
-								<i class="icon-briefcase"></i>
-								DB Viewer</a>
-						</li>
-						{% if is_local_admin %}
-						<li class="{{ resources_status }}">
-							<a href="/resources/" id="resources">
-								<i class="icon-wrench"></i>
-								Manage Resources</a>
-						</li>
-						{% endif %}
-						<li class="{{ store_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/store/" {% endif %} id="store">
-								<i class=" icon-cog"></i>
-								Markets </a>
-						</li>
-						<li class="{{ tools_status }}">
-							<a href="/tools/" id="tools">
-								<i class="icon-question-sign"></i>
-								Tools</a>
-						</li>
-						<li class="{{ help_status }}">
-							<a href="/help/" id="help">
-								<i class="icon-question-sign"></i>
-								Help</a>
-						</li>
-						<li> </li>
-					</ul>
-					{% endif %}
-				</div>
-			</div>
-		</div>
+		{% include "navbar.html" %}
 	</div>
 	<!-- /main navigation bar -->
 
 	<!-- global container under the nav-bar -->
 	<div id="content" class="container-fluid">
-		<!-- show messages here -->
 		{% if messages %}
-			<ul class="messages">
-				{% for message in messages %}
-					<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-				{% endfor %}
-			</ul>
+		<!-- show messages here -->
+		<ul class="messages">
+			{% for message in messages %}
+				<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+			{% endfor %}
+		</ul>
 		{% endif %}
 		<div class="row-fluid" style="display: none;">&nbsp;</div>
+		{% if false %}
 		{% if run_mode == 'pharma' or run_mode == 'pharma_dev' %}
+		<!-- New Breeze-pharma user notice message -->
 		<div class="row-fluid">
 			<div class="span10 offset1 alert alert-info" style="padding-bottom: 12px;padding-top: 12px;">
 				<h4 style="text-decoration: underline;padding-bottom: 8px;">Welcome to the new Breeze-Pharma !</h4>
@@ -320,7 +236,9 @@
 			</div>
 		</div>
 		{% endif %}
+		{% endif %}
 		{% if user.is_guest %}
+		<!-- Guest user notice message -->
 		<div class="row-fluid">
 			<div class="span10 offset1 alert alert-warning" style="padding-bottom: 12px;padding-top: 12px;">
 				<h4 style="text-decoration: underline;padding-bottom: 8px;">Guest user warning :</h4>
@@ -328,9 +246,7 @@
 			</div>
 		</div>
 		{% endif %}
-		{% block content %}
-
-		{% endblock %}
+		{% block content %}{% endblock %}
 	</div>
 	<!-- /global container -->
 
