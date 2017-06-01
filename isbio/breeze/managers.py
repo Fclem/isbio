@@ -668,10 +668,10 @@ class ProjectManager(ObjectsWithAuth):
 		if user.is_guest:
 			try:
 				return super(ProjectManager, self).filter(name=settings.GUEST_GROUP_NAME)
-			except ObjectDoesNotExist:
-				pass
+			except ObjectDoesNotExist as e:
+				logger.exception('Guest project not found for guest user : %s' % e)
 		return super(ProjectManager, self).filter(
-			org_Q(author__exact=user) or org_Q(collaborative=1)).order_by("name")
+			org_Q(author__exact=user) | org_Q(collaborative=1)).order_by("name")
 		
 	# clem 26/05/2017
 	def get_test_project(self):
