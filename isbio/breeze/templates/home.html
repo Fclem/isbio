@@ -59,13 +59,15 @@
 				<div class="span12 well">
 					<ul class="nav nav-list">
 						<li class="{% if not user.is_guest %}{{ feed_menu }}{% endif %}">
-							<a {% if not user.is_guest %}href="#feed_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %}>
+							<a {% if not user.is_guest %}href="#feed_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %} id="feedMenuLink">
 								<strong>Breeze updates</strong></a></li>
 						<li class="{% if not user.is_guest %}{{ preferences_menu }}{% endif %}">
-							<a {% if not user.is_guest %}href="#preferences_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %}>
+							<a {% if not user.is_guest %}href="#preferences_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %}
+							   id="preferencesMenuLink">
 							<strong>Preferences</strong></a></li>
 						<li class="{% if not user.is_guest %}{{ statistics_menu }}{% endif %}">
-							<a {% if not user.is_guest %}href="#statistics_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %}>
+							<a {% if not user.is_guest %}href="#statistics_menu" data-toggle="tab"{% else %}disabled="disabled" {% endif %}
+							   id="statsMenuLink">
 							<strong>Statistics</strong></a></li>
 					</ul>
 				</div>
@@ -133,9 +135,14 @@
 							<div class="tabbable">
 								<!-- Tabs' Header -->
 								<ul class="nav nav-tabs">
-									<li class="{{ projects_tab }}"><a href="#projects_tab" data-toggle="tab">Projects</a></li>
-									<li class="{{ usergroups_tab }}"><a href="#usergroups_tab" data-toggle="tab">User Groups</a></li>
-									<li class="{{ contacts_tab }}"><a href="#contacts_tab" data-toggle="tab">Contacts list</a></li>
+									<li class="{{ projects_tab }}">
+										<a id="projectsTabHeader" href="#projects_tab" data-toggle="tab">Projects</a></li>
+									<li class="{{ usergroups_tab }}">
+										<a id="groupsTabHeader" href="#usergroups_tab" data-toggle="tab">User
+											Groups</a></li>
+									<li class="{{ contacts_tab }}">
+										<a id="contactsTabHeader" href="#contacts_tab" data-toggle="tab">Contacts
+											list</a></li>
 
 								</ul>
 								<!-- Tabs' Content -->

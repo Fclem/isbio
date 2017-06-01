@@ -90,6 +90,18 @@
 	<!-- My tour for logged-in users -->
 	<script type="text/javascript">
 		$(function () {
+			function switchToProjects(){
+				$('#preferencesMenuLink').click();
+				$('#projectsTabHeader').click();
+			}
+			function switchToGroups(){
+				$('#preferencesMenuLink').click();
+				$('#groupsTabHeader').click();
+			}
+			function switchToFeed () {
+				$('#feedMenuLink').click();
+			}
+			
 			var tourUsed = 0;
 			var tour = new Tour({
 				orphan: true,
@@ -117,13 +129,45 @@
 					{
 						title  : "Personal information",
 						path   : "/home",
-						// element: "#update_btn",
 						element: "#userInfoDiv",
 						placement: "bottom",
 						backdrop: true,
-						//backdropPadding: 5,
 						content: "If you haven't done so yet, you can click here<br>to update your personal " +
 						"information"
+					},
+					{
+						title  : "Preferences",
+						path   : "/home",
+						element: "#preferencesMenuLink",
+						placement: "right",
+						content: "You may go here to use some customization features",
+						duration: 4000,
+						backdrop: true,
+						onShow: switchToFeed,
+						onNext: switchToProjects
+					},
+					{
+						title  : "Projects",
+						path   : "/home",
+						element: "#projects_tab",
+						placement: "bottom",
+						content: "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
+						+ "reports for your own convenience.",
+						backdrop: true,
+						onPrev: switchToFeed,
+						onShow: switchToProjects,
+						onNext: switchToGroups
+					},
+					{
+						title  : "Groups",
+						path   : "/home",
+						element: "#usergroups_tab",
+						placement: "bottom",
+						content: "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
+						+ "reports for your own convenience.",
+						backdrop: true,
+						onPrev: switchToProjects,
+						onShow: switchToGroups
 					},
 					{
 						title  : "Report page",
