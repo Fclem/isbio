@@ -110,7 +110,8 @@ def trigger_logout(request):
 		logger.info('LOGOUT %s (%s)' % (user.username, user.email))
 		
 		try:
-			url = user.user_profile.institute_info.url or settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
+			# url = user.user_profile.institute_info.url or settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
+			url = settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
 		except Exception as e:
 			logger.exception(str(e))
 		

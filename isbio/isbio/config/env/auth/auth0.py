@@ -21,7 +21,7 @@ AUTH0_SUCCESS_URL = '/home/'
 AUTH0_LOGOUT_URL = 'https://breeze.eu.auth0.com/v2/logout?returnTo=%s'
 AUTH0_OAUTH_TOKEN_URL = 'https://%s/oauth/token' % AUTH0_DOMAIN
 AUTH0_USER_INFO_URL_BASE = 'https://%s/userinfo?access_token=%s'
-AUTH0_DEFAULT_LOGOUT_REDIRECT = 'https://www.fimm.fi'
+AUTH0_DEFAULT_LOGOUT_REDIRECT = DomainList.CLOUD_PROD  #  'https://www.fimm.fi'
 
 # INSTALLED_APPS += ['django_auth0']
 INSTALLED_APPS += ['custom_auth0']
