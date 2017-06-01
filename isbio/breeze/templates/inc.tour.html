@@ -2,15 +2,23 @@
 <link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
 <script src="/static/js/bootstrap-tour.min.js"></script>
 
-<!-- fix z-index of modals forms when bootstrap tour is used along with it -->
+<!-- Some style fix to workaround issues with some elements when using bootstrap-tour -->
 <style>
-	.modal {
+	.modal { /* fix z-index of modals forms when bootstrap tour is used along with it */
 		z-index: 1110;
+	}
+	#reportTableHeader > th { /* fix z-index of table header elements (not showing otherwise) */
+		background: inherit;
+		position: relative;
+		z-index: 1101;
 	}
 </style>
 
 <!-- My tour for logged-in users -->
 <script type="text/javascript">
+	var tour = null;
+	var tourRedrawStepIndex = 7;
+	
 	$(function () {
 		function switchToProjects() {
 			$('#preferencesMenuLink').click();
@@ -27,7 +35,7 @@
 		}
 		
 		var tourUsed = 0;
-		var tour = new Tour({
+		tour = new Tour({
 			orphan: true,
 			//storage: false,
 			onEnd : function (tour) {
@@ -48,7 +56,8 @@
 					path   : "/home",
 					orphan : true,
 					content: "This is the main page, here you will find updates about pipelines<br>" +
-					"as well as all the customizations options of the platform"
+					"as well as all the customizations options of the platform",
+					onShow: switchToFeed
 				},
 				{
 					title    : "Personal information",
@@ -76,7 +85,7 @@
 					element  : "#projects_tab",
 					placement: "bottom",
 					content  : "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
-					+ "reports for your own convenience.",
+					+ " reports for your own convenience.",
 					backdrop : true,
 					onPrev   : switchToFeed,
 					onShow   : switchToProjects,
@@ -85,10 +94,10 @@
 				{
 					title    : "Groups",
 					path     : "/home",
-					element  : "#usergroups_tab",
+					element  : "#userGroupsTable",
 					placement: "bottom",
-					content  : "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
-					+ "reports for your own convenience.",
+					content  : "Here you can view, edit and create 'groups' that helps<br>with sharing your reports"
+					+ " to a pre-defined set of users.",
 					backdrop : true,
 					onPrev   : switchToProjects,
 					onShow   : switchToGroups
@@ -96,10 +105,52 @@
 				{
 					title  : "Report page",
 					path   : "/reports/",
-					reflex : true,
 					orphan : true,
-					content: "This is the report page"
+					content: "This is the report page, here you can find all your completed reports<br>"
+					+ " along with reports that may have been shared with you.",
+					duration: 4000
+				},
+				{
+					title  : "Reports sorting",
+					element: "#reportTableHeader",
+					placement:"bottom",
+					path   : "/reports/",
+					container: "#wrapper",
+					backdrop: true,
+					content: "Click on any column header to change the sorting.",
+					duration: 4000
+				},
+				{
+					title  : "Report filtering",
+					path   : "/reports/",
+					placement: "bottom",
+					element: "#filter_form",
+					content: "Use the filtering options to easily find any of your past report, or those shared with " +
+					"you.",
+					backdrop: true
+				},
+				{
+					title  : "New report",
+					path   : "/reports/",
+					placement: "right",
+					element: "#new_popover",
+					content: "Click here start a new analysis, create a report.",
+					duration: 3000,
+					onNext :  function (){
+						$("#new_popover").click();
+					}
+				},
+				{
+					title  : "Report type",
+					path   : "/reports/",
+					placement: "right",
+					element: "#type_selector",
+					content: "Select here the type of report you would like to create.",
+					onShow : function (){
+						$("#type_selector").click();
+					}
 				}
+			 
 			]
 		});
 		

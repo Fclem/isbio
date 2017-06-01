@@ -449,6 +449,12 @@
 			$('#filt_clean').click(resetForm);
 			$('#radio_all').click(resetForm);
 			
+			
+			$("#pagination-content").change(function (){
+				if(typeof tour !== 'undefined' && tourRedrawStepIndex === tour.getCurrentStep()) {
+					tour.goTo(tourRedrawStepIndex);
+				}
+			});
 		});
 	</script>
 {% endblock %}
