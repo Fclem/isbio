@@ -49,20 +49,18 @@
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-	<!--
-    {% bootstrap_javascript_tag "transition" %}
-    {% bootstrap_javascript_tag "tooltip" %}
-
-    {% bootstrap_javascript_tag "tab" %}
-    {% bootstrap_javascript_tag "affix" %}
-    {% bootstrap_javascript_tag "popover" %} -->
 	<link href="/static/css/breeze-base.css" rel="stylesheet">
 	<link href="/static/css/footer.css" rel="stylesheet">
 	<style>
 		.nav.pull-right .btn-group{
 			margin-left: 20px;
 		}
+		.modal{
+			z-index: 1110;
+		}
 	</style>
+	
+	<!-- Footnote as a real footer compatibility for IE<7 -->
 	<!--[if lt IE 7]>
     <style type="text/css">
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
@@ -101,20 +99,31 @@
 				},
 				steps : [
 					{
+						title: "Welcome !",
 						element  : "#tour-button",
 						placement: "bottom",
 						path     : "/home",
-						title    : "Welcome !",
 						content  : "Welcome to Breeze introduction tour.<br>" +
 						"It will introduce you to the Breeze platform<br>" +
-						"by walking through it step by step."
+						"by walking you through it, step by step."
 					},
 					{
 						title  : "Main page",
 						path   : "/home",
 						orphan : true,
 						content: "This is the main page, here you will find updates about pipelines<br>" +
-						"and find all the customizations options of the platform"
+						"as well as all the customizations options of the platform"
+					},
+					{
+						title  : "Personal information",
+						path   : "/home",
+						// element: "#update_btn",
+						element: "#userInfoDiv",
+						placement: "bottom",
+						backdrop: true,
+						//backdropPadding: 5,
+						content: "If you haven't done so yet, you can click here<br>to update your personal " +
+						"information"
 					},
 					{
 						title  : "Report page",
@@ -131,9 +140,6 @@
 			var tourBouton = document.getElementById("tour-button");
 			
 			tourBouton.addEventListener("click", function () {
-				//tour.start();
-				//tour.setCurrentStep(0);
-				//!tourUsed ? tour.start() : tour.restart();
 				tour.restart();
 				tourUsed++;
 				tourBouton.classList.add('disabled');

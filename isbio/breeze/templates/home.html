@@ -42,7 +42,7 @@
 		<div class="span3  offset1 ">
 			<!-- USER INFO -->
 			<div class="row-fluid">
-				<div class="span12 well">
+				<div id="userInfoDiv" class="span12 well">
 					<img style="float: left; margin: 1px 11px 1px 19px; height: 72px; width: 72px;" src="/static/user.jpg" class="thumbnail img-rounded">
 					<p> <strong>Welcome:</strong> </p>
 					<p>@{{ user.username|default:"USER NAME" }} </br>
@@ -453,7 +453,10 @@
 					$('#db_policy').modal('show');
 				});
 			}
+			
+			// FIXME : deprecated
 			function updateServer() {
+				return;
 				$.ajax({
 					type   : "GET",
 					url    : "/update-server/",
@@ -482,7 +485,7 @@
 							var elementExists = document.getElementById(prop);
 							if (elementExists != null) $('#' + prop).text(msg.server_info[prop]);
 						}
-						window.setTimeout(updateServer, 2000);
+						//window.setTimeout(updateServer, 2000);
 					}
 				});
 			}
@@ -642,7 +645,7 @@
 								}
 
 								// update the entire doc with the response, since we received a entire success page and we want to reload the entire page
-								window.clearTimeout(updateServer());
+								//window.clearTimeout(updateServer());
 								$(modalID).modal('hide');
 								document.open();
 								document.write(response);
