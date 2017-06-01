@@ -456,7 +456,7 @@ def reports(request, _all=False):
 	# manage pagination
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
-	sorting = aux.get_argument(request, 'sort') or '-created'
+	sorting = aux.get_argument(request, 'sort') or '-_created'
 	user_r_types = request.user.pipeline_access.all()
 	
 	# Merge request.GET and request.POST into request.REQUEST
