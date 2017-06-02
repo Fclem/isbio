@@ -362,7 +362,7 @@ class QuerySet(original_QS):
 		"""
 		from breeze.models import JobStat
 
-		return self.get_history().filter(Q(_status=JobStat.ABORTED) or Q(_status=JobStat.ABORT))
+		return self.get_history().filter(Q(_status=JobStat.ABORTED) | Q(_status=JobStat.ABORT)) # TODO test
 
 
 # TODO extend to all objects
