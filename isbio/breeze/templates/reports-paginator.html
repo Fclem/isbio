@@ -15,7 +15,7 @@
 		</i>
 		{% endif %}
 	</h4>
-</small>
+</small> <!-- Report count line -->
 {% endif %}
 </p>
 <table class="table table-striped table-hover" id="main_table">
@@ -144,7 +144,7 @@
 			totalPages   : {{ pagination_number|default:"1" }},
 			alignment    : 'center',
 			onPageChanged: function (e, oldPage, newPage) {
-				if (oldPage == newPage || !refresh) return;
+				if (oldPage === newPage || !refresh) return;
 				$("#pagination-content").fadeTo('', 0.33);
 				$.extend(searchQ, {page: newPage});
 				$.get(thisPageUrl + "{% if url %}{{ url }}{% endif %}" ,  searchQ , function (data) {

@@ -52,8 +52,16 @@
 	<link href="/static/css/breeze-base.css" rel="stylesheet">
 	<link href="/static/css/footer.css" rel="stylesheet">
 	<style>
-		.nav.pull-right .btn-group{
+		/* .nav.pull-right .btn-group{
+		#tour-button{ */
+		/* fix inherited styles from navbar that breaks the tour popover */
+		.nav.pull-right .btn-group.pull-right{
 			margin-left: 20px;
+		}
+		
+		/* fix inherited styles from navbar that breaks the tour popover */
+		.navbar .popover.tour-tour .btn, .navbar .popover.tour-tour .btn-group{
+			margin-top: 0;
 		}
 	</style>
 	
@@ -255,6 +263,11 @@
 	function switchObj(name) {
 		clkBtn = $('#' + name + '')[0];
 		if (clkBtn !== undefined) clkBtn.disabled = !clkBtn.disabled;
+	}
+	
+	function isFunction(functionToCheck) {
+		var getType = {};
+		return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
 	}
 </script>
 <!-- /global functions -->
