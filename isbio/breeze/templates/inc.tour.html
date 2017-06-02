@@ -34,6 +34,22 @@
 			$('#feedMenuLink').click();
 		}
 		
+		var newPopover = $("#new_popover");
+		
+		function hideNewPopover(){
+			newPopover = $("#new_popover");
+			if (newPopover.next('div.popover:visible').length) newPopover.click();
+		}
+		
+		function showNewPopover(){
+			newPopover = $("#new_popover");
+			if (!newPopover.next('div.popover:visible').length) newPopover.click();
+		}
+		
+		function submitNew(){
+			if($('#subBtn').length) $('#subBtn').click();
+		}
+		
 		var tourUsed = 0;
 		tour = new Tour({
 			orphan: true,
@@ -127,30 +143,66 @@
 					element: "#filter_form",
 					content: "Use the filtering options to easily find any of your past report, or those shared with " +
 					"you.",
-					backdrop: true
-				},
-				{
-					title  : "New report",
-					path   : "/reports/",
-					placement: "right",
-					element: "#new_popover",
-					content: "Click here start a new analysis, create a report.",
-					duration: 3000,
-					onNext :  function (){
-						$("#new_popover").click();
-					}
+					backdrop: true,
+					onHide: showNewPopover
 				},
 				{
 					title  : "Report type",
 					path   : "/reports/",
 					placement: "right",
 					element: "#type_selector",
-					content: "Select here the type of report you would like to create.",
-					onShow : function (){
-						$("#type_selector").click();
+					content: "To create a new report, start by selecting its type here...",
+					backdrop: true,
+					onPrev : hideNewPopover,
+					onShow : showNewPopover
+				},
+				{
+					title  : "Report name",
+					path   : "/reports/",
+					placement: "right",
+					element: "#popover_search",
+					content: "And then choosing a name for it.",
+					backdrop: true,
+					onShow : function(){
+						showNewPopover();
+						$('#popover_search').val('Testing Report');
+					},
+					onNext: function(){
+						console.log('name onNext');
+						return;
+						$('#subBtn').click();
+					}/*,
+					redirect: false*/
+				},
+				{
+					title  : "Creating a report",
+					path   : RegExp("/\/reports\/new\/\d+-[^/]+/i"),
+					//path   : "/reports/new/",
+					content: "This is the report creation form",
+					orphan : true,
+					redirect: false,
+					onShow : function(){
+						console.log('create onShow');
+						submitNew();
 					}
+					  /*
+					  function () {
+						try {
+							console.log('create redirecting');
+							$('#subBtn').click();
+						} finally {
+							console.log('done')
+						}
+					} */
+				},
+				{
+					title  : "Creating a report 2",
+					//path   : RegExp("/reports/new/\d+-[^/]+"),
+					path   : "/reports/new/",
+					content: "This is the report creation form",
+					orphan : true,
+					redirect: false
 				}
-			 
 			]
 		});
 		
