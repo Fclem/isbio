@@ -7,12 +7,6 @@
 	.modal { /* fix z-index of modals forms when bootstrap tour is used along with it */
 		z-index: 1110;
 	}
-	/*
-	#reportTableHeader > th {
-		background: inherit;
-		position: relative;
-		z-index: 1101;
-	} */ /* fix z-index of table header elements (not showing otherwise) */
 	.special-th-fix { /* fix z-index of table header elements (not showing otherwise) */
 		background: inherit;
 		position: relative;
@@ -64,7 +58,6 @@
 	
 	function fixTh() {
 		getTh().addClass('special-th-fix');
-		//getTh().click(unFixTh);
 	}
 	
 	function unFixTh() {
@@ -233,7 +226,6 @@
 				{
 					title   : "Creating a report 2",
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
-					//path   : "/reports/new/",
 					content : "This is the report creation form",
 					orphan  : true,
 					redirect: false

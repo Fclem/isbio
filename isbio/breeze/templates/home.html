@@ -404,88 +404,70 @@
 	</div>
 
 	<script type="text/javascript">
+		function getMyModal(){
+			return $('#myModal');
+		}
+		function getStatusEl(){
+			return $('#status');
+		}
+	
+		function attachModel(elementSelector){
+			$(elementSelector).removeAttr('href');
+			$(elementSelector).click(function (e) {
+				e.preventDefault();
+				getMyModal().modal('show');
+			});
+		}
+	
 		$(window).load(function () {
 			var id = '#user_info';
 
-			if ($(id).data('para') == "False") {
-				$('#myModal').modal('show');
-				$("#dash").removeAttr('href');
-				$("#dash").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#scripts").removeAttr('href');
-				$("#scripts").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#reports").removeAttr('href');
-				$("#reports").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#db").removeAttr('href');
-				$("#db").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#search").removeAttr('href');
-				$("#search").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#store").removeAttr('href');
-				$("#store").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#help").removeAttr('href');
-				$("#help").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
-				$("#resources").removeAttr('href');
-				$("#resources").click(function (e) {
-					e.preventDefault();
-					$('#myModal').modal('show');
-				});
+			if ($(id).data('para') === "False") {
+				getMyModal().modal('show');
+				var idList = ["#dash", "#scripts", "#reports", "#db", "#search", "#store", "#help", "#resources"];
+				var size = idList.length;
+				
+				for(var i=0; i < size; i++){
+					attachModel(idList[i]);
+				}
 			}
 
 			modalConnect();
 			// updateServer();
 			var db_access = '#db_access';
-			if ($(db_access).data('para') == "False") {
+			if ($(db_access).data('para') === "False") {
 				$("#db").click(function (e) {
 					e.preventDefault();
 					$('#db_policy').modal('show');
 				});
 			}
 			
-			// FIXME : deprecated
 			function updateServer() {
 				return;
+				/*
 				$.ajax({
 					type   : "GET",
 					url    : "/update-server/",
 					dataType: 'json',
 					success: function (msg) {
 						//console.log(msg.server_status)
+						var statusEl = getStatusEl();
 						if (msg.server_status == 'idle') {
 							//console.log("wowo")
-							$('#status').removeAttr('class');
-							$('#status').attr('class', 'btn btn-large btn-success');
-							$('#status').empty();
-							$('#status').text('idle')
+							statusEl.removeAttr('class');
+							statusEl.attr('class', 'btn btn-large btn-success');
+							statusEl.empty();
+							statusEl.text('idle')
 						} else if (msg.server_status == 'bad') {
-							$('#status').removeAttr('class');
-							$('#status').attr('class', 'btn btn-large btn-danger');
-							$('#status').empty();
-							$('#status').text('bad')
+							statusEl.removeAttr('class');
+							statusEl.attr('class', 'btn btn-large btn-danger');
+							statusEl.empty();
+							statusEl.text('bad')
 						} else if (msg.server_status == 'busy') {
-							$('#status').removeAttr('class');
-							$('#status').attr('class', 'btn btn-large btn-warning');
-							$('#status').empty();
-							$('#status').text('busy')
+							statusEl.removeAttr('class');
+							statusEl.attr('class', 'btn btn-large btn-warning');
+							statusEl.empty();
+							statusEl.text('busy')
 						}
 						for (var prop in msg.server_info) {
 							//auto updates vars from JSON using vars name as target id
@@ -495,6 +477,7 @@
 						//window.setTimeout(updateServer, 2000);
 					}
 				});
+				*/
 			}
 
 			// paginator setup
