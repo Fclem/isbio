@@ -33,9 +33,7 @@
 	</style>
 {% endblock %}
 {% block content %}
-	<div class="row-fluid">
-		&nbsp;
-	</div>
+	<div class="row-fluid"> &nbsp; </div>
 
 	<div class="row-fluid">
 		<!-- LEFT PANEL -->
@@ -407,9 +405,6 @@
 		function getMyModal(){
 			return $('#myModal');
 		}
-		function getStatusEl(){
-			return $('#status');
-		}
 	
 		function attachModel(elementSelector){
 			$(elementSelector).removeAttr('href');
@@ -433,51 +428,12 @@
 			}
 
 			modalConnect();
-			// updateServer();
 			var db_access = '#db_access';
 			if ($(db_access).data('para') === "False") {
 				$("#db").click(function (e) {
 					e.preventDefault();
 					$('#db_policy').modal('show');
 				});
-			}
-			
-			function updateServer() {
-				return;
-				/*
-				$.ajax({
-					type   : "GET",
-					url    : "/update-server/",
-					dataType: 'json',
-					success: function (msg) {
-						//console.log(msg.server_status)
-						var statusEl = getStatusEl();
-						if (msg.server_status == 'idle') {
-							//console.log("wowo")
-							statusEl.removeAttr('class');
-							statusEl.attr('class', 'btn btn-large btn-success');
-							statusEl.empty();
-							statusEl.text('idle')
-						} else if (msg.server_status == 'bad') {
-							statusEl.removeAttr('class');
-							statusEl.attr('class', 'btn btn-large btn-danger');
-							statusEl.empty();
-							statusEl.text('bad')
-						} else if (msg.server_status == 'busy') {
-							statusEl.removeAttr('class');
-							statusEl.attr('class', 'btn btn-large btn-warning');
-							statusEl.empty();
-							statusEl.text('busy')
-						}
-						for (var prop in msg.server_info) {
-							//auto updates vars from JSON using vars name as target id
-							var elementExists = document.getElementById(prop);
-							if (elementExists != null) $('#' + prop).text(msg.server_info[prop]);
-						}
-						//window.setTimeout(updateServer, 2000);
-					}
-				});
-				*/
 			}
 
 			// paginator setup
@@ -487,7 +443,6 @@
 				totalPages   : "{{ pag_total_screens }}",
 				alignment    : 'center',
 				onPageChanged: function (e, oldPage, newPage) {
-					//console.log( $('#pagination-test').load('/reports/ #pagination_context', "Page:" + newPage ) );
 					$.get("/pagination/home/", {page: newPage, table: 'screens'}, function (data) {
 						$('#screens-pagination-content').html(data);
 					});
@@ -509,26 +464,18 @@
 						url     : url,
 						dataType: "json",
 						success : function (data) {
-							//var data = [["2013-08", 5], ["2014-08", 5]];
-							//ret = data
 							var jqPlotData = $.map(data, function (value, key) {
-								if (key != "__type") {
+								if (key !== "__type") {
 									return [value]; //was key, value
 								}
 							});
 
 							ret = jQuery.makeArray(jqPlotData);
-							//alert(jqPlotData)
-							//var ret = [["2013-08", 5], ["2014-8", 5]];
-							//console.log(ret)
-							//console.log(jQuery.makeArray(data));
 						},
 						error   : function (request, status, error) { console.log("hate u forever!"); }
 					});
 					return [ret];
 				};
-
-
 				// The url for our json data
 				var jsonurl = "/stat";
 				var plot1 = $.jqplot('chartdiv', jsonurl, {
@@ -537,7 +484,6 @@
 					dataRendererOptions: {
 						unusedOptionalUrl: jsonurl
 					},
-					//series:[{renderer:$.jqplot.BarRenderer}],
 					series      : [{lineWidth: 2}],
 					axesDefaults: {
 						tickRenderer: $.jqplot.CanvasAxisTickRenderer,
@@ -557,11 +503,7 @@
 								formatString : '%y-%m',
 								labelPosition: 'start'
 							},
-							//min:'March 30, 2014',
 							tickInterval: '1 month'
-							//min: jsonurl[0][0][0],
-							//max: jsonurl[0][jsonurl[0].length-1][0]
-							//tickOptions:{formatString:'%H:%M'}
 						},
 						yaxis: {
 							min: 0,
@@ -608,7 +550,6 @@
 					// exclude 'multiselect-all' if it was a plugin widget
 					$(modalID).find(".multiselect option[value='multiselect-all']").remove();
 
-					//var formData = new FormData($('form')[0]);
 					var formData = new FormData($(modalID).find('form')[0]);
 					$.ajax({
 						type   : "POST",
@@ -621,13 +562,10 @@
 							// change this "if" to check for a specific return code which should be set in the view
 							if (form.html()) {  //update modal div
 								$(modalID).find('#form_modal_apply_div').html(form);
-
 								$('.multiselect').multiselect(multiConfigurationSet);
-
 								$(modalID).modal('show');
 							}
 							else {  // form is not returned if form submission succeeded
-
 								var ct = jqXHR.getResponseHeader("content-type") || "";
 								if (ct.indexOf('json') > -1) {
 									alert('html:' + textStatus);
@@ -644,8 +582,7 @@
 							}
 						},
 						error  : function (request, status, error) {
-							// implement proper error handling
-							// console.log(request.responseText);
+							// TODO implement proper error handling
 						},
 						cache  : false,
 						contentType: false,
@@ -658,7 +595,7 @@
 
 			function modalConnect() {
 				// 'hcalls' Class - goes for home ajax callable elements
-				var controls = $('.hcalls')  // [ "#update_btn", "#new_project_btn" ]
+				var controls = $('.hcalls');
 
 				$.each(controls, function (i, element) {
 					$(element).unbind('click');

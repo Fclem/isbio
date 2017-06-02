@@ -49,21 +49,10 @@
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
+	<!-- Breeze Specifics -->
 	<link href="/static/css/breeze-base.css" rel="stylesheet">
 	<link href="/static/css/footer.css" rel="stylesheet">
-	<style>
-		/* .nav.pull-right .btn-group{
-		#tour-button{ */
-		/* fix inherited styles from navbar that breaks the tour popover */
-		.nav.pull-right .btn-group.pull-right{
-			margin-left: 20px;
-		}
-		
-		/* fix inherited styles from navbar that breaks the tour popover */
-		.navbar .popover.tour-tour .btn, .navbar .popover.tour-tour .btn-group{
-			margin-top: 0;
-		}
-	</style>
+	<script src="/static/js/breeze-base.js"></script>
 	
 	<!-- Footnote as a real footer compatibility for IE<7 -->
 	<!--[if lt IE 7]>
@@ -205,71 +194,5 @@
 <!--End of Google Analytics-->
 {% endblock %}
 {% endif %}
-<!-- global functions -->
-<script type="text/javascript">
-	//Displays floating disposable error message box
-	function ShowError(HtmlContent) {
-		$("#error_msg").removeClass("hidden");
-		//$("#error_msg").innerHTML = HtmlContent;
-		if (HtmlContent !== "") {
-			var x = document.getElementById("error_msg_holder");
-			if (x !== undefined) {
-				x.innerHTML = HtmlContent;
-			}
-		}
-	}
-
-	$(document).ready(function () {
-		var x = document.getElementById("error_msg_holder");
-		if (x.innerHTML !== "" && x.innerHTML !== "<p></p>") {
-			ShowError("");
-		}
-	});
-
-	function fixDropDownSub(item) {
-
-	}
-
-	function fixDropDown() {
-		//drop down
-		var el=$('button.dropdown-toggle');
-		for (var i = 0; i < el.length; i++) {
-			el.eq(i).on("click", function () {
-				var tg = $(this);
-				var btGrp = tg.parents('div.btn-group').first();
-				var modal = tg.parents('div.modal-body').first();
-				if (btGrp.hasClass('open')) {
-					//modal.(modal.height() - 450);
-					modal.height(modal.height() - 450);
-				} else {
-					modal.height(modal.height() + 450);
-				}
-			});
-		}
-	}
-
-	// prevents click on a submit button
-	function disableObj(name) {
-		clkBtn = $('#' + name + '')[0];
-		//protect from double submission while sending
-		if (clkBtn !== undefined) clkBtn.disabled = true;
-	}
-
-	function enableObj(name) {
-		clkBtn = $('#' + name + '')[0];
-		if (clkBtn !== undefined) clkBtn.disabled = false;
-	}
-
-	function switchObj(name) {
-		clkBtn = $('#' + name + '')[0];
-		if (clkBtn !== undefined) clkBtn.disabled = !clkBtn.disabled;
-	}
-	
-	function isFunction(functionToCheck) {
-		var getType = {};
-		return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
-	}
-</script>
-<!-- /global functions -->
 </body>
 </html>
