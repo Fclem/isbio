@@ -185,6 +185,36 @@
 	<div id="Send" class="modal fade" role="dialog" aria-hidden="true"></div>
 	<!-- Off-site user add form (NOT USED TODO delete) -->
 	<div id="Add" class="modal fade" role="dialog" aria-hidden="true"></div>
+	<!-- New report PopOver -->
+	<div id="reportPopover" class="hide">
+		<form id="report_form" class="navbar-search" action="/search/entity" method="post">
+			<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+			<div class="control-group">
+				<div class="controls">
+					<select id="type_selector" name="type" class="input-medium search-query">
+						{% for item in user_r_types %}
+						<option id="{{ item.id }}" value="{{ item.type }}"
+						        data-search={{ item.search }}>{{ item.type }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<input id="popover_search" name="query" type="text" class="search-query input-medium"
+					       placeholder="Report name" value=""><br>
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<button id="subBtn" type="submit" class="btn btn-primary btn-small btn-block"
+					        onclick="disableObj('subBtn');submit();">
+						<strong> GO </strong></button>
+				</div>
+			</div>
+		</form>
+		</br>
+	</div>
 	<!-- User Access edit form management and User name conversion, and other forms -->
 	<script type="text/javascript">
 		function submitItemModalFormBind(url, target) {
@@ -335,7 +365,7 @@
 		function submit_filter_form(e, sort) {
 			$("#pagination-content").fadeTo(0, 0.33);
 			var formData = $('#filter_form').serialize();
-			if (sort != undefined ) formData+= '&sort=' + encodeURIComponent(sort);
+			if (sort !== undefined ) formData+= '&sort=' + encodeURIComponent(sort);
 			$.ajax({
 				type   : 'POST',
 				url    : searchUrl,
@@ -363,7 +393,7 @@
 			totalPages   : "{{ pagination_number }}",
 			alignment    : 'center',
 			onPageChanged: function (e, oldPage, newPage) {
-				if (oldPage == newPage || !refresh) return;
+				if (oldPage === newPage || !refresh) return;
 				$.get(thisPageUrl, {page: newPage}, function (data) {
 					$('#pagination-content').html(data);
 				});
@@ -371,11 +401,13 @@
 		};
 		//registering events handlers / functions
 		$(document).ready(function() {
+			var paginationContent = $("#pagination-content");
+			
 			apply_pg(pagOptions);
 			$('.Glyph').tooltip();
 
 			var db_access = '#db_access';
-			if($(db_access).data('para')=="False"){
+			if($(db_access).data('para') === "False"){
 				$("#db").click(function(e){
 					e.preventDefault();
 					$('#db_policy').modal('show');
@@ -387,45 +419,19 @@
 				trigger: "click",
 				placement: "right",
 				html: true,
-				content: '\
-    <form id= "report_form" class="navbar-search" action="/search/entity" method="post">\
-				<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>\
-      <div class="control-group">\
-        <div class="controls">\
-          <select id="type_selector" name="type" class="input-medium search-query">\
-          {% for item in user_r_types %}\
-            <option id="{{ item.id }}" value="{{ item.type }}" data-search={{ item.search }}>{{ item.type }}</option>\
-          {% endfor %}\
-          </select>\
-        </div>\
-      </div>\
-      <div class="control-group">\
-        <div class="controls">\
-          <input id="popover_search" name="query" type="text" class="search-query input-medium" placeholder="Report name..." value=""></br>\
-        </div>\
-      </div>\
-      <div class="control-group">\
-        <div class="controls">\
-          <button id="subBtn" type="submit" class="btn btn-primary btn-small btn-block" onclick="disableObj(\'subBtn\');submit();"><strong> GO </strong></button>\
-						</div>\
-					</div>\
-				</form>\
-				</br>\
-				'
+				content: $('#reportPopover').html()
 			});
 
 			$('#new_popover').click(function(){
-
 				$("#report_form").submit(function(event){
-					text = $( "#popover_search" ).val();
+					var text = $( "#popover_search" ).val();
 					if(text.match(/^\d/)){
 						event.preventDefault();
 						$("#ReportName").modal("show");
 					}
 				});
-
 				$('#type_selector').change(function(){
-					if ($('#type_selector').find(':selected').data('search') == "True"){
+					if ($('#type_selector').find(':selected').data('search') === "True"){
 						$('#popover_search').attr('placeholder', 'Item Search... ');
 					}
 					else {
