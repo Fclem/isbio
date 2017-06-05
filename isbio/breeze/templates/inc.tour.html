@@ -80,6 +80,24 @@
 			tourButton.removeClass('disabled');
 	}
 	
+	function getSharingButtonGroup(){
+		return $('#TagList div.btn-group');
+	}
+	
+	function openSharing(){
+		var button = getSharingButtonGroup();
+		if(!button.hasClass('open')){
+			button.addClass('open');
+		}
+	}
+	
+	function closeSharing(){
+		var button = getSharingButtonGroup();
+		if (button.hasClass('open')) {
+			button.removeClass('open');
+		}
+	}
+	
 	$(function () {
 		var tourUsed = 0;
 		tour = new Tour({
@@ -122,6 +140,7 @@
 					content  : "You may go here to use some customization features",
 					duration : 4000,
 					backdrop : true,
+					reflex   : true,
 					onShow   : switchToFeed,
 					onNext   : switchToProjects
 				},
@@ -224,11 +243,51 @@
 					}
 				},
 				{
-					title   : "Creating a report 2",
+					title   : "Project",
+					element : "#id_project",
+					container: "body",
+					backdrop: true,
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
-					content : "This is the report creation form",
-					orphan  : true,
+					content : "Select a project to attach this report to.<br>This only serves for sorting purposes",
+					redirect: false,
+					onShow  : function () {
+						// $('div.span4.offset1').css('position', 'relative');
+					},
+					onNext  : function () {
+						var projSelector = $('#id_project') ;
+						var firstOption = $("#id_project option:nth-child(2)");
+						if(projSelector.val() <= 1) projSelector.val(firstOption.val());
+					}
+				},
+				{
+					title   : "Computing target",
+					element : "#id_target",
+					container: "body",
+					backdrop: true,
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "This should usually be left to the default target.",
 					redirect: false
+				},
+				{
+					title   : "Report sharing",
+					element : "#TagList div.btn-group",
+					container: "body",
+					backdrop: true,
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "Optionally select users or group of users you would like to share this report with.",
+					redirect: false,
+					onShown: openSharing,
+					onHide: closeSharing
+				},
+				{
+					title   : "Report sharing",
+					//element : "#TagList div.btn-group",
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "Optionally select users or group of users you would like to share this report with.",
+					redirect: false,
+					orphan  : true,
+					onShow  : openSharing,
+					onHide  : closeSharing
 				}
 			]
 		});

@@ -124,8 +124,6 @@
 			</div>
 		</div>
 	{% endif %}
-
-
 	<!-- TABLE OF SEARCH RESULT -->
 	{% if search_result %}
 		<div class="row-fluid">
@@ -176,24 +174,14 @@
 		<!-- useless ? spacing ? -->
 		<div class="row-fluid">
 			<div class="span10 offset1">
-				<!--
-									<ul class="breadcrumb pull-left" style="background-color: transparent;">
-										<li><a href="/reports/">Reports</a> <span class="divider">/</span></li>
-										<li><a href="/reports/">Search</a> <span class="divider">/</span></li>
-										<li class="active"> Overview </li>
-									</ul>
-									-->
 			</div>
 		</div>
 
 		<!-- Main block -->
-		<div class="row-fluid">
-			<form id="TagList" action="" method="post" enctype="multipart/form-data">
+		<form id="TagList" action="" method="post" enctype="multipart/form-data">
+			<div class="row-fluid">
 				{% csrf_token %}
-				<!-- Left panel : Report details
-				/reports/overview/{{ overview_info.report_type }}-{{ overview_info.instance_name }}-{{ overview_info.instance_id }}
-				-->
-				<div class="span4 offset1" style="position:fixed;">
+				<div class="span4 offset1"> <!-- style="position:fixed;" -->
 					<div class="row-fluid thumbnail">
 						{% if overview_info.manual != "" and overview_info.manual != None %}
 						<p class="pull-right" style="margin-right: 45px;margin-top: 20px;">
@@ -233,7 +221,7 @@
 					</div>
 				</div>
 				<!-- Right panel : Report available tags/Pipeline (Rscript) -->
-				<div class="span6 offset5">
+				<div class="span6">
 					<div class="controls">
 						<table class="table table-condensed">
 							<tbody>
@@ -308,8 +296,8 @@
 						</table>
 					</div>
 				</div>
-			</form>
-		</div>
+			</div>
+		</form>
 	{% endif %}
 
 	{% if full_report %}

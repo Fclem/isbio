@@ -105,3 +105,8 @@ th[onclick] {
 .navbar .popover.tour-tour .btn, .navbar .popover.tour-tour .btn-group {
 	margin-top: 0;
 }
+/*
+.navbar-fixed-top, .navbar-fixed-bottom {
+	z-index: 1200;
+}
+*/
