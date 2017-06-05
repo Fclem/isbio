@@ -3,25 +3,29 @@
 	{% for job in current %}
 		{% if job.status == "running" %}
 			<tr id="{{ job.id }}_tr1" class="info">
-				<td id="{{ job.id }}_SGEstatus"><strong>{{ job.jname }}</strong> - checking status... - {{ job.staged }}</td>
+				<td id="{{ job.id }}_SGEstatus"><strong>{{ job.jname }}</strong> - checking status... - {{ job.staged }}
+				</td>
 			</tr>
 			<tr id="{{ job.id }}_tr2" class="info">
 				<td>
 					<div id="{{ job.id }}_div" class="progress progress-striped active">
-						<div id="{{ job.id }}_bar" class="bar jbar" data-param="{{ job.id }}" data-inst="{{ job.instance }}"
-							 style="width: {{ job.progress }}%"/>
+						<div id="{{ job.id }}_bar" class="bar jbar" data-param="{{ job.id }}"
+						     data-inst="{{ job.instance }}"
+						     style="width: {{ job.progress }}%"/>
 					</div>
 				</td>
 			</tr>
 		{% elif job.status == "queued_active" or job.status == "init" or job.status == 'aborted' %}
 			<tr id="{{ job.id }}_tr1" class="info">
-				<td id="{{ job.id }}_SGEstatus"><strong>{{ job.jname }}</strong> - checking status... - {{ job.staged }}</td>
+				<td id="{{ job.id }}_SGEstatus"><strong>{{ job.jname }}</strong> - checking status... - {{ job.staged }}
+				</td>
 			</tr>
 			<tr id="{{ job.id }}_tr2" class="info">
 				<td>
 					<div id="{{ job.id }}_div" class="progress progress-warning progress-striped active">
-						<div id="{{ job.id }}_bar" class="bar jbar" data-param="{{ job.id }}" data-inst="{{ job.instance }}"
-							 style="width: {{ job.progress }}%"/>
+						<div id="{{ job.id }}_bar" class="bar jbar" data-param="{{ job.id }}"
+						     data-inst="{{ job.instance }}"
+						     style="width: {{ job.progress }}%"/>
 					</div>
 				</td>
 			</tr>
