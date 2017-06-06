@@ -456,7 +456,7 @@ def reports(request, _all=False):
 	# manage pagination
 	page_index, entries_nb = aux.report_common(request)
 	# Manage sorting
-	sorting = aux.get_argument(request, 'sort') or '-created'
+	sorting = aux.get_argument(request, 'sort') or '-_created'
 	user_r_types = request.user.pipeline_access.all()
 	
 	# Merge request.GET and request.POST into request.REQUEST
@@ -1177,14 +1177,13 @@ def resources(request):
 			'legend': 'This is an example of another graph', }
 	)
 	usage_graph = ()
-	
-	# print advanced_pretty_print(ObjectCache.dump())
 
 	return render_to_response('resources.html', RequestContext(request, {
 		'resources_status': 'active',
 		'usage_graph': usage_graph,
 		'resources': get_template_check_list(),
-		'cache': ObjectCache.dump()
+		'cache': ObjectCache.dump(),
+		'reports': list(Report.objects.f.get_active()) + list(Report.objects.f.get_run_wait())
 	}))
 
 
@@ -1285,7 +1284,9 @@ def dochelp(request):
 	return render_to_response('help.html', RequestContext(request, {
 		'help_status': 'active',
 		'db_access': db_access,
-		'packages': utils.PyPackageLister.get_packages_list()
+		'xhr_package_summary': True,
+		'xhr_base_url': PyPackage.JSON_URL,
+		'packages': utils.PyPackageLister.get_packages_list(False, False)
 	}))
 
 
@@ -2430,7 +2431,7 @@ def report_file_server_sub(request, rid, category, report_inst, fname=None):
 
 
 # Clem on 22/09/2015
-@allow_guest(login_url='/')
+@allow_guest
 def update_jobs_json(request, jid, item):
 	if item == 'script':
 		obj = Jobs.objects.get(id=jid)
@@ -2453,10 +2454,18 @@ def update_jobs(request, jid, item):
 	return HttpResponse(simplejson.dumps(response), content_type=c_t.JSON)
 
 
+# clem 26/05/2017
+@login_required
+def jobs_resource_view(request, jid, _):
+	j_dumps = simplejson.dumps
+	return HttpResponse(j_dumps(Report.objects.secure_get(id=jid, user=request.user).json_info), content_type=c_t.JSON)
+
+
 @allow_guest
-def update_jobs_lp(request, jid, item, md5_t=None):
+def update_jobs_lp(request, jid, item, md5_t=None, callback=update_jobs):
+	assert callable(callback)
 	if md5_t is None:
-		return update_jobs(request, jid, item)
+		return callback(request, jid, item)
 	from time import sleep
 	refresh_time = 0.5
 
@@ -2477,7 +2486,7 @@ def update_jobs_lp(request, jid, item, md5_t=None):
 		# forced refresh
 		obj = a_class.objects.get(id=jid)
 
-	return update_jobs(request, jid, item)
+	return callback(request, jid, item)
 
 
 @login_required(login_url='/')

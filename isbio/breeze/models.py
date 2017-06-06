@@ -2546,16 +2546,25 @@ class Report(Runnable, AutoJSON):
 		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	
-	_serialize_keys = ['id', ('_name', 'name'), ('_author', 'author'), ('_type', 'type'), ('_created','created'), 'project']
+	_serialize_keys = ['id', 'name', 'author', 'type', 'created', 'project', 'target']
 	_serialize_recur = False
 
 	# clem 24/03/2017
 	def _extra_json(self):
-		return {
-			'links': {
-				
+		return dict()
+	"""
+	return {
+			'_textual': {
+				'author': self._author.get_full_name(),
+				'type': self._type.type,
+				'project': self.project.name,
+				'target': self.target.name,
 			}
 		}
+	'links': {
+			
+			},
+	"""
 
 	# clem 19/05/2017
 	@property
@@ -2598,6 +2607,22 @@ class Report(Runnable, AutoJSON):
 		for each in item_list:
 			user_list.append(each[1:]) if each[0] == 'u' else group_list.append(each[1:])
 		return user_list, group_list
+	
+	# clem 26/05/2017
+	@property
+	def json_info(self):
+		serialize_keys = [
+			'id',
+			'name',
+			('author.get_full_name', 'author'),
+			('type.type', 'r_type'),
+			'created',
+			('project.name', 'project'),
+			('target.name', 'target'),
+			('get_status', 'state'),
+			'md5'
+		]
+		return self.to_json(serialize_keys)
 
 	class Meta(Runnable.Meta): # TODO check if inheritance is required here
 		abstract = False

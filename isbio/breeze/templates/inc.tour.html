@@ -1,0 +1,351 @@
+<!-- bootstrap-tour -->
+<link href="{{ '/static' }}/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
+<script src="{{ '/static' }}/js/bootstrap-tour.min.js"></script>
+
+<!-- Some style fix to workaround issues with some elements when using bootstrap-tour -->
+<style>
+	.modal { /* fix z-index of modals forms when bootstrap tour is used along with it */
+		z-index: 1110;
+	}
+	.special-th-fix { /* fix z-index of table header elements (not showing otherwise) */
+		background: inherit;
+		position: relative;
+		z-index: 1101;
+	}
+	
+	/* Fix for home page left menu */
+	#preferencesMenuLink{
+		background-color: #f5f5f5;
+	}
+	.nav-list > li > a{
+		border-radius: 6px;
+	}
+	.nav-list > .active > a#preferencesMenuLink{
+		color: #ffffff;
+		text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+		background-color: #0088cc;
+	}
+	#preferencesMenuLink:hover{
+		text-decoration: none;
+		background-color: #eeeeee;
+	}
+</style>
+
+<!-- My tour for logged-in users -->
+<script type="text/javascript">
+	var tour = null;
+	var selectEventAttached = false;
+	var tourRedrawStepIndex = 7;
+	
+	function getPrefMenuLinkObj() {
+		return $('#preferencesMenuLink');
+	}
+	
+	function switchToProjects() {
+		getPrefMenuLinkObj().click();
+		$('#projectsTabHeader').click();
+	}
+	
+	function switchToGroups() {
+		getPrefMenuLinkObj().click();
+		$('#groupsTabHeader').click();
+	}
+	
+	function switchToFeed() {
+		$('#feedMenuLink').click();
+	}
+	
+	function getNewPopover() {
+		return $("#new_popover");
+	}
+	
+	function hideNewPopover() {
+		newPopover = getNewPopover();
+		if (newPopover.next('div.popover:visible').length) newPopover.click();
+	}
+	
+	function showNewPopover() {
+		newPopover = getNewPopover();
+		if (!newPopover.next('div.popover:visible').length) newPopover.click();
+	}
+	
+	function submitNew() {
+		var subBtn = $('#subBtn');
+		if (subBtn.length) subBtn.click();
+	}
+	
+	function getTh() {
+		return $('#reportTableHeader > th');
+	}
+	
+	function fixTh() {
+		getTh().addClass('special-th-fix');
+	}
+	
+	function unFixTh() {
+		getTh().removeClass('special-th-fix');
+	}
+	
+	function getTourButton() {
+		return tourButton = $("#tour-button");
+	}
+	
+	function disableTourButton(){
+		var tourButton = getTourButton();
+		if (tourButton.length)
+			tourButton.addClass('disabled');
+	}
+	
+	function enableTourButton(){
+		var tourButton = getTourButton();
+		if (tourButton.length)
+			tourButton.removeClass('disabled');
+	}
+	
+	function getSharingButtonGroup(){
+		return $('#TagList div.btn-group');
+	}
+	
+	function getSharingSelectObj(){
+		return $('#id_shared');
+	}
+	
+	function openSharing(){
+		var button = getSharingButtonGroup();
+		if(!button.hasClass('open')){
+			button.addClass('open');
+		}
+		if(!selectEventAttached){
+			selectEventAttached = true;
+			getSharingSelectObj().change(function () {
+				// enabled redrawing of the step popover to match the new size of the button
+				tour.showStep(tour.getCurrentStep()); // valid
+				// (window).resize(); // too slow
+			})
+		}
+	}
+	
+	function closeSharing(){
+		var button = getSharingButtonGroup();
+		if (button.hasClass('open')) {
+			button.removeClass('open');
+		}
+		getSharingSelectObj().unbind('change');
+		selectEventAttached = false;
+	}
+	
+	$(function () {
+		var tourUsed = 0;
+		tour = new Tour({
+			orphan: true,
+			onStart: disableTourButton,
+			onEnd: enableTourButton,
+			steps : [
+				{
+					title    : "Welcome !",
+					element  : "#tour-button",
+					container: "body",
+					placement: "bottom",
+					path     : "/home",
+					content  : "Welcome to Breeze introduction tour.<br>" +
+					"It will introduce you to the Breeze platform<br>" +
+					"by walking you through it, step by step."
+				},
+				{
+					title  : "Main page",
+					path   : "/home",
+					orphan : true,
+					content: "This is the main page, here you will find updates about pipelines<br>" +
+					"as well as all the customizations options of the platform",
+					onShow : switchToFeed
+				},
+				{
+					title    : "Personal information",
+					path     : "/home",
+					element  : "#userInfoDiv",
+					placement: "bottom",
+					backdrop : true,
+					content  : "If you haven't done so yet, you can click here<br>to update your personal " +
+					"information"
+				},
+				{
+					title    : "Preferences",
+					path     : "/home",
+					element  : "#preferencesMenuLink",
+					placement: "right",
+					content  : "You may go here to use some customization features",
+					duration : 4000,
+					backdrop : true,
+					reflex   : true,
+					onShow   : switchToFeed,
+					onNext   : switchToProjects
+				},
+				{
+					title    : "Projects",
+					path     : "/home",
+					element  : "#tabsDiv", //"#projects_tab",
+					placement: "left",
+					content  : "Here you can view, edit and create 'projects' that helps<br>with categorizing your"
+					+ " reports for your own convenience.",
+					backdrop : true,
+					onPrev   : switchToFeed,
+					onShow   : switchToProjects,
+					onNext   : switchToGroups
+				},
+				{
+					title    : "Groups",
+					path     : "/home",
+					element  : "#tabsDiv", //"#userGroupsTable",
+					placement: "left",
+					content  : "Here you can view, edit and create 'groups' that helps<br>with sharing your reports"
+					+ " to a pre-defined set of users.",
+					backdrop : true,
+					onPrev   : switchToProjects,
+					onShow   : switchToGroups
+				},
+				{
+					title   : "Report page",
+					path    : "/reports/",
+					orphan  : true,
+					content : "This is the report page, here you can find all your completed reports<br>"
+					+ " along with reports that may have been shared with you.",
+					duration: 4000
+				},
+				{
+					title    : "Reports sorting",
+					element  : "#reportTableHeader",
+					placement: "bottom",
+					path     : "/reports/",
+					container: "body",
+					backdrop : true,
+					content  : "Click on any column header to change the sorting.",
+					duration : 4000,
+					onShown  : fixTh,
+					onNext   : unFixTh,
+					onHidden : unFixTh
+				},
+				{
+					title    : "Report filtering",
+					path     : "/reports/",
+					placement: "bottom",
+					element  : "#filter_form",
+					content  : "Use the filtering options to easily find any of your past report, or those shared " +
+					"with you.",
+					backdrop : true,
+					onNext   : showNewPopover
+				},
+				{
+					title    : "Report type",
+					path     : "/reports/",
+					placement: "right",
+					element  : "#type_selector",
+					content  : "To create a new report, start by selecting its type here...",
+					backdrop : true,
+					onPrev   : hideNewPopover,
+					onShow   : showNewPopover
+				},
+				{
+					title       : "Report name",
+					path        : "/reports/",
+					placement   : "right",
+					element     : "#popover_search",
+					content     : "And then choosing a name for it.",
+					backdrop    : true,
+					onShow      : function(){ // FIXME
+						console.log('name onShow');
+						showNewPopover();
+						$(function () {
+							console.log('name onShow loaded');
+							showNewPopover();
+							$('#popover_search').val('Testing Report');
+						});
+					},
+					onNext      : function(){ submitNew(); }
+				},
+				{
+					title   : "Creating a report",
+					path    : "/reports/new/",
+					content : "This is the report creation form",
+					orphan  : true,
+					redirect: false,
+					onPrev  : function () {
+						if(document.location !== '/reports/')
+							document.location = '/reports/';
+					},
+					onShown : function () { // FIXME nasty hack
+						if(String(document.location).search('/reports/new/') === -1){
+							$('.tour-tour-11').hide();
+						}
+					}
+				},
+				{
+					title   : "Project",
+					element : "#id_project",
+					container: "body",
+					backdrop: true,
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "Select a project to attach this report to.<br>This only serves for sorting purposes",
+					redirect: false,
+					onShow  : function () {
+						// $('div.span4.offset1').css('position', 'relative');
+					},
+					onNext  : function () {
+						var projSelector = $('#id_project') ;
+						var firstOption = $("#id_project option:nth-child(2)");
+						if(projSelector.val() <= 0){
+							projSelector.val(firstOption.val());
+							projSelector.change();
+						}
+					}
+				},
+				{
+					title   : "Computing target",
+					element : "#id_target",
+					container: "body",
+					backdrop: true,
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "This should usually be left to the default target.",
+					redirect: false,
+					onNext  : openSharing
+				},
+				{
+					title   : "Report sharing",
+					element : "#TagList div.btn-group",
+					container: "body",
+					backdrop: true,
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "Optionally select users or group of users you would like to share this report with.",
+					redirect: false,
+					onPrev: closeSharing,
+					onNext: closeSharing,
+					onEnd : closeSharing,
+					onShown: openSharing
+					//onHide: closeSharing
+				},
+				{
+					title   : "TODO",
+					//element : "#TagList div.btn-group",
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "This tour is not yet completed",
+					redirect: false,
+					orphan  : true
+				}
+			]
+		});
+		
+		tour.init();
+		{% if request.path == '/home/' %}
+		var tourButton = getTourButton();
+		if (tourButton.length){
+			tourButton.click(function () {
+				tour.restart();
+				tourUsed++;
+			});
+		}
+		
+		!tour.ended() ? disableTourButton() : enableTourButton();
+		{% endif %}
+		//tour.goTo()
+		//!tour.ended() ? tour.goTo(tour._current) : null;
+	});
+</script>

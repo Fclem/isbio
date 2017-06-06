@@ -1,18 +1,14 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% load bootstrap_toolkit %}
 {% load user_translate %}
-
 {% block title %}Reports{% endblock %}
-
 {% block extra_head %}
-
-	<script type="text/javascript" src="/static/js/bootstrap-multiselect.js"></script>
-	<link rel="stylesheet" href="/static/css/bootstrap-multiselect.css" type="text/css"/>
-	<link href="/static/css/bootstrapSwitch.css" rel="stylesheet">
-	<script src="/static/js/bootstrapSwitch.js"></script>
-	<script type="text/javascript" src="/static/js/bootstrap-paginator.min.js"></script>
-
+	<script type="text/javascript" src="{% static "" %}/js/bootstrap-multiselect.js"></script>
+	<link rel="stylesheet" href="{% static "" %}/css/bootstrap-multiselect.css" type="text/css"/>
+	<link href="{% static "" %}/css/bootstrapSwitch.css" rel="stylesheet">
+	<script src="{% static "" %}/js/bootstrapSwitch.js"></script>
+	<script type="text/javascript" src="{% static "" %}/js/bootstrap-paginator.min.js"></script>
 	<style type="text/css">
 		#main_table td {text-align:center; vertical-align:middle;}
 		#main_table th {text-align:center; vertical-align:middle;}
@@ -53,9 +49,7 @@
 			margin-right: 4px;
 		}
 	</style>
-
 {% endblock %}
-
 {% block content %}
 	<!-- site map bar -->
 	<div class="row-fluid">
@@ -185,6 +179,36 @@
 	<div id="Send" class="modal fade" role="dialog" aria-hidden="true"></div>
 	<!-- Off-site user add form (NOT USED TODO delete) -->
 	<div id="Add" class="modal fade" role="dialog" aria-hidden="true"></div>
+	<!-- New report PopOver -->
+	<div id="reportPopover" class="hide">
+		<form id="report_form" class="navbar-search" action="/search/entity" method="post">
+			<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+			<div class="control-group">
+				<div class="controls">
+					<select id="type_selector" name="type" class="input-medium search-query">
+						{% for item in user_r_types %}
+						<option id="{{ item.id }}" value="{{ item.type }}"
+						        data-search={{ item.search }}>{{ item.type }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<input id="popover_search" name="query" type="text" class="search-query input-medium"
+					       placeholder="Report name" value=""><br>
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<button id="subBtn" type="submit" class="btn btn-primary btn-small btn-block"
+					        onclick="disableObj('subBtn');submit();">
+						<strong> GO </strong></button>
+				</div>
+			</div>
+		</form>
+		</br>
+	</div>
 	<!-- User Access edit form management and User name conversion, and other forms -->
 	<script type="text/javascript">
 		function submitItemModalFormBind(url, target) {
@@ -331,18 +355,22 @@
 		if(thisPageUrl.charAt(thisPageUrl.length - 1) !== '/') thisPageUrl += '/';
 		var searchUrl = thisPageUrl + 'search';
 		
+		var paginationContent = $("#pagination-content");
+		var popoverSearch = $("#popover_search");
+		var newPopover = $("#new_popover");
+		
 		//AJAX submission of the filtering form (triggers reports list refresh)
 		function submit_filter_form(e, sort) {
-			$("#pagination-content").fadeTo(0, 0.33);
+			paginationContent.fadeTo(0, 0.33);
 			var formData = $('#filter_form').serialize();
-			if (sort != undefined ) formData+= '&sort=' + encodeURIComponent(sort);
+			if (sort !== undefined ) formData+= '&sort=' + encodeURIComponent(sort);
 			$.ajax({
 				type   : 'POST',
 				url    : searchUrl,
 				data   : formData,
 				success: function (response, textStatus, jqXHR) {
-					$("#pagination-content").fadeTo(0, 1);
-					$("#pagination-content").html(response);
+					paginationContent.fadeTo(0, 1);
+					paginationContent.html(response);
 					if(e !== undefined && isFunction(e)) e.call(); //call-back
 				},
 				error  : function (request, status, error) { console.log(error); }
@@ -363,9 +391,9 @@
 			totalPages   : "{{ pagination_number }}",
 			alignment    : 'center',
 			onPageChanged: function (e, oldPage, newPage) {
-				if (oldPage == newPage || !refresh) return;
+				if (oldPage === newPage || !refresh) return;
 				$.get(thisPageUrl, {page: newPage}, function (data) {
-					$('#pagination-content').html(data);
+					paginationContent.html(data);
 				});
 			}
 		};
@@ -375,73 +403,47 @@
 			$('.Glyph').tooltip();
 
 			var db_access = '#db_access';
-			if($(db_access).data('para')=="False"){
+			if($(db_access).data('para') === "False"){
 				$("#db").click(function(e){
 					e.preventDefault();
 					$('#db_policy').modal('show');
 				});
 			}
-
-			$('#new_popover').popover({
+			
+			newPopover.popover({
 				title: "New Report Query",
 				trigger: "click",
 				placement: "right",
 				html: true,
-				content: '\
-    <form id= "report_form" class="navbar-search" action="/search/entity" method="post">\
-				<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>\
-      <div class="control-group">\
-        <div class="controls">\
-          <select id="type_selector" name="type" class="input-medium search-query">\
-          {% for item in user_r_types %}\
-            <option id="{{ item.id }}" value="{{ item.type }}" data-search={{ item.search }}>{{ item.type }}</option>\
-          {% endfor %}\
-          </select>\
-        </div>\
-      </div>\
-      <div class="control-group">\
-        <div class="controls">\
-          <input id="popover_search" name="query" type="text" class="search-query input-medium" placeholder="Report name..." value=""></br>\
-        </div>\
-      </div>\
-      <div class="control-group">\
-        <div class="controls">\
-          <button id="subBtn" type="submit" class="btn btn-primary btn-small btn-block" onclick="disableObj(\'subBtn\');submit();"><strong> GO </strong></button>\
-						</div>\
-					</div>\
-				</form>\
-				</br>\
-				'
+				content: $('#reportPopover').html()
 			});
-
-			$('#new_popover').click(function(){
-
+			
+			newPopover.click(function(){
 				$("#report_form").submit(function(event){
-					text = $( "#popover_search" ).val();
+					var text = popoverSearch.val();
 					if(text.match(/^\d/)){
 						event.preventDefault();
 						$("#ReportName").modal("show");
 					}
 				});
-
 				$('#type_selector').change(function(){
-					if ($('#type_selector').find(':selected').data('search') == "True"){
-						$('#popover_search').attr('placeholder', 'Item Search... ');
+					if ($('#type_selector').find(':selected').data('search') === "True"){
+						popoverSearch.attr('placeholder', 'Item Search... ');
 					}
 					else {
-						$('#popover_search').attr('placeholder', 'Report Name ');
+						popoverSearch.attr('placeholder', 'Report Name ');
 					}
 				});
 			});
 			
 			// FILTERING: Clean filter form
 			function resetForm () {
-				$("#pagination-content").fadeTo("slow", 0.33);
-				$("#pagination-content").load(searchUrl, {
+				paginationContent.fadeTo("slow", 0.33);
+				paginationContent.load(searchUrl, {
 					reset              : 1,
 					csrfmiddlewaretoken: '{{ csrf_token }}'
 				}, function (response, status, xhr) {
-					$("#pagination-content").fadeTo(0, 1);
+					paginationContent.fadeTo(0, 1);
 				});
 			}
 			
@@ -449,6 +451,11 @@
 			$('#filt_clean').click(resetForm);
 			$('#radio_all').click(resetForm);
 			
+			paginationContent.change(function (){
+				if(typeof tour !== 'undefined' && tourRedrawStepIndex === tour.getCurrentStep()) {
+					tour.goTo(tourRedrawStepIndex);
+				}
+			});
 		});
 	</script>
 {% endblock %}

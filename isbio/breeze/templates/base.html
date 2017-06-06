@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 {% load bootstrap_toolkit %}
+{% load static %}
+{% get_static_prefix as STATIC_P %}
 <html lang="en">
 <head id="html_header">
 	<meta charset="utf-8">
@@ -7,9 +9,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="">
 	<meta name="author" content="">
-	<link rel="shortcut icon" href="/static/img/favicon.ico"/>
+	<link rel="shortcut icon" href="{% static "" %}/img/favicon.ico"/>
 	
 	<!-- Rollbar -->
+	<!--
 	<script type="text/javascript">
 		var _rollbarConfig = {
 			accessToken: "5a228b54d0074cdda7951cd590d4fd74",
@@ -19,50 +22,47 @@
 			}
 		};
 	</script>
-	<script src="/static/js/rollbar.js"></script>
+	<script src="{% static "" %}/js/rollbar.js"></script>
+	-->
 	<!-- jQuery -->
-	<script src="/static/js/jquery.js"></script>
-	<script src="/static/js/jquery-1.8.3.min.js"></script>
+	<script src="{% static "" %}/js/jquery-1.8.3.min.js"></script>
 	
 	<!-- Bootstrap -->
-	<script src="/static/js/bootstrap.min.js"></script>
-	<script src="/static/js/bootbox.min.js"></script>
-	<link href="/static/css/bootstrap.css" rel="stylesheet">
-	<link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+	<script src="{% static "" %}/js/bootstrap.min.js"></script>
+	<script src="{% static "" %}/js/bootbox.min.js"></script>
+	<link href="{% static "" %}/css/bootstrap.css" rel="stylesheet">
+	<link href="{% static "" %}/css/bootstrap-responsive.css" rel="stylesheet">
 	
 	<!-- jQuery ui -->
-	<script src="/static/js/jquery-ui-1.9.2.custom.min.js"></script>
-	<link href="/static/css/jquery-ui-1.9.2.custom.css" rel="stylesheet">
+	<script src="{% static "" %}/js/jquery-ui-1.9.2.custom.min.js"></script>
+	<link href="{% static "" %}/css/jquery-ui-1.9.2.custom.css" rel="stylesheet">
 	
 	<!-- jQuery modules -->
-	<script src="/static/js/jquery.ajaxfileupload.js"></script>
-	<script src="/static/js/jquery.MultiFile.js"></script>
+	<script src="{% static "" %}/js/jquery.ajaxfileupload.js"></script>
+	<script src="{% static "" %}/js/jquery.MultiFile.js"></script>
 
 	<!-- jQuery FileInput -->
-	<script src="/static/third-party/jQuery-UI-FileInput/js/enhance.min.js" type="text/javascript"></script>
-	<script src="/static/third-party/jQuery-UI-FileInput/js/fileinput.jquery.js" type="text/javascript"></script>
-	<link href="/static/third-party/jQuery-UI-FileInput/css/enhanced.css" rel="stylesheet">
+	<script src="{% static "" %}/third-party/jQuery-UI-FileInput/js/enhance.min.js" type="text/javascript"></script>
+	<script src="{% static "" %}/third-party/jQuery-UI-FileInput/js/fileinput.jquery.js" type="text/javascript"></script>
+	<link href="{% static "" %}/third-party/jQuery-UI-FileInput/css/enhanced.css" rel="stylesheet">
 
 	<!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
 	<!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-	<!--
-    {% bootstrap_javascript_tag "transition" %}
-    {% bootstrap_javascript_tag "tooltip" %}
-
-    {% bootstrap_javascript_tag "tab" %}
-    {% bootstrap_javascript_tag "affix" %}
-    {% bootstrap_javascript_tag "popover" %} -->
-
-	<link href="/static/css/breeze-base.css" rel="stylesheet">
-	<link href="/static/css/footer.css" rel="stylesheet">
+	<!-- Breeze Specifics -->
+	<link href="{% static "" %}/css/breeze-base.css" rel="stylesheet">
+	<link href="{% static "" %}/css/footer.css" rel="stylesheet">
+	<script src="{% static "" %}/js/breeze-base.js"></script>
+	
+	<!-- Footnote as a real footer compatibility for IE<7 -->
 	<!--[if lt IE 7]>
     <style type="text/css">
       #wrapper { height:100%; } /* Footnote as a real footer compatibility for IE<7 */
     </style>
     <![endif]-->
+
 	<!-- AUTH0 include & init -->
 	{% include "hello_auth/auth0.html" %}
 	<script type="text/javascript">
@@ -74,16 +74,18 @@
 			return event.preventDefault();
 		}
 	</script>
-	<!-- bootstrap-tour -->
-	<link href="/static/css/bootstrap-tour.min.css" rel="stylesheet">
-	<script src="/static/js/bootstrap-tour.min.js"></script>
-	<!-- Extra head container, to be overriden by child pages -->
+	
+	<!-- Extra head container, to be overridden by child pages -->
 	{% block extra_head %}{% endblock %}
+	
+	{% if not request.user.is_guest %}
+	{% include "inc.tour.html" %}
+	{% endif %}
 </head>
 <body>
 <div id="wrapper">
 	<!--[if lt IE 9]>
-      <link rel="stylesheet" type="text/css" href="/static/css/jquery.ui.1.9.2.ie.css"/>
+      <link rel="stylesheet" type="text/css" href="{% static "" %}/css/jquery.ui.1.9.2.ie.css"/>
       <![endif]-->
 	<!-- error popup message placeholder -->
 	<div id="popup_message_container">
@@ -96,99 +98,24 @@
 
 	<!-- main navigation bar -->
 	<div class="navbar navbar-inverse navbar-fixed-top">
-		<div class="navbar-inner">
-			<div class="container-fluid">
-				<a class="brand" href="/breeze/">{{ site_title }}</a>
-				<div class="navbar-content" id="navbar-content">
-					{% if user.is_authenticated %}
-					<ul class="nav pull-right">
-						<li>
-							<div class="btn-group pull-right">
-								<a class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
-									<i class="icon-user icon-white"></i> {{ user.username }} <span
-								  class="caret"> </span>
-								</a>
-								<ul class="dropdown-menu">
-									{% if user.is_guest %}
-									<li><a href="#" onclick="logout_login();"> Log in <i class="icon-share"></i></a></li>
-									<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
-									{% else %}
-									<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
-									{% endif %}
-								</ul>
-							</div>
-						</li>
-					</ul>
-
-					<ul class="nav" >
-						<li class="{{ home_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/home/"{% endif %}>
-								<i class="icon-home"></i>
-								Home</a>
-						</li>
-						<li class="{{ jobs_status }}">
-							<a href="/jobs/" id="dash">
-								<i class="icon-tasks"></i>
-								Dash</a>
-						</li>
-						<li class="{{ scripts_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/scripts/"{% endif %} id="scripts">
-								<i class="icon-list-alt"></i>
-								Scripts</a>
-						</li>
-						<li class="{{ reports_status }}">
-							<a href="/reports/" id="reports">
-								<i class="icon-th"></i>
-								Reports</a>
-						</li>
-						<li class="{{ dbviewer_status }} disabled">
-							<a href="#" id="db" disabled="disabled">
-								<i class="icon-briefcase"></i>
-								DB Viewer</a>
-						</li>
-						{% if is_local_admin %}
-						<li class="{{ resources_status }}">
-							<a href="/resources/" id="resources">
-								<i class="icon-wrench"></i>
-								Manage Resources</a>
-						</li>
-						{% endif %}
-						<li class="{{ store_status }}{% if user.is_guest %} disabled{% endif %}">
-							<a {% if not user.is_guest %} href="/store/" {% endif %} id="store">
-								<i class=" icon-cog"></i>
-								Markets </a>
-						</li>
-						<li class="{{ tools_status }}">
-							<a href="/tools/" id="tools">
-								<i class="icon-question-sign"></i>
-								Tools</a>
-						</li>
-						<li class="{{ help_status }}">
-							<a href="/help/" id="help">
-								<i class="icon-question-sign"></i>
-								Help</a>
-						</li>
-						<li> </li>
-					</ul>
-					{% endif %}
-				</div>
-			</div>
-		</div>
+		{% include "inc.navbar.html" %}
 	</div>
 	<!-- /main navigation bar -->
 
 	<!-- global container under the nav-bar -->
 	<div id="content" class="container-fluid">
-		<!-- show messages here -->
 		{% if messages %}
-			<ul class="messages">
-				{% for message in messages %}
-					<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-				{% endfor %}
-			</ul>
+		<!-- show messages here -->
+		<ul class="messages">
+			{% for message in messages %}
+			<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+			{% endfor %}
+		</ul>
 		{% endif %}
 		<div class="row-fluid" style="display: none;">&nbsp;</div>
+		{% if false %}
 		{% if run_mode == 'pharma' or run_mode == 'pharma_dev' %}
+		<!-- New Breeze-pharma user notice message -->
 		<div class="row-fluid">
 			<div class="span10 offset1 alert alert-info" style="padding-bottom: 12px;padding-top: 12px;">
 				<h4 style="text-decoration: underline;padding-bottom: 8px;">Welcome to the new Breeze-Pharma !</h4>
@@ -198,7 +125,9 @@
 			</div>
 		</div>
 		{% endif %}
+		{% endif %}
 		{% if user.is_guest %}
+		<!-- Guest user notice message -->
 		<div class="row-fluid">
 			<div class="span10 offset1 alert alert-warning" style="padding-bottom: 12px;padding-top: 12px;">
 				<h4 style="text-decoration: underline;padding-bottom: 8px;">Guest user warning :</h4>
@@ -206,139 +135,74 @@
 			</div>
 		</div>
 		{% endif %}
-		{% block content %}
-
-		{% endblock %}
+		{% block content %}{% endblock %}
 	</div>
 	<!-- /global container -->
-
-	{% include "footer.html" %}
-	<!-- template : {{db_access}} -->
-	<!--
-	<div id="db_access" data-para="{{db_access}}">
-		<div class="modal hide fade" id="db_policy"  role="dialog" aria-hidden="true" style="background: url('/static/nail.png');">
-			{% include "db_policy.html" %}
-		</div>
-	</div>
-	-->
+	
+	<!-- footer -->
+	{% include "inc.footer.html" %}
+	<!-- /footer -->
 </div>
 {% if not disable_zopim %}
-	{% block zopim %}
-		<!--Start of Zopim Live Chat Script-->
-		<script type="text/javascript">
-			window.$zopim || (function (d, s) {
-				var z = $zopim = function (c) {z._.push(c)}, $ = z.s =
-				  d.createElement(s), e = d.getElementsByTagName(s)[0];
-				z.set = function (o) {
-					z.set.
-					  _.push(o)
-				};
-				z._ = [];
-				z.set._ = [];
-				$.async = !0;
-				$.setAttribute("charset", "utf-8");
-				$.src = "//v2.zopim.com/?2fQMyVQQ1GO74NehJsG5a8uf8RiZXHfV";
-				z.t = +new Date;
-				$.
-				  type = "text/javascript";
-				e.parentNode.insertBefore($, e)
-			})(document, "script");
-			{% if user.is_authenticated %}
-				$zopim(function () {
-					$zopim.livechat.setName('{{ user.get_full_name }}');
-					$zopim.livechat.setEmail('{{ user.email }}');
-				});
-			{% endif %}
-		</script>
-		<!--End of Zopim Live Chat Script-->
-	{% endblock %}
+{% block zopim %}
+<!--Start of Zopim Live Chat Script-->
+<script type="text/javascript">
+	window.$zopim || (function (d, s) {
+		var z = $zopim = function (c) {z._.push(c)}, $ = z.s =
+		  d.createElement(s), e = d.getElementsByTagName(s)[0];
+		z.set = function (o) {
+			z.set.
+			  _.push(o)
+		};
+		z._ = [];
+		z.set._ = [];
+		$.async = !0;
+		$.setAttribute("charset", "utf-8");
+		$.src = "//v2.zopim.com/?2fQMyVQQ1GO74NehJsG5a8uf8RiZXHfV";
+		z.t = +new Date;
+		$.
+		  type = "text/javascript";
+		e.parentNode.insertBefore($, e)
+	})(document, "script");
+	{% if user.is_authenticated %}
+		$zopim(function () {
+			$zopim.livechat.setName('{{ user.get_full_name }}');
+			$zopim.livechat.setEmail('{{ user.email }}');
+		});
+	{% endif %}
+</script>
+<!--End of Zopim Live Chat Script-->
+{% endblock %}
 {% endif %}
 {% if not disable_google_analytics %}
-	{% block google_analytics %}
-		<!--Start of Google Analytics-->
-		<script>
-			(function (i, s, o, g, r, a, m) {
-				i['GoogleAnalyticsObject'] = r;
-				i[r] = i[r] || function () {
-					  (i[r].q = i[r].q || []).push(arguments)
-				  }, i[r].l = 1 * new Date();
-				a = s.createElement(o),
-				  m = s.getElementsByTagName(o)[0];
-				a.async = 1;
-				a.src = g;
-				m.parentNode.insertBefore(a, m)
-			})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-			ga('create', 'UA-86239311-1', 'auto');
-			ga('require', 'linkid');
-			ga('send', 'pageview');
-		</script>
-		<!--End of Google Analytics-->
-	{% endblock %}
-{% endif %}
+{% block google_analytics %}
+<!--Start of Google Analytics-->
 <script type="text/javascript">
-	//Diplays floating disposable error message box
-	function ShowError(HtmlContent) {
-		$("#error_msg").removeClass("hidden");
-//$("#error_msg").innerHTML = HtmlContent;
-		if (HtmlContent != "") {
-			var x = document.getElementById("error_msg_holder");
-			if (x != undefined) {
-				x.innerHTML = HtmlContent;
-			}
-		}
-	}
-
-	$(document).ready(function () {
-		var x = document.getElementById("error_msg_holder");
-		if (x.innerHTML != "" && x.innerHTML != "<p></p>") {
-			ShowError("");
-		}
-
-	});
-
-	function fixDropDownSub(item) {
-
-	}
-
-	function fixDropDown() {
-		//drop down
-		var el=$('button.dropdown-toggle')
-		for (var i = 0; i < el.length; i++) {
-			el.eq(i).on("click", function () {
-				var tg = $(this);
-				var btGrp = tg.parents('div.btn-group').first();
-				var modal = tg.parents('div.modal-body').first();
-				if (btGrp.hasClass('open')) {
-					//modal.(modal.height() - 450);
-					modal.height(modal.height() - 450);
-				} else {
-					modal.height(modal.height() + 450);
-				}
-			});
-		}
-
-
-
-
-	}
-
-
-	// prevents click on a submit button
-	function disableObj(name) {
-		clkBtn = $('#' + name + '')[0];
-//protect from double submission while sending
-		if (clkBtn != undefined) clkBtn.disabled = true;
-	}
-
-	function enableObj(name) {
-		clkBtn = $('#' + name + '')[0];
-		if (clkBtn != undefined) clkBtn.disabled = false;
-	}
-
-	function switchObj(name) {
-		clkBtn = $('#' + name + '')[0];
-		if (clkBtn != undefined) clkBtn.disabled = !clkBtn.disabled;
-	}
+	(function (i, s, o, g, r, a, m) {
+		i['GoogleAnalyticsObject'] = r;
+		i[r] = i[r] || function () {
+			  (i[r].q = i[r].q || []).push(arguments)
+		  }, i[r].l = 1 * new Date();
+		a = s.createElement(o),
+		  m = s.getElementsByTagName(o)[0];
+		a.async = 1;
+		a.src = g;
+		m.parentNode.insertBefore(a, m)
+	})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+	ga('create', 'UA-86239311-1', 'auto');
+	ga('require', 'linkid');
+	ga('send', 'pageview');
 </script>
+<!--End of Google Analytics-->
+{% endblock %}
+{% endif %}
+{% if run_mode == 'dev' %}
+<!-- Context :
+vars :
+{% for each in context_vars_list %}{{ each }}, {% endfor %}
+pprint :
+{{ context_vars_values|pprint|safe }}
+-->
+{% endif %}
 </body>
 </html>

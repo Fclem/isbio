@@ -158,6 +158,8 @@ else:
 			{ 'item': 'script' }, name='update_jobs_lp'),
 		url(r'^reports/info_lp/(?P<jid>\d+)/(?P<md5_t>[a-z0-9_]{32})?$', v.update_jobs_lp,
 			{ 'item': 'report' }, name='update_jobs_lp'),
+		url(r'^resources/info_lp/(?P<jid>\d+)/(?P<md5_t>[a-z0-9_]{32})?$', v.update_jobs_lp,
+			{ 'item': 'report', 'callback': v.jobs_resource_view }, name='update_jobs_lp_admin'),
 		
 		url(r'^hook/(?P<i_type>r|j)(?P<rid>\d+)/(?P<md5>[a-z0-9_]{32})/(?P<status>\w+)?$', v.job_url_hook,
 			name='job_url_hook'),

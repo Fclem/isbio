@@ -135,7 +135,8 @@
 		    {% for package in packages %}
 			    <li><a href="{{ package.url }}" target="_blank">{{ package.name }}</a>
 				    {% if package.version != '' %}v{{ package.version }}{% endif %}
-				    {% if package.summary != '' %}, <i>{{ package.summary }}</i>{% endif %}
+				    <span id="pkgSummary-{{ package.name|cut:"." }}">
+					    {% if package.summary !=  '' %}, <i>{{ package.summary }}</i>{% endif %}</span>
 			    </li>
 		    {% empty %}
 			    err : Nothing to show
@@ -145,14 +146,47 @@
   </div>
 </div>
 <script type="text/javascript">
+
+{% if xhr_package_summary %}
+	var summaryList = [];
+	var baseName = '';
+	var baseUrl = '{{ xhr_base_url }}';
+	
+	{% for package in packages %}
+		baseName = "{{ package.name }}";
+		summaryList.push({
+			id: baseName.replace('.', ''),
+			url : "{{ package.query_url }}" // interpolate(baseUrl, '{{ package.name }}') //
+		});
+	{% endfor %}
+	
+	function loadSummaries(){
+		// grabs the summaries for each module from pypi's json interface
+		var len = summaryList.length;
+		for (var i = 0; i < len; i++) {
+			var each = summaryList[i];
+			(function (url, currentId) {
+				$.get(url, function (data) {
+					$('#' + currentId).html(', <i>' + data['info']['summary'] + '</i>');
+				});
+			})(each.url, "pkgSummary-" + each.id);
+		}
+	}
+{% endif %}
+
 $(document).ready(function() {
     var db_access = '#db_access';
-    if($(db_access).data('para')=="False"){
+    if($(db_access).data('para') === "False"){
         $("#db").click(function(e){
             e.preventDefault();
             $('#db_policy').modal('show');
         });
     }
+	  
+	{% if xhr_package_summary %}
+	loadSummaries();
+	{% endif %}
+   
 });
 </script>
 {% endblock %}

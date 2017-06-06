@@ -1,97 +1,112 @@
-		/* Override some defaults */
-		html, body {
-			background: url('/static/wall.png');
-			height: 100%;
-			background-repeat: repeat;
-			margin:0;
-			padding:0;
-		}
-		body {
-			overflow-y: scroll; /* prevents stretching effect of centered layout when content dynamically overflow-y */
-		}
-		/* Customized */
-		#popup_message_container{
-			position: fixed;
-			top: 66px;
-			width: 100%;
-			z-index:102;
-		}
-		#error_msg{
-			width: 400px;
-			z-index:103;
-			margin-left:auto;
-			margin-right:auto;
-			opacity: 0.85;
-			filter: alpha(opacity=85); /* For IE8 and earlier */
-		}
-		/* Managing the footnote to always be at the bottom even if page content is not as tall as the viewport
-						cf. http://www.cssreset.com/how-to-keep-footer-at-bottom-of-page-with-css/
-						*/
-		#wrapper {
-			min-height:100%;
-			position:relative;
-		}
-		#content {
-			/* padding:10px; */
-			padding-top:  50px;
-			padding-bottom:80px;   /* Height of the footer element */
-		}
-		
-		input[type="text"]{
-			color:#2E2E2E !important;
-		}
-		.modal-body {
-			overflow-x: hidden;
-		}
+/* Override some defaults */
+html, body {
+	background: url('/static/wall.png');
+	height: 100%;
+	background-repeat: repeat;
+	margin:0;
+	padding:0;
+}
+body {
+	overflow-y: scroll; /* prevents stretching effect of centered layout when content dynamically overflow-y */
+}
+/* Customized */
+#popup_message_container{
+	position: fixed;
+	top: 66px;
+	width: 100%;
+	z-index:102;
+}
+#error_msg{
+	width: 400px;
+	z-index:103;
+	margin-left:auto;
+	margin-right:auto;
+	opacity: 0.85;
+	filter: alpha(opacity=85); /* For IE8 and earlier */
+}
+/* Managing the footnote to always be at the bottom even if page content is not as tall as the viewport
+				cf. http://www.cssreset.com/how-to-keep-footer-at-bottom-of-page-with-css/
+				*/
+#wrapper {
+	min-height:100%;
+	position:relative;
+}
+#content {
+	/* padding:10px; */
+	padding-top:  50px;
+	padding-bottom:80px;   /* Height of the footer element */
+}
 
-		#Send .modal-body, #Edit .modal-body, .has_dropdown .modal-body{
-			overflow-x: visible !important;
-			overflow-y: visible !important;
-		}
-		.multiselect-container{
-			overflow-x: hidden;
-			position: fixed;
-			top: inherit;
-			left: inherit;
-		}
-		input.form-control.multiselect-search{
-			width:95%;
-			/* margin-right: 14px; */
-		}
-		.modal{
-			background: url('/static/nail.png');
-		}
-		#form_modal_apply{
-			margin-bottom: 0px;
-		}
+input[type="text"]{
+	color:#2E2E2E !important;
+}
+.modal-body {
+	overflow-x: hidden;
+}
 
-		.open > .dropdown-menu {
-			display: block;
-			position: absolute;
-		}
+#Send .modal-body, #Edit .modal-body, .has_dropdown .modal-body{
+	overflow-x: visible !important;
+	overflow-y: visible !important;
+}
+.multiselect-container{
+	overflow-x: hidden;
+	position: fixed;
+	top: inherit;
+	left: inherit;
+}
+input.form-control.multiselect-search{
+	width:95%;
+	/* margin-right: 14px; */
+}
+.modal{
+	background: url('/static/nail.png');
+}
+#form_modal_apply{
+	margin-bottom: 0px;
+}
 
-		.table.table-condensed tr{
-			overflow-y: visible;
-			height: auto;
-		}
+.open > .dropdown-menu {
+	display: block;
+	position: absolute;
+}
 
-		.table.table-condensed tr td{
-			overflow-y: visible ! important;
-		}
+.table.table-condensed tr{
+	overflow-y: visible;
+	height: auto;
+}
 
-		.over {
-			overflow: visible ! important;
-		}
+.table.table-condensed tr td{
+	overflow-y: visible ! important;
+}
 
-		th[onclick] {
-			cursor: pointer;
-		}
-		
-		.navbar-inverse .nav > li.disabled > a:hover,
-		.navbar-inverse .nav > li.disabled > a:focus{
-			color: #999999; !important;
-		}
+.over {
+	overflow: visible ! important;
+}
 
-		.page-header{
-			padding-top: 40px;
-		}
+th[onclick] {
+	cursor: pointer;
+}
+
+.navbar-inverse .nav > li.disabled > a:hover,
+.navbar-inverse .nav > li.disabled > a:focus{
+	color: #999999; !important;
+}
+
+.page-header{
+	padding-top: 40px;
+}
+
+/* fix inherited styles from navbar that breaks the tour popover */
+.nav.pull-right .btn-group.pull-right {
+	margin-left: 20px;
+}
+
+/* fix inherited styles from navbar that breaks the tour popover */
+.navbar .popover.tour-tour .btn, .navbar .popover.tour-tour .btn-group {
+	margin-top: 0;
+}
+/*
+.navbar-fixed-top, .navbar-fixed-bottom {
+	z-index: 1200;
+}
+*/

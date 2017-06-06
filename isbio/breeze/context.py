@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.functional import SimpleLazyObject
+from breeze.utils import autogen_context_dict
 from django.conf import settings
 
 
@@ -42,3 +43,10 @@ def run_mode_context(_):
 		'run_mode_text': '-DEV' if settings.DEV_MODE else '',
 		'run_mode': settings.RUN_MODE
 	}
+
+
+# clem 06/06/2017
+def __context_var_list(request):
+	all_context = autogen_context_dict(request, True)
+	return {'context_vars_list': all_context.keys(),
+			'context_vars_values': all_context }

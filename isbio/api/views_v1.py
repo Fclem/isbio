@@ -95,3 +95,17 @@ def users(_):
 def news(_):
 	data = json.load(open(settings.settings.DJANGO_ROOT + 'news.json'))
 	return code.get_response(data=data)
+
+
+# clem 26/05/2017
+@login_required
+def report_info(request, jid, md5_t=''):
+	from breeze.models import Report
+	return code.get_response(data={'data': Report.objects.secure_get(id=jid, user=request.user).json_info})
+
+
+# clem 26/05/2017
+@login_required
+def reports_active(_):
+	from breeze.models import Report
+	return code.default_object_json_dump(Report, Report.objects.f.get_active())

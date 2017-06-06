@@ -211,6 +211,14 @@ def this_function_caller_name(delta=0):
 	return inspect.currentframe(2 + delta).f_code.co_name
 
 
+# clem 06/06/2017
+def list_functions_from_module(module):
+	import types
+	
+	return [module.__dict__.get(a) for a in dir(module)
+		if isinstance(module.__dict__.get(a), types.FunctionType)]
+
+
 ####################
 # CUSTOMIZED TYPES #
 ####################
@@ -373,4 +381,3 @@ class AutoOrderedDict(OrderedDict):
 		if key in self:
 			del self[key]
 		OrderedDict.__setitem__(self, key, value)
-

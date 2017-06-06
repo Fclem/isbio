@@ -22,5 +22,12 @@ footer p{
 footer img {
 	border: 0;
 	overflow: hidden;
-	width: 50%;
+	min-width: 40%;
+}
+@media only screen and (min-width: 970px) {
+	footer img {
+		min-height: 79px;
+		min-width: 953px;
+		width: 50%;
+	}
 }

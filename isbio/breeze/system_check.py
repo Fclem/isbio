@@ -13,7 +13,7 @@ SKIP_SYSTEM_CHECK = False
 # 	#from breeze.process import Process
 # else:
 # 	from multiprocessing import Process
-from breeze.process import Process
+from breeze.process import Process as BreezeProcess
 
 OK = '[' + TermColoring.ok_green('OK') + ']'
 BAD = '[' + TermColoring.fail('NO') + ']'
@@ -148,7 +148,7 @@ class RunType(enumerate):
 
 
 # clem 08/09/2015
-class SysCheckUnit(Process):
+class SysCheckUnit(BreezeProcess):
 	""" Describe a self executable unit of system test, includes all the process management part """
 	RAISE_EXCEPTION = False
 	EXIT_NORMAL = 0
@@ -232,7 +232,7 @@ class SysCheckUnit(Process):
 	# clem 25/09/2015
 	@property
 	def has_proc(self):
-		return isinstance(self, Process)
+		return isinstance(self, BreezeProcess)
 
 	# clem 25/09/2015
 	@property

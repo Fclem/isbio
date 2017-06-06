@@ -7,7 +7,7 @@ from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -1355,27 +1355,56 @@ class AutoJSON(object):
 			return json_name, split[0], split[1]
 		else:
 			return json_name, ('_' + name if not hasattr(self, name) and hasattr(self, '_' + name) else name), ''
-		
+	
+	# clem 26/05/2017
+	@staticmethod
+	def __attr_rooter(obj):
+		return obj.__getattr__ if hasattr(obj, '__getattr__') else obj.__getattribute__
+	
 	# clem 27/03/2017
-	def __attr_parser(self, attr_path):
+	def __attr_parser_sub(self, attr_path, top_object=None):
+		top_object = top_object or self
 		json_name, root, sub = self.__internal_attr_name(attr_path)
-		if sub:
-			attr_name = sub
-			parent_object = self.__getattribute__(root)
-		else:
-			attr_name = root
-			parent_object = self
-		return parent_object.__getattribute__(attr_name), json_name
+		attribute = self.__attr_rooter(top_object)(root)
+		
+		return attribute, json_name, sub
+	
+	# clem 26/05/2017
+	def __attr_parser(self, attr_path):
+		attribute, json_name, sub = self.__attr_parser_sub(attr_path)
+		while sub != '': # recurse through dotted path
+			attribute, _, sub = self.__attr_parser_sub(sub, attribute)
+		if callable(attribute): # and attribute.im_func.func_code.co_argcount == 1:
+			try: # access an argument-less method
+				attribute = attribute()
+			except Exception as e:
+				logger.warning('AutoJson failed : %s' % e)
+		return attribute, json_name
 	
 	# clem 27/03/2017
 	def __recur_predicate(self, attribute):
 		return hasattr(attribute, 'to_json') and callable(attribute.to_json) \
 			and (not hasattr(self, '_serialize_recur') or self._serialize_recur)
 	
-	def to_json(self):
-		assert hasattr(self, '_serialize_keys')
+	def to_json(self, serialize_key_list=None, add_extra=True):
+		""" Returns a dict ready to be converted into json.
+		
+		By default uses the list of key to serialize defined in the object as __serialize_keys but
+		this can be overridden by serialize_key_list
+		
+		The format of the key_list is as following :
+		['property_name' | ('property_name', 'property display name'), ...]
+		
+		:param serialize_key_list: optional list of keys to use
+		:type serialize_key_list: list[tuple[str, str] | str] | tuple[str, str] | str | None
+		:param add_extra: wether to call the delegated '_extra_json' method if present in the class or not
+		:type add_extra: bool | None
+		:return:
+		:rtype: dict
+		"""
+		assert hasattr(self, '_serialize_keys') or serialize_key_list
 		a_dict = dict()
-		for each in self._serialize_keys:
+		for each in serialize_key_list or self._serialize_keys:
 			attribute, json_name = self.__attr_parser(each)
 
 			if self.__recur_predicate(attribute):
@@ -1390,8 +1419,7 @@ class AutoJSON(object):
 				if value == 'None':
 					value = None
 			a_dict.update({json_name: value})
-		
-		if hasattr(self, '_extra_json') and callable(self._extra_json):
+		if add_extra and hasattr(self, '_extra_json') and callable(self._extra_json):
 			a_dict.update(self._extra_json())
 		
 		return a_dict
@@ -1399,18 +1427,28 @@ class AutoJSON(object):
 	# clem 27/03/2017
 	@classmethod
 	def json_key_list(cls):
+		""" Returns the display name of every key in _serialize_keys list
+		
+		:rtype: list
+		"""
 		a_list = list()
 		for each in cls._serialize_keys:
 			json_name, _ = cls.__base_name_parser(each)
 			a_list.append(json_name)
 		return a_list
 	
-	@classmethod
+	@classmethod # TODO finish
 	def json_dump(cls, query=None):
+		""" Dump every object from all() or the optional query
+		
+		:param query: an optional filtered query to dump
+		:type query:  django.db.models.query.QuerySet
+		:return: a dictionary with two keys : '_keys': a list of selected keys, 'list': the object list
+		:rtype: dict
+		"""
 		if query is None:
 			query = cls.objects.all()
 		return {
-			# '_keys': cls._serialize_keys,
 			'_keys': cls.json_key_list(),
 			'list': query if type(query) is list else list(query)
 		}
@@ -1418,6 +1456,15 @@ class AutoJSON(object):
 	# clem 29/03/2017
 	@classmethod
 	def add_keys(cls, keys_list):
+		""" Adds one or multiple keys to the _serialize_keys key list
+		
+		The format of the key_list is as following :
+		['property_name' | ('property_name', 'property display name'), ...]
+		
+		:param keys_list:
+		:type keys_list: list[tuple[basestring, basestring] | basestring] | tuple[basestring, basestring] | basestring
+		:rtype: None
+		"""
 		if type(keys_list) in [tuple, basestring]:
 			cls._serialize_keys.append(keys_list)
 		elif type(keys_list) is list:
