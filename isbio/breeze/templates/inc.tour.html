@@ -320,26 +320,12 @@
 					//onHide: closeSharing
 				},
 				{
-					title   : "EMPTY",
+					title   : "TODO",
 					//element : "#TagList div.btn-group",
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
-					content : "TODO",
+					content : "This tour is not yet completed",
 					redirect: false,
-					orphan  : true,
-					onPrev  : openSharing
-				},
-				{
-					title   : "EMPTY",
-					//element : "#TagList div.btn-group",
-					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
-					content : "Optionally select users or group of users you would like to share this report with.",
-					redirect: false,
-					orphan  : true,
-					onPrev  : closeSharing,
-					onNext  : closeSharing,
-					onEnd   : closeSharing,
-					onShow  : openSharing,
-					onHide  : closeSharing
+					orphan  : true
 				}
 			]
 		});
