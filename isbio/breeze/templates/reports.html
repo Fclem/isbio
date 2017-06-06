@@ -1,18 +1,13 @@
 {% extends "base.html" %}
-
 {% load bootstrap_toolkit %}
 {% load user_translate %}
-
 {% block title %}Reports{% endblock %}
-
 {% block extra_head %}
-
-	<script type="text/javascript" src="/static/js/bootstrap-multiselect.js"></script>
-	<link rel="stylesheet" href="/static/css/bootstrap-multiselect.css" type="text/css"/>
-	<link href="/static/css/bootstrapSwitch.css" rel="stylesheet">
-	<script src="/static/js/bootstrapSwitch.js"></script>
-	<script type="text/javascript" src="/static/js/bootstrap-paginator.min.js"></script>
-
+	<script type="text/javascript" src="{% static "" %}/js/bootstrap-multiselect.js"></script>
+	<link rel="stylesheet" href="{% static "" %}/css/bootstrap-multiselect.css" type="text/css"/>
+	<link href="{% static "" %}/css/bootstrapSwitch.css" rel="stylesheet">
+	<script src="{% static "" %}/js/bootstrapSwitch.js"></script>
+	<script type="text/javascript" src="{% static "" %}/js/bootstrap-paginator.min.js"></script>
 	<style type="text/css">
 		#main_table td {text-align:center; vertical-align:middle;}
 		#main_table th {text-align:center; vertical-align:middle;}
@@ -53,9 +48,7 @@
 			margin-right: 4px;
 		}
 	</style>
-
 {% endblock %}
-
 {% block content %}
 	<!-- site map bar -->
 	<div class="row-fluid">
