@@ -1,6 +1,6 @@
 <!-- bootstrap-tour -->
-<link href="/static/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
-<script src="/static/js/bootstrap-tour.min.js"></script>
+<link href="{{ '/static' }}/css/bootstrap-tour-standalone-custom.css" rel="stylesheet">
+<script src="{{ '/static' }}/js/bootstrap-tour.min.js"></script>
 
 <!-- Some style fix to workaround issues with some elements when using bootstrap-tour -->
 <style>
@@ -12,20 +12,54 @@
 		position: relative;
 		z-index: 1101;
 	}
+	
+	/* Fix for home page left menu */
+	#preferencesMenuLink{
+		background-color: #f5f5f5;
+	}
+	.nav-list > li > a{
+		border-radius: 6px;
+	}
+	.nav-list > .active > a#preferencesMenuLink{
+		color: #ffffff;
+		text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+		background-color: #0088cc;
+	}
+	#preferencesMenuLink:hover{
+		text-decoration: none;
+		background-color: #eeeeee;
+	}
 </style>
 
 <!-- My tour for logged-in users -->
 <script type="text/javascript">
 	var tour = null;
+	var selectEventAttached = false;
 	var tourRedrawStepIndex = 7;
 	
+	function getPrefMenuLinkObj() {
+		return $('#preferencesMenuLink');
+	}
+	
+	function removeLiFix(){
+		//getPrefMenuLinkObj().removeClass('special-li-menu-fix');
+		getPrefMenuLinkObj().css('background-color', '');
+		getPrefMenuLinkObj().css('border-radius', '');
+	}
+	
+	function addLiFix() {
+		// getPrefMenuLinkObj().addClass('special-li-menu-fix');
+		getPrefMenuLinkObj().css('background-color', '#f5f5f5');
+		getPrefMenuLinkObj().css('border-radius', '6px');
+	}
+	
 	function switchToProjects() {
-		$('#preferencesMenuLink').click();
+		getPrefMenuLinkObj().click();
 		$('#projectsTabHeader').click();
 	}
 	
 	function switchToGroups() {
-		$('#preferencesMenuLink').click();
+		getPrefMenuLinkObj().click();
 		$('#groupsTabHeader').click();
 	}
 	
@@ -84,10 +118,21 @@
 		return $('#TagList div.btn-group');
 	}
 	
+	function getSharingSelectObj(){
+		return $('#id_shared');
+	}
+	
 	function openSharing(){
 		var button = getSharingButtonGroup();
 		if(!button.hasClass('open')){
 			button.addClass('open');
+		}
+		if(!selectEventAttached){
+			selectEventAttached = true;
+			getSharingSelectObj().change(function () {
+				// enabled redrawing of the step popover to match the new size of the button
+				tour.goTo(tour._current);
+			})
 		}
 	}
 	
@@ -96,6 +141,8 @@
 		if (button.hasClass('open')) {
 			button.removeClass('open');
 		}
+		getSharingSelectObj().unbind('change');
+		selectEventAttached = false;
 	}
 	
 	$(function () {
@@ -256,7 +303,7 @@
 					onNext  : function () {
 						var projSelector = $('#id_project') ;
 						var firstOption = $("#id_project option:nth-child(2)");
-						if(projSelector.val() <= 1) projSelector.val(firstOption.val());
+						if(projSelector.val() <= 0) projSelector.val(firstOption.val());
 					}
 				},
 				{
@@ -266,7 +313,8 @@
 					backdrop: true,
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
 					content : "This should usually be left to the default target.",
-					redirect: false
+					redirect: false,
+					onNext  : openSharing
 				},
 				{
 					title   : "Report sharing",
@@ -276,16 +324,31 @@
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
 					content : "Optionally select users or group of users you would like to share this report with.",
 					redirect: false,
-					onShown: openSharing,
-					onHide: closeSharing
+					onPrev: closeSharing,
+					onNext: closeSharing,
+					onEnd : closeSharing,
+					onShown: openSharing
+					//onHide: closeSharing
 				},
 				{
-					title   : "Report sharing",
+					title   : "EMPTY",
+					//element : "#TagList div.btn-group",
+					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
+					content : "TODO",
+					redirect: false,
+					orphan  : true,
+					onPrev  : openSharing
+				},
+				{
+					title   : "EMPTY",
 					//element : "#TagList div.btn-group",
 					path    : new RegExp(/\/reports\/new\/\d+-[^/]+/), // TODO check
 					content : "Optionally select users or group of users you would like to share this report with.",
 					redirect: false,
 					orphan  : true,
+					onPrev  : closeSharing,
+					onNext  : closeSharing,
+					onEnd   : closeSharing,
 					onShow  : openSharing,
 					onHide  : closeSharing
 				}
@@ -304,5 +367,7 @@
 		
 		!tour.ended() ? disableTourButton() : enableTourButton();
 		{% endif %}
+		tour.goTo()
+		//!tour.ended() ? tour.goTo(tour._current) : null;
 	});
 </script>

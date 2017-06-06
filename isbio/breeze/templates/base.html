@@ -198,9 +198,10 @@
 {% endif %}
 {% if run_mode == 'dev' %}
 <!-- Context :
-	{% for each in context_vars_list %}
-		{{ each }}
-	{% endfor %}
+vars :
+{% for each in context_vars_list %}{{ each }}, {% endfor %}
+pprint :
+{{ context_vars_values|pprint|safe }}
 -->
 {% endif %}
 </body>
