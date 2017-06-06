@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.functional import SimpleLazyObject
-from breeze.utils import list_context_functions
+from breeze.utils import autogen_context_dict
 from django.conf import settings
 
 
@@ -45,21 +45,8 @@ def run_mode_context(_):
 	}
 
 
-def __autogen_context_dict(request, flat=False):
-	def filter_functions():
-		a_list = list_context_functions()
-		b_list = list()
-		for each in a_list:
-			if not each.__name__.startswith('__') and each.__module__ == 'breeze.context':
-				b_list.append(each)
-		return b_list
-	a_dict = dict()
-	for each in filter_functions():
-		data = each.__call__(request) if each.func_code.co_argcount else each.__call__()
-		a_dict.update({each.__name__: data}) if not flat else a_dict.update(data)
-	
-	return a_dict
-
-
+# clem 06/06/2017
 def __context_var_list(request):
-	return {'context_vars_list': __autogen_context_dict(request, True).keys()}
+	all_context = autogen_context_dict(request, True)
+	return {'context_vars_list': all_context.keys(),
+			'context_vars_values': all_context }
