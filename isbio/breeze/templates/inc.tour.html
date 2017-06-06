@@ -292,7 +292,10 @@
 					onNext  : function () {
 						var projSelector = $('#id_project') ;
 						var firstOption = $("#id_project option:nth-child(2)");
-						if(projSelector.val() <= 0) projSelector.val(firstOption.val());
+						if(projSelector.val() <= 0){
+							projSelector.val(firstOption.val());
+							projSelector.change();
+						}
 					}
 				},
 				{
