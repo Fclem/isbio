@@ -2,16 +2,16 @@
 {% load bootstrap_toolkit %}
 {% block title %}{{ title|default:"Create a new report" }}{% endblock %}
 {% block extra_head %}
-	<link href="{{ '/static' }}/css/bootstrapSwitch.css" rel="stylesheet">
-	<link rel="stylesheet" href="{{ '/static' }}/css/bootstrap-multiselect.css" type="text/css"/>
-	<link rel="stylesheet" href="{{ '/static' }}/css/custom.css" type="text/css"/>
-	<script src="{{ '/static' }}/js/bootstrapSwitch.js"></script>
-	<script type="text/javascript" src="{{ '/static' }}/js/bootstrap-multiselect.js"></script>
+	<link href="{% static "" %}/css/bootstrapSwitch.css" rel="stylesheet">
+	<link rel="stylesheet" href="{% static "" %}/css/bootstrap-multiselect.css" type="text/css"/>
+	<link rel="stylesheet" href="{% static "" %}/css/custom.css" type="text/css"/>
+	<script src="{% static "" %}/js/bootstrapSwitch.js"></script>
+	<script type="text/javascript" src="{% static "" %}/js/bootstrap-multiselect.js"></script>
 	<style type="text/css">
 		.thumbnail {
 			border-style: groove;
 			border-radius: 7px;
-			background: url('{{ '/static' }}/nail1.png');
+			background: url('{% static "" %}/nail1.png');
 		}
 		body {
 			height: 100%;
@@ -83,7 +83,7 @@
 					{% if overview_info.manual != "" and overview_info.manual != None %}
 					<p class="pull-right" style="margin-right: 45px;margin-top: 20px;">
 						<label><small><a href="{{ overview_info.manual }}" target="_blank">
-							<img src="{{ '/static' }}/pdf.png" title="Click here to download this pipeline user-manual"
+							<img src="{% static "" %}/pdf.png" title="Click here to download this pipeline user-manual"
 							     alt="Click here to download this pipeline user-manual" width="150" height="150">
 							<br />download</a> pipeline manual</small></label></p>
 					{% endif %}
@@ -453,9 +453,9 @@
 		// TODO : incomplet / un-used / testing ?
 		function load() {
 			//Re-execute the bootStrapMultiSelect
-			$.getScript("{{ '/static' }}/js/bootstrap-multiselect.js", function () {
+			$.getScript("{% static "" %}/js/bootstrap-multiselect.js", function () {
 				//Re-execute the bootStrapSwitch
-				$.getScript("{{ '/static' }}/js/bootstrapSwitch.js", function () {
+				$.getScript("{% static "" %}/js/bootstrapSwitch.js", function () {
 					init();
 				});
 			});
