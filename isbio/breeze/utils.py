@@ -336,3 +336,9 @@ class PyPackage(object):
 			'query_url': self.query_url,
 			'summary':   self.summary.strip() if with_summary else ''
 		}
+
+
+# clem 06/06/2017
+def list_context_functions():
+	from breeze import context
+	return list_functions_from_module(context)

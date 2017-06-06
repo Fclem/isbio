@@ -93,6 +93,7 @@ TEMPLATES = [
 				'breeze.context.run_mode_context',
 				# 'django_auth0.context_processors.auth0', # moved to config/auth0.py
 				"breeze.context.site",
+				"breeze.context.__context_var_list",
 			],
 		},
 	},
