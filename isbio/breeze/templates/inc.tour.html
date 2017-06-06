@@ -41,18 +41,6 @@
 		return $('#preferencesMenuLink');
 	}
 	
-	function removeLiFix(){
-		//getPrefMenuLinkObj().removeClass('special-li-menu-fix');
-		getPrefMenuLinkObj().css('background-color', '');
-		getPrefMenuLinkObj().css('border-radius', '');
-	}
-	
-	function addLiFix() {
-		// getPrefMenuLinkObj().addClass('special-li-menu-fix');
-		getPrefMenuLinkObj().css('background-color', '#f5f5f5');
-		getPrefMenuLinkObj().css('border-radius', '6px');
-	}
-	
 	function switchToProjects() {
 		getPrefMenuLinkObj().click();
 		$('#projectsTabHeader').click();
@@ -131,7 +119,8 @@
 			selectEventAttached = true;
 			getSharingSelectObj().change(function () {
 				// enabled redrawing of the step popover to match the new size of the button
-				tour.goTo(tour._current);
+				tour.showStep(tour.getCurrentStep()); // valid
+				// (window).resize(); // too slow
 			})
 		}
 	}
@@ -367,7 +356,7 @@
 		
 		!tour.ended() ? disableTourButton() : enableTourButton();
 		{% endif %}
-		tour.goTo()
+		//tour.goTo()
 		//!tour.ended() ? tour.goTo(tour._current) : null;
 	});
 </script>
