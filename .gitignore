@@ -24,9 +24,10 @@ running
 .*~
 .*_secret
 */.*_secret
-static_source/
+static_source
 .*
 !.gitignore
 !.sge_request
 *.ipynb
 */*.ipynb
+_static_source
