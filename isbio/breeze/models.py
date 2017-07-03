@@ -1206,16 +1206,36 @@ class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a 
 	def get_institute(cls, user):
 		return cls.objects.get(user=user).institute_info
 	
+	# clem 03/07/2017
 	@classmethod
-	def make_guest(cls, user):
+	def _make_profile(cls, user, is_guest=False):
 		user_profile = cls()
 		user_profile.user = user
-		# FIXME broken due to DB constrains
-		# FIXME should be part of Breeze installation not runtime
-		user_profile.institute_info, created = Institute.objects.get_or_create(
-			institute=settings.GUEST_FIRST_NAME.capitalize())
+		email = user.email
+		if is_guest:
+			# FIXME broken due to DB constrains
+			# FIXME should be part of Breeze installation not runtime
+			user_profile.institute_info, created = Institute.objects.get_or_create(
+				institute=settings.GUEST_FIRST_NAME.capitalize())
+		elif email and '@' in email and '.' in email:
+			full_split = email.split('@')
+			nick = full_split[0].split('.')
+			domain = full_split[1]
+			user_profile.institute_info, created = Institute.objects.get_or_create(
+				domain=domain)
+			if created:
+				user_profile.institute_info.institute = '.'.join(domain.split('.')[:-1])
+				user_profile.institute_info.url = 'http://%s' % domain
 		user_profile.save()
 		return user_profile
+	
+	@classmethod
+	def make_guest(cls, user):
+		return cls._make_profile(user, True)
+	
+	@classmethod
+	def make_user(cls, user):
+		return cls._make_profile(user)
 	
 	# clem 29/03/2017
 	def delete(self, using=None, keep_parents=False):

@@ -186,9 +186,13 @@ class CheckUserProfile(object):
 		if not isinstance(user, AnonymousUser): # TODO move to backend
 			# update the last_active field of UserProfile (as this field is set to auto_now)
 			# this is useful mostly to track inactive guest user
-			profile = UserProfile.get(request)
-			profile.save()
-			
+			from django.core.exceptions import ObjectDoesNotExist
+			try:
+				profile = UserProfile.get(request)
+				profile.save()
+			except ObjectDoesNotExist as e:
+				logger.exception(e)
+				
 		UserProfile.objects.clear_expired_guests() # FIXME put in a separate guest middleware
 
 
