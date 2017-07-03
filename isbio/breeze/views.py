@@ -2746,7 +2746,7 @@ def update_user_info_dialog(request):
 					user_profile.institute_info = Institute.objects.get(id=request.POST['institute'])
 				user.save()
 				user_profile.save()
-			except UserProfile.DoesNotExist: # FIXME should not happend anymore
+			except UserProfile.DoesNotExist: # FIXME should not happen anymore
 				user_profile = UserProfile()
 				user_profile.user = user
 				user_profile.institute_info = Institute.objects.get(id=request.POST['institute'])
@@ -2755,12 +2755,13 @@ def update_user_info_dialog(request):
 			return HttpResponseRedirect('/home')  # FIXME hardcoded url
 	else:
 		personal_form = breezeForms.PersonalInfo(initial=user.kwarg_dump)
-		try:
-			print personal_form.fields['institute']
-			print personal_form.fields['institute'].widget
-			print personal_form.fields['institute'].widget.attr
-		except:
-			pass
+		if user.is_superuser:
+			try: # bypass UI locking of institute selection list
+				del personal_form.fields['institute'].widget.attrs['disabled']
+				css_class = personal_form.fields['institute'].widget.attrs.get('class', '')
+				personal_form.fields['institute'].widget.attrs['class'] = css_class + ' admin-object'
+			except Exception as e:
+				logger.exception('Unhandled: %s' % str(e))
 		
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': personal_form,
