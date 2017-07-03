@@ -800,7 +800,7 @@ class BreezeUserManager(UserManager):
 			logger.exception(e)
 	
 	def create_user(self, **kwargs):
-		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se']
+		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se', 'rr-research.no']
 		email = kwargs.get('email', '')
 		pass_on = kwargs
 		pass_on['is_active'] = True
@@ -825,10 +825,9 @@ class BreezeUserManager(UserManager):
 		user = self.create(**pass_on)
 		
 		# TODO alert admin about new user
-		if user_institute:
-			from breeze.models import UserProfile
-			user_profile = UserProfile.make_user(user)
-			user.save()
+		from breeze.models import UserProfile
+		user_profile = UserProfile.make_user(user)
+		user.save()
 		self.__send_mail(user)
 		return user
 	
