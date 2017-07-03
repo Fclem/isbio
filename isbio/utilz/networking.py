@@ -175,3 +175,9 @@ def is_ip_in_fimm_network(ip_addr):
 def is_http_client_in_fimm_network(request):
 	from webhooks.hooker import HookWSGIReq
 	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
+
+
+# clem 02/07/2017
+def get_fqdn():
+	import socket
+	return socket.getfqdn()
