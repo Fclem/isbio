@@ -87,7 +87,9 @@ def process_login(request):
 				
 				return __login_stage_two(request, user)
 			except Exception as e:
-				messages.add_message(request, messages.ERROR, str(e))
+				messages.add_message(request, messages.ERROR, 'Breeze unexpected authentication failure')
+				logger.exception(e)
+				
 		else:
 			# error from AUTH0
 			messages.add_message(request, messages.ERROR, 'AUTH0: %s' % token_info['error'])
