@@ -2755,8 +2755,6 @@ def update_user_info_dialog(request):
 			return HttpResponseRedirect('/home')  # FIXME hardcoded url
 	else:
 		personal_form = breezeForms.PersonalInfo(initial=OrderedUser.kwarg_dump)
-		if not user.is_superuser: # normal user can't change their institute (front-end)
-			personal_form.fields['institute'].widget.attrs.update({'disabled': 'disabled'})
 		
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': personal_form,

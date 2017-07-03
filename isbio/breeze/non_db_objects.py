@@ -1632,16 +1632,16 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	@property
 	def kwarg_dump(self):
 		from breeze.models import UserProfile, Institute
-		infos = {
+		info = {
 			'first_name': self.first_name, 'last_name': self.last_name,
 			'email': self.email
 		}
 		try:
 			institute = self.user_profile.institute_info.id
-			infos.update(institute=institute)
+			info.update(institute=institute)
 		except UserProfile.DoesNotExist:
-			infos.update({'institute': models.Institute.default})
-		return infos
+			info.update(institute=Institute.default)
+		return info
 
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}

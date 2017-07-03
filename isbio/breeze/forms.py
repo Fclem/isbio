@@ -569,7 +569,7 @@ class PersonalInfo(forms.Form):
 			initial=institute_list[0],
 			choices=institute_list,
 			widget=forms.Select(
-				attrs={'class': 'multiselect', }
+				attrs={'class': 'multiselect', 'disabled': 'disabled'}
 			)
 		)
 
