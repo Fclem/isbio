@@ -95,7 +95,7 @@ def process_login(request):
 	else: # eventual other AUTH0 methods
 		if error:
 			description = request.GET.get('error_description', '')
-			logger.warning('AUTH error content: %s' % request.GET.get('error_description', ''))
+			logger.warning('AUTH error : %s' % description)
 			messages.add_message(request, messages.ERROR, description)
 		else:
 			# unsupported method
