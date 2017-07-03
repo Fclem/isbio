@@ -61,6 +61,7 @@ def process_login(request):
 	"""
 	
 	code = request.GET.get('code', None)
+	error = request.GET.get('error', None)
 	if code: # Normal AUTH0 login request
 		json_header = {'content-type': 'application/json'}
 		
@@ -79,20 +80,29 @@ def process_login(request):
 			user_url = settings.AUTH0_USER_INFO_URL_BASE % (settings.AUTH0_DOMAIN, token_info['access_token'])
 			user_info = requests.get(user_url).json()
 			
-			user = auth.authenticate(**user_info)
-			# We're saving all user information into the session
-			request.session['profile'] = user_info
-			
-			return __login_stage_two(request, user)
-		# error from AUTH0
-		messages.add_message(request, messages.ERROR, 'AUTH0: %s' % token_info['error'])
-		logger.warning('AUTH failure (AUTH0 denied) [%s]' % str(token_info))
+			try:
+				user = auth.authenticate(**user_info)
+				# We're saving all user information into the session
+				request.session['profile'] = user_info
+				
+				return __login_stage_two(request, user)
+			except Exception as e:
+				messages.add_message(request, messages.ERROR, str(e))
+		else:
+			# error from AUTH0
+			messages.add_message(request, messages.ERROR, 'AUTH0: %s' % token_info['error'])
+			logger.warning('AUTH failure (AUTH0 denied) [%s]' % str(token_info))
 	else: # eventual other AUTH0 methods
-		# unsupported method
-		logger.warning('AUTH invalid GET[%s] POST[%s] content: %s' % (request.GET.__dict__,
-		request.POST.__dict__, str(request.body)))
-		messages.add_message(request, messages.ERROR, 'Unexpected or unsupported authentication mode')
-		print('unsupported auth type :\n', request.GET.__dict__, request.POST.__dict__)
+		if error:
+			description = request.GET.get('error_description', '')
+			logger.warning('AUTH error content: %s' % request.GET.get('error_description', ''))
+			messages.add_message(request, messages.ERROR, description)
+		else:
+			# unsupported method
+			logger.warning('AUTH invalid GET[%s] POST[%s] content: %s' % (request.GET.__dict__,
+			request.POST.__dict__, str(request.body)))
+			messages.add_message(request, messages.ERROR, 'Unexpected or unsupported authentication mode')
+			print('unsupported auth type :\n', request.GET.__dict__, request.POST.__dict__)
 	return login_page_redirect()
 
 
