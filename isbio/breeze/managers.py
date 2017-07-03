@@ -790,11 +790,11 @@ class BreezeUserManager(UserManager):
 	@staticmethod
 	def __send_mail(user):
 		from django.core.mail import EmailMessage
+		from breeze.utils import get_fqdn
 		try:
 			msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
-				(user.username, user.first_name, user.last_name, user.email, settings.CURRENT_FQDN)
-			msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS',
-                   [settings.ADMINS[1]])
+				(user.username, user.first_name, user.last_name, user.email, get_fqdn())
+			msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS', [settings.ADMINS[1]])
 			result = msg.send()
 		except Exception as e:
 			logger.exception(e)
@@ -812,16 +812,9 @@ class BreezeUserManager(UserManager):
 			if domain == 'ki.se':
 				domain = 'scilifelab.se'
 			if domain in has_name_info_domains:
-				pass_on['first_name'] = nick[0]
-				pass_on['last_name'] = nick[1]
-			# try:
-			# 	from breeze.models import Institute
-			# 	user_institute = Institute.objects.get(domain=domain)
-			# except Exception as e:
-			# 	logger.exception(str(e))
-			
-		# user = super(BreezeUserManager, self).create(**pass_on)
-		# cls.get_query_set().create(**pass_on)
+				pass_on['first_name'] = nick[0].capitalize()
+				pass_on['last_name'] = nick[1].capitalize()
+		
 		user = self.create(**pass_on)
 		
 		# TODO alert admin about new user
