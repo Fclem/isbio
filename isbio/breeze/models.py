@@ -44,6 +44,19 @@ class Institute(CustomModelAbstract):
 	@property
 	def default(self):
 		return self.objects.get_or_create({ 'id': 1, 'institute': 'FIMM' })
+	
+	# clem 03/07/2017
+	@classmethod
+	def get_guest_institute(cls):
+		""" Return and create if necessary the Guest users' fake institue
+		
+		:rtype: Institute
+		"""
+		institute, created = cls.objects.get_or_create(
+			institute=settings.GUEST_FIRST_NAME.capitalize())
+		if created:
+			institute.save()
+		return institute
 
 
 # clem 20/06/2016
@@ -1213,19 +1226,17 @@ class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a 
 		user_profile.user = user
 		email = user.email
 		if is_guest:
-			# FIXME broken due to DB constrains
-			# FIXME should be part of Breeze installation not runtime
-			user_profile.institute_info, created = Institute.objects.get_or_create(
-				institute=settings.GUEST_FIRST_NAME.capitalize())
+			# ?? FIXME broken due to DB constrains
+			user_profile.institute_info = Institute.get_guest_institute()
 		elif email and '@' in email and '.' in email:
 			full_split = email.split('@')
 			nick = full_split[0].split('.')
 			domain = full_split[1]
-			user_profile.institute_info, created = Institute.objects.get_or_create(
-				domain=domain)
+			user_profile.institute_info, created = Institute.objects.get_or_create(domain=domain)
 			if created:
 				user_profile.institute_info.institute = '.'.join(domain.split('.')[:-1])
 				user_profile.institute_info.url = 'http://%s' % domain
+				user_profile.institute_info.save()
 		user_profile.save()
 		return user_profile
 	

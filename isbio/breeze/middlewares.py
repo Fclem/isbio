@@ -190,8 +190,10 @@ class CheckUserProfile(object):
 			try:
 				profile = UserProfile.get(request)
 				profile.save()
-			except ObjectDoesNotExist as e:
-				logger.exception(e)
+			except UserProfile.DoesNotExist as e:
+				logger.exception('DoesNotExist : %s' % str(e))
+			except Exception as e:
+				logger.exception('Unhandled : %s' % str(e))
 				
 		UserProfile.objects.clear_expired_guests() # FIXME put in a separate guest middleware
 

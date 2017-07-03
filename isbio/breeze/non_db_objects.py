@@ -1628,6 +1628,21 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 	def __is_superuser(self):
 		return settings.SU_ACCESS_OVERRIDE and self.is_superuser
 
+	# clem 03/07/2017
+	@property
+	def kwarg_dump(self):
+		from breeze.models import UserProfile, Institute
+		infos = {
+			'first_name': self.first_name, 'last_name': self.last_name,
+			'email': self.email
+		}
+		try:
+			institute = self.user_profile.institute_info.id
+			infos.update(institute=institute)
+		except UserProfile.DoesNotExist:
+			infos.update({'institute': models.Institute.default})
+		return infos
+
 
 # 04/06/2015 {% if user.is_guest %} disabled{% endif %}
 class OrderedUser(BreezeUser):

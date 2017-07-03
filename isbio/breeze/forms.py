@@ -558,9 +558,11 @@ class PersonalInfo(forms.Form):
 			widget=forms.TextInput(attrs={'placeholder': ' first.last@helsinki.fi ', })
 		)
 		institute_list = list()
-		institute_list.append(tuple((0, "Unknwown")))
-		for each in breeze.models.Institute.objects.all():
+		# institute_list.append(tuple((0, "Unknwown")))
+		for each in breeze.models.Institute.objects.exclude(id=breeze.models.Institute.get_guest_institute().id):
 			institute_list.append(tuple((each.id, each.institute)))
+		if not len(institute_list):
+			institute_list.append(tuple((0, "Unknwown")))
 
 		self.fields['institute'] = forms.ChoiceField(
 			required=False,
