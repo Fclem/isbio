@@ -2732,6 +2732,7 @@ def edit_group_dialog(request, gid):
 def update_user_info_dialog(request):
 	__self__ = this_function_name()  # instance to self
 	user_info = OrderedUser.get(request)
+	user = user_info
 	
 	if request.method == 'POST' and not user_info.is_guest:
 		personal_form = breezeForms.PersonalInfo(request.POST)
@@ -2741,30 +2742,22 @@ def update_user_info_dialog(request):
 			user_info.email = personal_form.cleaned_data.get('email', None)
 			try:
 				user_details = UserProfile.objects.get(user=request.user)
-				user_details.institute_info = Institute.objects.get(id=request.POST['institute'])
+				if user.is_superuser: # normal user can't change their institute (back-end)
+					user_details.institute_info = Institute.objects.get(id=request.POST['institute'])
 				user_info.save()
 				user_details.save()
-			except UserProfile.DoesNotExist:
-
+			except UserProfile.DoesNotExist: # FIXME should not happend anymore
 				user_details = UserProfile()
 				user_details.user = user_info
 				user_details.institute_info = Institute.objects.get(id=request.POST['institute'])
 				user_info.save()
 				user_details.save()
 			return HttpResponseRedirect('/home')  # FIXME hardcoded url
-
 	else:
-
-		try:
-			user_details = UserProfile.objects.get(user=user_info.id)
-			personal_form = breezeForms.PersonalInfo(
-				initial={'first_name': user_info.first_name, 'last_name': user_info.last_name,
-					'institute': user_details.institute_info.id, 'email': user_info.email})
-		except UserProfile.DoesNotExist:
-			personal_form = breezeForms.PersonalInfo(
-				initial={'first_name': user_info.first_name, 'last_name': user_info.last_name,
-					'email': user_info.email})
-
+		personal_form = breezeForms.PersonalInfo(initial=OrderedUser.kwarg_dump)
+		if not user.is_superuser: # normal user can't change their institute (front-end)
+			personal_form.fields['institute'].widget.attrs.update({'disabled': 'disabled'})
+		
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': personal_form,
 		'action': reverse(__self__),
