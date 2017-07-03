@@ -814,11 +814,11 @@ class BreezeUserManager(UserManager):
 			if domain in has_name_info_domains:
 				pass_on['first_name'] = nick[0]
 				pass_on['last_name'] = nick[1]
-			try:
-				from breeze.models import Institute
-				user_institute = Institute.objects.get(domain=domain)
-			except Exception as e:
-				logger.exception(str(e))
+			# try:
+			# 	from breeze.models import Institute
+			# 	user_institute = Institute.objects.get(domain=domain)
+			# except Exception as e:
+			# 	logger.exception(str(e))
 			
 		# user = super(BreezeUserManager, self).create(**pass_on)
 		# cls.get_query_set().create(**pass_on)
@@ -826,8 +826,8 @@ class BreezeUserManager(UserManager):
 		
 		# TODO alert admin about new user
 		if user_institute:
-			user.user_profile.institute_info = user_institute
-			user.user_profile.save()
+			from breeze.models import UserProfile
+			user_profile = UserProfile.make_user(user)
 			user.save()
 		self.__send_mail(user)
 		return user
