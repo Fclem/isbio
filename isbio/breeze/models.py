@@ -43,7 +43,7 @@ class Institute(CustomModelAbstract):
 	# clem 20/06/2016
 	@property
 	def default(self):
-		return self.objects.get_or_create({ 'id': 1, 'institute': 'FIMM' })
+		return self.objects.get_or_create(**{'id': 1, 'institute': 'FIMM' })
 	
 	# clem 03/07/2017
 	@classmethod
