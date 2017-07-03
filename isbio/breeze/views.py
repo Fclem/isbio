@@ -2754,7 +2754,7 @@ def update_user_info_dialog(request):
 				user_details.save()
 			return HttpResponseRedirect('/home')  # FIXME hardcoded url
 	else:
-		personal_form = breezeForms.PersonalInfo(initial=OrderedUser.kwarg_dump)
+		personal_form = breezeForms.PersonalInfo(initial=user_info.kwarg_dump)
 		
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': personal_form,
