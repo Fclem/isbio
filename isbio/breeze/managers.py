@@ -790,11 +790,14 @@ class BreezeUserManager(UserManager):
 	@staticmethod
 	def __send_mail(user):
 		from django.core.mail import EmailMessage
-
-		msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
-			(user.username, user.first_name, user.last_name, user.email, settings.CURRENT_FQDN)
-		msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS', [settings.ADMINS[1]])
-		result = msg.send()
+		try:
+			msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
+				(user.username, user.first_name, user.last_name, user.email, settings.CURRENT_FQDN)
+			msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS',
+                   [settings.ADMINS[1]])
+			result = msg.send()
+		except Exception as e:
+			logger.exception(e)
 	
 	def create_user(self, **kwargs):
 		has_name_info_domains = ['fimm.fi', 'ki.se', 'scilifelab.se']
@@ -823,8 +826,8 @@ class BreezeUserManager(UserManager):
 		
 		# TODO alert admin about new user
 		if user_institute:
-			user.userprofile.institute_info = user_institute
-			user.userprofile.save()
+			user.user_profile.institute_info = user_institute
+			user.user_profile.save()
 			user.save()
 		self.__send_mail(user)
 		return user
