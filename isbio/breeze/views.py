@@ -2731,30 +2731,36 @@ def edit_group_dialog(request, gid):
 @login_required(login_url='/')
 def update_user_info_dialog(request):
 	__self__ = this_function_name()  # instance to self
-	user_info = OrderedUser.get(request)
-	user = user_info
+	user = OrderedUser.get(request)
 	
-	if request.method == 'POST' and not user_info.is_guest:
+	if request.method == 'POST' and not user.is_guest:
 		personal_form = breezeForms.PersonalInfo(request.POST)
 		if personal_form.is_valid():
-			user_info.first_name = personal_form.cleaned_data.get('first_name', None)
-			user_info.last_name = personal_form.cleaned_data.get('last_name', None)
-			user_info.email = personal_form.cleaned_data.get('email', None)
+			user.first_name = personal_form.cleaned_data.get('first_name', None)
+			user.last_name = personal_form.cleaned_data.get('last_name', None)
+			user.email = personal_form.cleaned_data.get('email', None)
 			try:
-				user_details = UserProfile.objects.get(user=request.user)
+				# user_profile = UserProfile.objects.get(user=request.user)
+				user_profile = UserProfile.get(request)
 				if user.is_superuser: # normal user can't change their institute (back-end)
-					user_details.institute_info = Institute.objects.get(id=request.POST['institute'])
-				user_info.save()
-				user_details.save()
+					user_profile.institute_info = Institute.objects.get(id=request.POST['institute'])
+				user.save()
+				user_profile.save()
 			except UserProfile.DoesNotExist: # FIXME should not happend anymore
-				user_details = UserProfile()
-				user_details.user = user_info
-				user_details.institute_info = Institute.objects.get(id=request.POST['institute'])
-				user_info.save()
-				user_details.save()
+				user_profile = UserProfile()
+				user_profile.user = user
+				user_profile.institute_info = Institute.objects.get(id=request.POST['institute'])
+				user.save()
+				user_profile.save()
 			return HttpResponseRedirect('/home')  # FIXME hardcoded url
 	else:
-		personal_form = breezeForms.PersonalInfo(initial=user_info.kwarg_dump)
+		personal_form = breezeForms.PersonalInfo(initial=user.kwarg_dump)
+		try:
+			print personal_form.fields['institute']
+			print personal_form.fields['institute'].widget
+			print personal_form.fields['institute'].widget.attr
+		except:
+			pass
 		
 	return render_to_response('forms/basic_form_dialog.html', RequestContext(request, {
 		'form': personal_form,
