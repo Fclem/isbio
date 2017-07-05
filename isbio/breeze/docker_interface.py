@@ -8,7 +8,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.2'
+__version__ = '0.9.3'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -902,8 +902,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		return False
 
 
-use_caching = True
-expire_after = 30 * 60 # 30 minutes
+use_caching = True and 'ObjectCache' in dir()
+expire_after = 0 # DO NOT set to positive value, otherwise run_id will be lost and the job results will never be
+# retrieved upon completion when the job running time is greater than the expiry time # 30 * 60 # 30 minutes
+idle_expiry = 6*30*60 # 6 hours
 
 
 # clem 04/05/2016
@@ -917,11 +919,7 @@ def initiator(compute_target, *_):
 		if use_caching:
 			key_id = compute_target.runnable.short_id if hasattr(compute_target.runnable, 'short_id') else ''
 			key = '%s:%s' % ('DockerInterface', key_id)
-			return ObjectCache.get_or_add(key, new_if, expire_after)
-			# cached = ObjectCache.get(key)
-			# if not cached:
-			# 	ObjectCache.add(new_if(), key, expire_after)
-			# return ObjectCache.get(key)
+			return ObjectCache.get_or_add(key, new_if, expire_after, idle_expiry)
 		return new_if()
 
 # removed DockerIfTest from azure_test commit 422cc8e on 24/05/2016
