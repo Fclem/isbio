@@ -1549,7 +1549,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		elif cat == "-result":
 			name = '_result'
 			exclude_list = self.hidden_files # + ['*.xml', '*.r*', '*.sh*']
-		return exclude_list, filer_list, name
+		return exclude_list, filer_list, '%s_%s' % (slugify(self.name), name)
 
 	@property  # FIXME obsolete
 	def sge_job_name(self):
