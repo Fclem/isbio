@@ -1169,6 +1169,10 @@ def search(request, what=None):
 @login_required(login_url='/')
 def resources(request):
 	from breeze.system_check import get_template_check_list
+	
+	if not (request.user.is_superuser or request.user.is_staff):
+		raise PermissionDenied(request=request)
+	
 	usage_graph = (
 		{'url': 'http://192.168.0.225/S/D', 'html_alt': 'queue stats on the last 24h',
 			'html_title': 'queue stats on the last 24h', 'legend': 'queue stats on the last 24h', 'href': ''},
@@ -2758,7 +2762,7 @@ def update_user_info_dialog(request):
 		if user.is_superuser:
 			try: # bypass UI locking of institute selection list
 				del personal_form.fields['institute'].widget.attrs['disabled']
-				css_class = personal_form.fields['institute'].widget.attrs.get('class', '')
+				css_class = personal_form.fields['institute'].widget.attrs.get('class', '') # FIXME faulty
 				personal_form.fields['institute'].widget.attrs['class'] = css_class + ' admin-object'
 			except Exception as e:
 				logger.exception('Unhandled: %s' % str(e))
@@ -2953,6 +2957,8 @@ def check_file_system_coherent(request):
 # clem on 21/08/2015
 @login_required(login_url='/')
 def file_system_info(request):
+	if not (request.user.is_superuser or request.user.is_staff):
+		raise PermissionDenied(request=request)
 	_, _, files_state, folders_state, _ = check.deep_fs_check()
 
 	return render_to_response('fs_info.html', RequestContext(request, {
