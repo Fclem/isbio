@@ -449,6 +449,16 @@ class FolderObj(object):
 	def hidden_files(self):
 		return self.HIDDEN_FILES
 
+	# clem 07/07/2017
+	@property
+	def archive_name(self):
+		""" Must implement naming of the downloaded archive without extension
+
+		:return: the generated name of the archive to be used
+		:rtype: str
+		"""
+		return str(self.folder_name)
+
 	# clem 02/10/2015
 	def _download_ignore(self, cat=None):
 		"""
@@ -507,7 +517,7 @@ class FolderObj(object):
 		:return:
 		:rtype: CachedFile
 		"""
-		arch_full_name = str(self.folder_name) + sup + '.zip'
+		arch_full_name = self.archive_name + sup + '.zip'
 		# create the cached file object
 		return CachedFile(arch_full_name, os.path.join(self.base_folder, '_cache'), auto_cache)
 	
@@ -1254,7 +1264,7 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 	
 	__prop_read_only = False
 	RESERVED = {} # will cause validation error in forms
-	"""Exemple :
+	""" Example :
 	RESERVED = {
 		'name': ['System', 'Admin'],
 		...

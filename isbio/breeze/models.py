@@ -33,9 +33,9 @@ JOB_PS = JobStat.job_ps # legacy
 
 
 class Institute(CustomModelAbstract):
-	institute = models.CharField(max_length=32, default='FIMM')
-	url = models.CharField(max_length=64, default='https://www.fimm.fi')
-	domain = models.CharField(max_length=32, default='fimm.fi')
+	institute = models.CharField(max_length=32, default='')
+	url = models.CharField(max_length=64, default='')
+	domain = models.CharField(max_length=32, default='')
 
 	def __unicode__(self):
 		return self.institute
@@ -52,11 +52,26 @@ class Institute(CustomModelAbstract):
 		
 		:rtype: Institute
 		"""
-		institute, created = cls.objects.get_or_create(
-			institute=settings.GUEST_FIRST_NAME.capitalize())
-		if created:
+		
+		return cls.get_or_create(settings.CURRENT_FQDN, name=settings.GUEST_FIRST_NAME.capitalize())[0]
+	
+	# clem 07/07/2017
+	@classmethod
+	def get_or_create(cls, domain, name=None, url=None):
+		""" Return and create if necessary the user institute based on it's mail address domain
+		
+		:rtype: (Institute, bool)
+		"""
+		created = False
+		try:
+			institute = cls.objects.get(domain=domain)
+		except ObjectDoesNotExist:
+			name = name or '.'.join(domain.split('.')[:-1])
+			url = url or 'http://%s' % domain
+			institute = Institute.objects.create(domain=domain, url=url, institute=name)
 			institute.save()
-		return institute
+			created = True
+		return institute, created
 
 
 # clem 20/06/2016
@@ -245,7 +260,7 @@ class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 		:param self:
 		:type self:
 		:return: Django user object
-		:rtype: models.User
+		:rtype: BreezeUser
 		"""
 		auth = None
 		if hasattr(self, 'author'): # most objects
@@ -1232,11 +1247,8 @@ class UserProfile(CustomModelAbstract, AutoJSON, MagicGetter): # TODO move to a 
 			full_split = email.split('@')
 			nick = full_split[0].split('.')
 			domain = full_split[1]
-			user_profile.institute_info, created = Institute.objects.get_or_create(domain=domain)
-			if created:
-				user_profile.institute_info.institute = '.'.join(domain.split('.')[:-1])
-				user_profile.institute_info.url = 'http://%s' % domain
-				user_profile.institute_info.save()
+			user_profile.institute_info, created = Institute.get_or_create(domain=domain)
+
 		user_profile.save()
 		return user_profile
 	
@@ -1530,6 +1542,16 @@ class Runnable(FolderObj, ObjectsWithACL):
 		:rtype: list
 		"""
 		return self.HIDDEN_FILES + [self._sge_log_file, '*~', '*.o%s' % self.sgeid] + self._shiny_files
+		
+	# clem 07/07/2017
+	@property   
+	def archive_name(self):
+		""" implement naming of the downloaded archive without extension
+
+		:return: the generated name of the archive to be used
+		:rtype: str
+		"""
+		return '%s_%s_%s' % (str(self.folder_name), slugify(self.name), self._get_author().username)
 
 	# FIXME obsolete
 	def _download_ignore(self, cat=None):
