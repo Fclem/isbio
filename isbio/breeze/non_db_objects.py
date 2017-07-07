@@ -1254,7 +1254,7 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 	
 	__prop_read_only = False
 	RESERVED = {} # will cause validation error in forms
-	"""Exemple :
+	""" Example :
 	RESERVED = {
 		'name': ['System', 'Admin'],
 		...

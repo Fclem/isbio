@@ -293,6 +293,7 @@ class DomainList(object):
 	
 	@classmethod
 	def get_current_domain(cls):
+		from isbio.config import RUN_ENV_CLASS, ConfigEnvironments, MODE_PROD, DEV_MODE, PHARMA_MODE
 		if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
 			domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
 		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
