@@ -35,15 +35,13 @@
 				<a class="btn btn-inverse" href="{{ job.rdownhref }}"><i
 				  class="icon-white icon-download-alt"></i> results </a>
 				{% else %}
-				<a class="btn btn-inverse disabled" href="#" disabled><i
-				  class="icon-white icon-download-alt"></i> results </a>
+				<a class="btn btn-inverse disabled" href="#" disabled="disabled"><i
+				  class="icon-white icon-download-alt"></i> logs </a>
 				{% endif %}
 
 				<button class="btn dropdown-toggle btn-inverse" data-toggle="dropdown"
 				  {% if not is_local_admin %}
-				      {% if job.instance == "report" and job.status == "succeed" and not job.go_shiny %}
-				        disabled="disabled"
-				      {% elif not job.instance == "report" %}
+				      {% if job.instance != "report" or job.status != "succeed"  %}
 				        disabled="disabled"
 				      {% endif %}
 				  {% endif %}
@@ -55,20 +53,20 @@
 						<li class="divider"></li>
 						<li align="right"><a href="{{ job.fdownhref }}">Full Job Set <i class="icon-folder-open"></i></a>
 						</li>
+						<li class="divider"></li>
 					{% endif %}
 					<!-- Re-Run -->
 					{% if job.instance == "report" %}
-						<li class="divider"></li>
 						<li align="right">
 						<a href="{{ job.reschedhref }}">
 							Re-Run / Duplicate
 							<i class="icon-repeat"></i>
 						</a>
 					</li>
+						<li class="divider"></li>
 					{% endif %}
 					<!-- Shiny tab -->
 					{% if job.instance == "report" and job.status == "succeed" and  job.go_shiny %}
-						<li class="divider"></li>
 						<li align="right">
 							<a href="/reports/shiny-tab/{{ job.id }}">
 								Shiny report
