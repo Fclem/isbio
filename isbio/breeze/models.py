@@ -260,7 +260,7 @@ class ObjectsWithACL(CustomModelAbstract): # TODO FIXME finish
 		:param self:
 		:type self:
 		:return: Django user object
-		:rtype: models.User
+		:rtype: BreezeUser
 		"""
 		auth = None
 		if hasattr(self, 'author'): # most objects
@@ -1542,6 +1542,16 @@ class Runnable(FolderObj, ObjectsWithACL):
 		:rtype: list
 		"""
 		return self.HIDDEN_FILES + [self._sge_log_file, '*~', '*.o%s' % self.sgeid] + self._shiny_files
+		
+	# clem 07/07/2017
+	@property   
+	def archive_name(self):
+		""" implement naming of the downloaded archive without extension
+
+		:return: the generated name of the archive to be used
+		:rtype: str
+		"""
+		return '%s_%s_%s' % (str(self.folder_name), slugify(self.name), self._get_author().username)
 
 	# FIXME obsolete
 	def _download_ignore(self, cat=None):
@@ -1561,7 +1571,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		elif cat == "-result":
 			name = '_result'
 			exclude_list = self.hidden_files # + ['*.xml', '*.r*', '*.sh*']
-		return exclude_list, filer_list, '%s_%s' % (slugify(self.name), name)
+		return exclude_list, filer_list, name
 
 	@property  # FIXME obsolete
 	def sge_job_name(self):
