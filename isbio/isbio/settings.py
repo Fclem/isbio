@@ -290,6 +290,14 @@ class DomainList(object):
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
 	FIMM_PROD = ['breeze-fimm.fimm.fi', 'breeze-new.fimm.fi', ]
+	
+	@classmethod
+	def get_current_domain(cls):
+		if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
+			domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
+		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
+			domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
+		return domain[0]
 
 DEBUG = False
 VERBOSE = False
