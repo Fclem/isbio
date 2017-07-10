@@ -496,7 +496,7 @@ TMP_CSC_TAITO_REMOTE_CHROOT = '/homeappl/home/clement/'
 # mail config
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'breeze.fimm@gmail.com'
-EMAIL_HOST_PASSWORD = 'mult24mult24'
+EMAIL_HOST_PASSWORD = get_key('gmail')
 EMAIL_PORT = '587'
 # EMAIL_SUBJECT_PREFIX = '[' + FULL_HOST_NAME + '] '
 EMAIL_SUBJECT_PREFIX = '[' + BREEZE_TITLE + '] '
