@@ -1787,6 +1787,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		self.__auto_json_dump(ret_val, self._test_file)
 		self.breeze_stat = JobStat.SUCCEED
 		self.log.info('SUCCESS !')
+		self.send_completion_mail(True)
 		self.trigger_run_success(ret_val)
 
 	# Clem 11/09/2015  # FIXME obsolete design
@@ -1801,6 +1802,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		"""
 		self.breeze_stat = JobStat.ABORTED
 		self.log.info('exit code %s, user aborted' % exit_code)
+		self.send_completion_mail(False)
 		self.trigger_run_user_aborted(ret_val, exit_code)
 
 	# Clem 11/09/2015  # FIXME obsolete design
@@ -1823,7 +1825,9 @@ class Runnable(FolderObj, ObjectsWithACL):
 			else:
 				self.log.info('Script has failed ! (%s)' % failure_type)
 				self.breeze_stat = JobStat.SCRIPT_FAILED
-
+		
+		self.send_completion_mail(False)
+	
 		self.trigger_run_failed(ret_val, exit_code)
 
 	# Clem 11/09/2015
@@ -2096,6 +2100,53 @@ class Runnable(FolderObj, ObjectsWithACL):
 		
 		log_obj.verbose = verbose_proxy
 		return log_obj
+
+	# clem 10/07/2017
+	def comp_run_time(self):
+		import datetime
+		ZERO = datetime.timedelta(0)
+		
+		class UTC(datetime.tzinfo):
+			"""UTC"""
+			
+			def utcoffset(self, dt):
+				return ZERO
+			
+			def tzname(self, dt):
+				return "UTC"
+			
+			def dst(self, dt):
+				return ZERO
+		
+		utc = UTC()
+		dt = datetime.datetime.now().utcnow()
+		naive = dt.replace(tzinfo=utc)
+		print naive - self._created
+	
+	# clem 10/07/2017
+	def send_completion_mail(self, success, message=''):
+		from django.core.urlresolvers import reverse
+		
+		def make_full_url(path):
+			return 'https://%s%s' % (settings.DOMAIN[0], path)
+			
+		author = self._get_author()
+		if success:
+			subject = 'Report %s is available' % self.name
+			from breeze.views import report_file_view, send_zipfile_r
+			# view_link = make_full_url(reverse(report_file_view, kwargs={'rid': self.id}))
+			view_link = make_full_url('/reports/view/%s' % self.id) # FIXME static url (broken reverse)
+			# dl_link = make_full_url(reverse(send_zipfile_r, kwargs={'jid': self.id, 'mod': '-result'}))
+			dl_link = make_full_url('/reports/download/%s%s' % (self.id, '-result'))  # FIXME static url (broken
+			# reverse)
+			message += '\n\nYou can see this report here %s\nDownload the report archive : %s' \
+				'\n\nBest,\nThe Breeze team.' % (view_link, dl_link)
+		else:
+			subject = 'Report %s has failed' % self.name
+			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
+			from django.core.mail import EmailMessage
+			EmailMessage(subject, message, 'Breeze PMS', [settings.ADMINS[0][1]]).send()
+		author.email_user(subject, message, 'Breeze PMS')
 
 	def __unicode__(self): # Python 3: def __str__(self):
 		return u'%s' % self.text_id
