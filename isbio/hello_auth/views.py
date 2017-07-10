@@ -17,6 +17,7 @@ UserModel = BreezeUser
 
 def show_login_page(request):
 	# context = {'from_fimm': is_http_client_in_fimm_network(request)}
+	request.session['next'] = request.GET.get('next', None)
 	context = {'from_fimm': False}
 	return render(request, 'hello_auth/base.html', context=context)
 
@@ -34,7 +35,9 @@ def __login_stage_two(request, user_bis):
 		auth.login(request, user_bis) # persists user
 		logger.info('AUTH success for %s (%s)' % user_details)
 		# return index(request)
-		return success_redirect
+		print(request.session)
+		next_page, request.session['next'] = request.session['next'], None
+		return redirect(next_page) if next_page else success_redirect
 	request.session['profile'] = None
 	logger.warning('AUTH denied for %s (%s)' % user_details)
 	return login_page_redirect()
