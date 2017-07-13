@@ -35,8 +35,9 @@ def __login_stage_two(request, user_bis):
 		auth.login(request, user_bis) # persists user
 		logger.info('AUTH success for %s (%s)' % user_details)
 		# return index(request)
-		print(request.session)
-		next_page, request.session['next'] = request.session['next'], None
+		next_page = None
+		if 'next' in request.session :
+			next_page, request.session['next'] = request.session['next'], None
 		return redirect(next_page) if next_page else success_redirect
 	request.session['profile'] = None
 	logger.warning('AUTH denied for %s (%s)' % user_details)
