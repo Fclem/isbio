@@ -794,7 +794,7 @@ class BreezeUserManager(UserManager):
 		try:
 			msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
 				(user.username, user.first_name, user.last_name, user.email, get_fqdn())
-			msg = EmailMessage('New user "%s" created' % user.username, msg_text, 'Breeze PMS', [settings.ADMINS[0][1]])
+			msg = EmailMessage('New user "%s" created' % user.username, msg_text, settings.EMAIL_SENDER, [settings.ADMINS[0][1]])
 			result = msg.send()
 		except Exception as e:
 			logger.exception(e)
