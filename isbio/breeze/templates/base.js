@@ -63,3 +63,24 @@ function isFunction(functionToCheck) {
 	var getType = {};
 	return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
 }
+
+function exists(symbolName){
+	// return if the symbol symbolName exists in the current context
+	return window.hasOwwnProperty(symbolName);
+}
+
+function flash (elements) {
+	var opacity = 100;
+	var color = "255, 255, 20"; // has to be in this format since we use rgba
+	var savedBackground = $(elements).css('background');
+	console.log(savedBackground);
+	var interval = setInterval(function () {
+		opacity -= 3;
+		if (opacity <= 0){
+			$(elements).css({background: savedBackground});
+			clearInterval(interval);
+		}else{
+			$(elements).css({background: "rgba(" + color + ", " + opacity / 100 + ")"});
+		}
+	}, 30);
+}

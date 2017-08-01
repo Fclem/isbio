@@ -41,9 +41,23 @@
 		return $('#preferencesMenuLink');
 	}
 	
+	function getPipelineMenuObj() {
+		return $('#pipelines_tab');
+	}
+	
+	function validatePipeline(id){
+		if (id === 'pipe-2') { // TODO
+			tour.next();
+		}
+	}
+	
 	function switchToProjects() {
 		getPrefMenuLinkObj().click();
 		$('#projectsTabHeader').click();
+	}
+	
+	function switchToPipelines(){
+		getPipelineMenuObj().click();
 	}
 	
 	function switchToGroups() {
@@ -202,6 +216,23 @@
 					backdrop : true,
 					onPrev   : switchToProjects,
 					onShow   : switchToGroups
+				},
+				{
+					title    : "Market page",
+					path     : "/store/",
+					element  : "#pipelines", //"#userGroupsTable",
+					// next     : -1,
+					placement: "bottom",
+					content  : "Here you can select and install any of the available pipelines.<br>"
+					+ "Find the DSRT pipeline, click install, and confirm.",
+					backdrop : true,
+					onPrev   : switchToGroups,
+					onShow   : switchToPipelines,
+					onShown  : function (tour) {
+						switchToPipelines();
+						$("#step-6 > div.popover-navigation > div > button:nth-child(2)")
+						  .prop("disabled", true).addClass('disabled');
+					}
 				},
 				{
 					title   : "Report page",

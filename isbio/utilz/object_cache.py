@@ -114,6 +114,23 @@ class CachedObject(object):
 		"""
 		return self.get_object()
 
+	# clem 06/07/2017
+	@property
+	def time_out_value(self):
+		return self.__time_out
+	
+	# clem 06/07/2017
+	@property
+	def idle_time_out_value(self):
+		return self.__idle_time_out
+	
+	# clem 06/07/2017
+	def set_time_out(self, time_out=None, idle_time_out=None):
+		if time_out is not None:
+			self.__time_out = time_out
+		if idle_time_out is not None:
+			self.__idle_time_out = idle_time_out
+
 	# clem 24/03/2017
 	def to_json(self):
 		print(type(self.get_object()))

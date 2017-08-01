@@ -1,9 +1,15 @@
 #!/usr/bin/python
 from blob_storage_module import * # import interface, already has os, sys and abc
-from azure.common import AzureMissingResourceHttpError as MissingResException
-from azure.storage.blob import BlockBlobService
+import time
+try:
+	from azure.common import AzureMissingResourceHttpError as MissingResException
+	from azure.storage.blob import BlockBlobService
+except ImportError as e:
+	print Bcolors.fail('ImportError : %s' % e)
+	print Bcolors.warning('Please install required module ', Bcolors.bold('azure'), ', usually by typing :')
+	print '%s %s' % (Bcolors.bold(Bcolors.ok_green('$')), Bcolors.ok_blue('sudo pip install azure azure-storage'))
 
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 __author__ = 'clem'
 
 
@@ -27,7 +33,6 @@ class NoProgressException(BaseException):
 
 
 class BlockingTransfer(object):
-	import time
 	_completed = False
 	_per100 = 0.
 	_last_progress = 0.
@@ -52,7 +57,7 @@ class BlockingTransfer(object):
 	def do_blocking_transfer(self):
 		if not self._started:
 			try:
-				self._start_time = self.time.time()
+				self._start_time = time.time()
 				self._transfer_func(self._progress_func)
 				self._started = True
 				self._wait()
@@ -66,8 +71,8 @@ class BlockingTransfer(object):
 		if self._started and not self._waiting:
 			self._waiting = True
 			while not self.is_complete:
-				self.time.sleep(0.005)
-				if (self.time.time() - self._start_time) % 2 == 0:
+				time.sleep(0.005)
+				if (time.time() - self._start_time) % 2 == 0:
 					# check every two seconds if some progress was made
 					if self._per100 == self._last_progress:
 						print 'NoProgressException'

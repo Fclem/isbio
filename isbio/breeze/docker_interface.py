@@ -314,6 +314,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	_data_storage = None
 	_jobs_storage = None
 	_run_server = None
+	# FIXME : design issue. This data is not saved anywhere and is calculated from the archives that gets deleted.
+	# FIXME : this object is then cached, but if for some reason it gets deleted from cache (expiration or process restart)
+	# FIXME : this value gets lost and whenever the job completes, the interface won't get the signal and/or at least
+	# FIXME : no results will ever get collected as this id is the only thing that reference the data
+	# solution would be to save that in the database, or to be able to calculate it in an invariant fashion, or
+	# compute it from the container id or such.
 	run_id = '' # stores the md5 of the sent archive ie. the job id
 	proc = None
 	# _client = None
@@ -917,7 +923,8 @@ def initiator(compute_target, *_):
 		
 	with a_lock:
 		if use_caching:
-			key_id = compute_target.runnable.short_id if hasattr(compute_target.runnable, 'short_id') else ''
+			key_id = compute_target.runnable.short_id if hasattr(compute_target.runnable, 'short_id') else hex(id(
+				compute_target.runnable))
 			key = '%s:%s' % ('DockerInterface', key_id)
 			return ObjectCache.get_or_add(key, new_if, expire_after, idle_expiry)
 		return new_if()

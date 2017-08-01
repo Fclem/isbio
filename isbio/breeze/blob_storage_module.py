@@ -2,7 +2,7 @@ import os
 import sys
 import abc
 
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 __author__ = 'clem'
 __date__ = '28/04/2016'
 
@@ -109,34 +109,42 @@ class Bcolors(object):
 	ENDC = '\033[0m'
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
+	
+	# clem 27/06/2017
+	@staticmethod
+	def composer(starter, *text):
+		compose = ''
+		for each in text:
+			compose += starter + each + Bcolors.ENDC
+		return compose
 
 	@staticmethod
-	def ok_blue(text):
-		return Bcolors.OKBLUE + text + Bcolors.ENDC
+	def ok_blue(*text):
+		return Bcolors.composer(Bcolors.OKBLUE, *text)
 
 	@staticmethod
-	def ok_green(text):
-		return Bcolors.OKGREEN + text + Bcolors.ENDC
+	def ok_green(*text):
+		return Bcolors.composer(Bcolors.OKGREEN, *text)
 
 	@staticmethod
-	def fail(text):
-		return Bcolors.FAIL + text + Bcolors.ENDC + ' (%s)' % __name__
+	def fail(*text):
+		return Bcolors.composer(Bcolors.FAIL, *text) + ' (%s)' % __name__
 
 	@staticmethod
-	def warning(text):
-		return Bcolors.WARNING + text + Bcolors.ENDC
+	def warning(*text):
+		return Bcolors.composer(Bcolors.WARNING, *text)
 
 	@staticmethod
-	def header(text):
-		return Bcolors.HEADER + text + Bcolors.ENDC
+	def header(*text):
+		return Bcolors.composer(Bcolors.HEADER, *text)
 
 	@staticmethod
-	def bold(text):
-		return Bcolors.BOLD + text + Bcolors.ENDC
+	def bold(*text):
+		return Bcolors.composer(Bcolors.BOLD, *text)
 
 	@staticmethod
-	def underlined(text):
-		return Bcolors.UNDERLINE + text + Bcolors.ENDC
+	def underlined(*text):
+		return Bcolors.composer(Bcolors.UNDERLINE, *text)
 
 
 # clem 14/04/2016
