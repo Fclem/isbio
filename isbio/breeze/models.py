@@ -2133,7 +2133,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		author = self._get_author()
 		if success:
 			subject = 'Report %s is available' % self.name
-			from breeze.views import report_file_view, send_zipfile_r
+			# from breeze.views import report_file_view, send_zipfile_r
 			# view_link = make_full_url(reverse(report_file_view, kwargs={'rid': self.id}))
 			view_link = make_full_url('/reports/view/%s' % self.id) # FIXME static url (broken reverse)
 			# dl_link = make_full_url(reverse(send_zipfile_r, kwargs={'jid': self.id, 'mod': '-result'}))
@@ -2145,8 +2145,8 @@ class Runnable(FolderObj, ObjectsWithACL):
 			subject = 'Report %s has failed' % self.name
 			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
 			from django.core.mail import EmailMessage
-			EmailMessage(subject, message, 'Breeze PMS', [settings.ADMINS[0][1]]).send()
-		author.email_user(subject, message, 'Breeze PMS')
+			EmailMessage(subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
+		author.email_user(subject, message, settings.EMAIL_SENDER)
 
 	def __unicode__(self): # Python 3: def __str__(self):
 		return u'%s' % self.text_id

@@ -549,11 +549,10 @@ def send_report(request, rid):
 					'recipient': off_user.full_name,
 					'sender': str(request.user.get_full_name()),
 					'report_name': str(report_inst.name),
-					# 'url': 'http://' + settings.FULL_HOST_NAME + reverse(report_shiny_view_tab_out, kwargs={'s_key': report_inst.shiny_key, 'u_key': off_user.user_key})
 					'url': report_inst.shiny_url
 				}
 				msg_html = loader.render_to_string('mail.html', RequestContext(request, data))
-				msg = EmailMessage('Check out "' + report_inst.name + '" on Tumor Virtual Board right now !', msg_html, 'Breeze PMS', [off_user.email])
+				msg = EmailMessage('Check out "' + report_inst.name + '" on Tumor Virtual Board right now !', msg_html, settings.EMAIL_SENDER, [off_user.email])
 				msg.content_subtype = "html"  # Main content is now text/html
 				result = msg.send()
 				status = 'Success' if result == 1 else 'Failed'
