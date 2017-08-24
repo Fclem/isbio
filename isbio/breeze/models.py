@@ -2146,7 +2146,8 @@ class Runnable(FolderObj, ObjectsWithACL):
 			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
 			from django.core.mail import EmailMessage
 			EmailMessage(subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
-		author.email_user(subject, message, settings.EMAIL_SENDER)
+		if not author.is_guest:
+			author.email_user(subject, message, settings.EMAIL_SENDER)
 
 	def __unicode__(self): # Python 3: def __str__(self):
 		return u'%s' % self.text_id
