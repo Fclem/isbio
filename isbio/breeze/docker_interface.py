@@ -183,11 +183,11 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 
 		:rtype: int
 		"""
-		if not self.__connect_port:
-			if self.target_obj.target_use_tunnel:
-				self.__connect_port = self._get_a_port()
-			else:
-				self.__connect_port = self.config_daemon_port
+		if not self.__connect_port: # 24/08/2017 trying to fix ssh tunneling
+			# if self.target_obj.target_use_tunnel:
+			#	self.__connect_port = self._get_a_port()
+			#else:
+			self.__connect_port = self.config_daemon_port
 		return self.__connect_port
 	
 	# clem 10/05/2016
