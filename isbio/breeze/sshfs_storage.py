@@ -1,56 +1,30 @@
 from storage_stub import *
 
-__version__ = '0.4.3'
+__version__ = '0.0.1'
 __author__ = 'clem'
-__date__ = '28/04/2016'
+__date__ = '29/08/2016'
 
 
-# TODO set this configs :
-SERVICE_BLOB_BASE_URL = '' # format 'proto://%s.domain/%s/' % (container_name, url)
 __DEV__ = True
 __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
 
-# TODO throw an error if key is invalid, otherwise azure keeps on returning "resource not found" error
-# clem 22/09/2016 duplicated from utilities/__init__
-def get_key_bis(name=''):
-	if name.endswith('_secret'):
-		name = name[:-7]
-	if name.startswith('.'):
-		name = name[1:]
-	try:
-		full_path = '%s/.%s_secret' % (__dir_path__, name)
-		print 'accessing key at %s' % full_path
-		with open(full_path) as f:
-			return str(f.read())[:-1]
-	except Exception:
-		pass
-	return ''
-
-
 # clem 14/04/2016
-class StorageModule(StorageModuleAbstract):
+class SSHFSModule(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	_blob_service = None
 	container = None
-	ACCOUNT_LOGIN = ''
-	ACCOUNT_KEY = ''
 	old_md5 = ''
-	# TODO : populate these values accordingly in concrete class
 	_interface = None # as to be defined as a BlobStorageObject that support argument list : (account_name=self
 	# .ACCOUNT_LOGIN, account_key=self.ACCOUNT_KEY). OR you can override the 'blob_service' property
-	missing_res_exception = None # AzureMissingResourceHttpError
+	missing_res_exception = FileNotFound
 
-	def __init__(self, login, key, container):
-		assert isinstance(login, basestring)
-		assert isinstance(key, basestring)
-		assert isinstance(container, basestring)
-		self.ACCOUNT_LOGIN = login
-		self.ACCOUNT_KEY = key
-		self.container = container
+	def __init__(self, base_path):
+		assert isinstance(base_path, basestring)
+		self.container = base_path # TODO
 
 	@property
 	def blob_service(self):
@@ -92,6 +66,15 @@ class StorageModule(StorageModuleAbstract):
 		"""
 		return self._blob_info(self.container, blob_name)
 
+	# clem 20/04/2016
+	def _print_call(self, fun_name, args):
+		arg_list = ''
+		if isinstance(args, basestring):
+			args = [args]
+		for each in args:
+			arg_list += "'%s', " % Bcolors.warning(each)
+		print Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2]
+
 	# clem 29/04/2016
 	def _upload_self_sub(self, blob_name, file_name, container=None):
 		if not container:
@@ -111,6 +94,32 @@ class StorageModule(StorageModuleAbstract):
 		:rtype: Blob
 		"""
 		return self._upload_self_sub(__file_name__, __file__, container)
+
+	# clem 29/04/2016
+	def _update_self_sub(self, blob_name, file_name, container=None):
+		if not container:
+			container = MNGT_CONTAINER
+		# try:
+		blob_name = blob_name.replace('.pyc', '.py')
+		file_name = file_name.replace('.pyc', '.py')
+		return self.download(blob_name, file_name, container)
+		#except Exception: # blob was not found
+		#	return False
+
+	# clem 20/04/2016
+	def update_self(self, container=None):
+		""" Download a possibly updated version of this script from * blob storage
+		Will only work from command line for the implementation.
+		You must override this method, use _update_self_sub, and call it using super, like so :
+		return super(__class_name__, self).update_self() and self._update_self_sub(__file_name__, __file__, container)
+
+		:param container: target container (default to MNGT_CONTAINER)
+		:type container: str|None
+		:return: success ?
+		:rtype: bool
+		:raise: AssertionError
+		"""
+		return self._update_self_sub(__file_name__, __file__, container)
 
 	# clem 28/04/201
 	@abc.abstractmethod
@@ -197,18 +206,16 @@ class StorageModule(StorageModuleAbstract):
 		:type container: str or None
 		:param verbose: Print actions (default to True)
 		:type verbose: bool or None
-		:param no_fail: suppress error messages (default to False)
-		:type no_fail: bool or None
 		:return: success?
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
-	
+
 
 # TODO : in your concrete class, simply add those four line at the end
 if __name__ == '__main__':
 	a, b, c = input_pre_handling()
 	# TODO : replace StorageModule with your implemented class
-	storage_inst = StorageModule('account', 'key', ACT_CONT_MAPPING[a])
+	storage_inst = SSHFSModule('account', 'key', ACT_CONT_MAPPING[a])
 	command_line_interface(storage_inst, a, b, c)

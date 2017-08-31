@@ -2,7 +2,8 @@ from compute_interface_module import * # has os, abc, self.js, Runnable, Compute
 from docker_client import *
 from django.conf import settings
 from utils import safe_rm
-from blob_storage_module import StorageModule
+# from blob_storage_module import StorageModule
+from storage_stub import StorageModuleAbstract
 from breeze.non_db_objects import RunServer
 import os
 a_lock = Lock()
@@ -184,7 +185,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		:rtype: int
 		"""
 		if not self.__connect_port: # 24/08/2017 trying to fix ssh tunneling
-			# if self.target_obj.target_use_tunnel:
+			# if self.target_obj.target_use_tunnel: # FIXME
 			#	self.__connect_port = self._get_a_port()
 			#else:
 			self.__connect_port = self.config_daemon_port
@@ -498,7 +499,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the jobs-to-run archives
 
 		:return: an implementation of
-		:rtype: StorageModule
+		:rtype: StorageModuleAbstract
 		"""
 		if not self._jobs_storage:
 			self._jobs_storage = self._get_storage(self.storage_backend.jobs_container())
@@ -510,7 +511,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the results archives
 
 		:return: an implementation of
-		:rtype: StorageModule
+		:rtype: StorageModuleAbstract
 		"""
 		if not self._data_storage:
 			self._data_storage = self._get_storage(self.storage_backend.data_container())
@@ -522,7 +523,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the storage backend files
 
 		:return: an implementation of
-		:rtype: StorageModule
+		:rtype: StorageModuleAbstract
 		"""
 		if not self.__docker_storage:
 			self.__docker_storage = self._get_storage(self.storage_backend.management_container())

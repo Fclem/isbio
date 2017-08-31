@@ -118,7 +118,7 @@ class ObjectNotFound(BaseException):
 	pass
 
 
-class FileNotFound(ObjectNotFound):
+class FileNotFound(ObjectNotFound, IOError):
 	pass
 
 
