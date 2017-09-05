@@ -1,8 +1,9 @@
+from __future__ import print_function
 import os
 import sys
 import abc
 
-__version__ = '0.4.2'
+__version__ = '0.5'
 __author__ = 'clem'
 __date__ = '29/08/2017'
 
@@ -35,10 +36,28 @@ ACT_CONT_MAPPING = {
 	ACTION_LIST[2]: MNGT_CONTAINER,
 	ACTION_LIST[3]: MNGT_CONTAINER,
 }
+# clem 05/09/2017
+PYTHON_VERSION = sys.version_info.major
+IS_PYTHON2 = PYTHON_VERSION == 2
+IS_PYTHON3 = PYTHON_VERSION == 3
 
 
-class FileNotFound(IOError):
-	pass
+if IS_PYTHON2:
+	basestring_t = basestring
+	
+	# clem 05/09/2017
+	class FileExistsError(OSError):
+		pass
+	
+	
+	class TimeoutError(OSError):
+		pass
+
+
+	class FileNotFoundError(OSError):
+		pass
+elif IS_PYTHON3:
+	basestring_t = str
 
 
 # clem 08/04/2016 (from utilities)
@@ -127,15 +146,16 @@ class Bcolors(object):
 class StorageModuleAbstract(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
+	missing_res_exception = None
 
 	# clem 20/04/2016
 	def _print_call(self, fun_name, args):
 		arg_list = ''
-		if isinstance(args, basestring):
+		if isinstance(args, basestring_t):
 			args = [args]
 		for each in args:
 			arg_list += "'%s', " % Bcolors.warning(each)
-		print Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2]
+		print(Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2])
 	
 	# clem 29/04/2016
 	def _update_self_sub(self, blob_name, file_name, container=None):
@@ -247,7 +267,7 @@ def input_pre_handling():
 	bb = '' if len(sys.argv) <= 2 else str(sys.argv[2])
 	cc = '' if len(sys.argv) <= 3 else str(sys.argv[3])
 
-	assert isinstance(aa, basestring) and aa in ACTION_LIST
+	assert isinstance(aa, basestring_t) and aa in ACTION_LIST
 	return aa, bb, cc
 
 
@@ -257,9 +277,9 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 	original base code by clem 14/04/2016
 
 	:type storage_implementation_instance: StorageModule
-	:type action: basestring
-	:type obj_id: basestring
-	:type file_n: basestring
+	:type action: basestring_t
+	:type obj_id: basestring_t
+	:type file_n: basestring_t
 	:return: exit code
 	:rtype: int
 	"""
@@ -290,20 +310,20 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 			if storage.update_self():
 				new_md5 = get_file_md5(__file__)
 				if new_md5 != old_md5:
-					print Bcolors.ok_green('successfully'), 'updated from %s to %s' % (Bcolors.bold(old_md5),
-					Bcolors.bold(new_md5))
+					print(Bcolors.ok_green('successfully'), 'updated from %s to %s' % (Bcolors.bold(old_md5),
+					Bcolors.bold(new_md5)))
 				else:
-					print Bcolors.ok_green('not updated') + ',', Bcolors.ok_blue('this is already the latest version.')
+					print(Bcolors.ok_green('not updated') + ',', Bcolors.ok_blue('this is already the latest version.'))
 			else:
-				print Bcolors.fail('Upgrade failure')
+				print(Bcolors.fail('Upgrade failure'))
 				exit(1)
 	except Exception as e:
-		print Bcolors.fail('FAILURE :')
+		print(Bcolors.fail('FAILURE :'))
 		code = 1
 		if hasattr(e, 'msg') and e.msg:
-			print e.msg
+			print(e.msg)
 		elif hasattr(e, 'message') and e.message:
-			print e.message
+			print(e.message)
 		else:
 			raise
 		if hasattr(e, 'status_code'):
