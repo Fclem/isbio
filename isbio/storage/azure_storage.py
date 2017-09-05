@@ -1,9 +1,10 @@
 #!/usr/bin/python
+from __future__ import print_function
 from blob_storage_module import * # import interface, already has os, sys and abc
 from azure.common import AzureMissingResourceHttpError as MissingResException
 from azure.storage.blob import BlockBlobService
 
-__version__ = '0.4.3'
+__version__ = '0.5'
 __author__ = 'clem'
 
 
@@ -20,76 +21,6 @@ AZURE_PWD_FILE = 'azure_pwd_%s' % AZURE_ACCOUNT
 
 def azure_key():
 	return get_key_bis(AZURE_PWD_FILE)
-
-
-class NoProgressException(BaseException):
-	pass
-
-
-class BlockingTransfer(object):
-	import time
-	_completed = False
-	_per100 = 0.
-	_last_progress = 0.
-	_started = False
-	_start_time = 0
-	_transfer_func = None
-	_waiting = False
-	_failed = False
-	_verbose = False
-	
-	def __init__(self, transfer_func, verbose=True):
-		"""
-		
-		:param transfer_func: The actual transfer function, that takes as first and only parameter the
-			progress_func(current, total)
-		:type transfer_func: callable
-		"""
-		assert callable(transfer_func)
-		self._verbose = verbose
-		self._transfer_func = transfer_func
-		
-	def do_blocking_transfer(self):
-		if not self._started:
-			try:
-				self._start_time = self.time.time()
-				self._transfer_func(self._progress_func)
-				self._started = True
-				self._wait()
-				return True
-			except:
-				self._failed = True
-				self._waiting = False
-		return False
-		
-	def _wait(self):
-		if self._started and not self._waiting:
-			self._waiting = True
-			while not self.is_complete:
-				self.time.sleep(0.005)
-				if (self.time.time() - self._start_time) % 2 == 0:
-					# check every two seconds if some progress was made
-					if self._per100 == self._last_progress:
-						print 'NoProgressException'
-						raise NoProgressException
-	
-	def _progress_func(self, current, total):
-		self._last_progress = self._per100
-		self._per100 = (current // total) * 100
-		if self._verbose:
-			print 'transfer: %.2f%%\r' % self._per100,
-		if current == total:
-			self._completed = True
-			if self._verbose:
-				print 'transfer complete'
-			
-	@property
-	def is_complete(self):
-		return self._completed and not self._failed
-	
-	@property
-	def progress(self):
-		return self._per100
 
 
 # clem 14/04/2016
@@ -146,7 +77,7 @@ class AzureStorage(StorageModule):
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		return super(AzureStorage, self).upload_self(container) and self._upload_self_sub(__file_name__, __file__,
+		return super(AzureStorage, self).upload_self(container) and self._upload_self_do(__file_name__, __file__,
 			container)
 
 	# clem 20/04/2016
@@ -160,8 +91,8 @@ class AzureStorage(StorageModule):
 		:rtype: bool
 		:raise: AssertionError or AzureMissingResourceHttpError
 		"""
-		assert __name__ == '__main__' # restrict access
-		return super(AzureStorage, self).update_self(container) and self._update_self_sub(__file_name__, __file__,
+		assert FROM_COMMAND_LINE # restrict access
+		return super(AzureStorage, self).update_self(container) and self._update_self_do(__file_name__, __file__,
 			container)
 
 	# clem 15/04/2016
@@ -184,7 +115,7 @@ class AzureStorage(StorageModule):
 		"""
 		if not container:
 			container = self.container
-		err = getattr(__builtins__, 'FileNotFoundError', IOError)
+		# err = getattr(__builtins__, 'FileNotFoundError', IOError)
 		
 		def do_upload(progress_func):
 			assert callable(progress_func)
@@ -200,10 +131,10 @@ class AzureStorage(StorageModule):
 				self.blob_service.create_container(container)
 			trans = BlockingTransfer(do_upload, verbose=False).do_blocking_transfer()
 			if not trans:
-				raise err("Blocking Upload failed")
+				raise FileNotFoundError("Blocking Upload failed")
 			# self.blob_service.create_blob_from_path(container, blob_name, file_path)
 		else:
-			raise err("File '%s' not found in '%s' !" % (os.path.basename(file_path),
+			raise FileNotFoundError("File '%s' not found in '%s' !" % (os.path.basename(file_path),
 				os.path.dirname(file_path)))
 		return self.blob_service.get_blob_properties(container, blob_name)
 

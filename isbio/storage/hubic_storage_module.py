@@ -2,27 +2,29 @@
 from __future__ import print_function
 import lhubic
 from utils import *
+from storage_module_prototype import *
 from concurrent.futures import ThreadPoolExecutor
-# from swiftclient.exceptions import ClientException
 # clem 31/08/2017
 
 
 HUBIC_TOKEN_FILE = '.hubic_token'
 HUBIC_CLIENT_ID = get_key('hubic_api_id')
 HUBIC_CLIENT_SECRET = get_key('hubic_api_secret')
+SHOW_SPEED_AND_PROGRESS = True
 _100_KiBi = 100 * 1024
 _512_KiBi = 512 * 1024
 _1_MiBi = 1 * 1024 * 1024
 _2_MiBi = 2 * 1024 * 1024
 
 
-class HubicClient(object):
+class HubicClient(StorageModuleAbstract):
+	missing_res_exception = lhubic.HubicObjectNotFound
 	__hubic = None
 	__auth_token = ''
 	
 	def __init__(self):
 		if self._auth():
-			self.save_token()
+			self._save_token()
 		
 	@property
 	def __token_connection_args(self):
@@ -109,7 +111,7 @@ class HubicClient(object):
 			# waiter('Waiting %s sec before next retry', 2)
 		return self._auth()
 	
-	def save_token(self):
+	def _save_token(self):
 		""" Save the content of refresh_token to get access without user/password in HUBIC_TOKEN_FILE file
 		
 		:return: is success
@@ -130,6 +132,8 @@ class HubicClient(object):
 		def _upload_wrapper():
 			total_size = getsize(local_file_path)
 			total_size_str = human_readable_byte_size(total_size)
+			if not isfile(local_file_path):
+				raise FileNotFoundError('File %s does not exists.' % local_file_path)
 			with open(local_file_path, 'rb') as f:
 				from time import sleep
 				i = 0.
@@ -163,7 +167,7 @@ class HubicClient(object):
 			total_size = int(header.get('content-length', 0))
 			total_size_str = human_readable_byte_size(total_size)
 			if isfile(local_file_path):
-				raise FileExistsError('File %s exist. For safety files will not be overwritten' % local_file_path)
+				raise FileExistsError('File %s exists. For safety files will not be overwritten' % local_file_path)
 			with open(local_file_path, 'wb') as f:
 				with ThreadPoolExecutor(max_workers=1) as executor:
 					temp = dict()
@@ -183,25 +187,72 @@ class HubicClient(object):
 			if speed:
 				sup = ' in %.02s sec, avg %s' % (res[1], speed)
 			log.info('%s %s%s' % (local_file_path, res[0], sup))
+			return True
 		except Exception as e:
 			log.error('ERROR: %s' % e)
+			return False
 	
-	def upload(self, container, local_file_path, remote_file_path, measure_speed=True):
-		self.__up_down_stud(container, local_file_path, remote_file_path, 'up', measure_speed)
+	# clem 05/09/2017
+	def upload(self, target_path, file_path, container=None, verbose=True):
+		""" Upload wrapper for * storage :\n
+		upload a local file to the default container or a specified one on * storage
+		if the container does not exists, it will be created using *
+
+		:param target_path: Name of the blob as to be stored in * storage
+		:type target_path: str
+		:param file_path: Path of the local file to upload
+		:type file_path: str
+		:param container: Name of the container to use to store the blob (default to self.container)
+		:type container: str or None
+		:param verbose: Print actions (default to True)
+		:type verbose: bool or None
+		:return: object corresponding to the created blob
+		:rtype: Blob
+		:raise: IOError or FileNotFoundError
+		"""
+		return self.__up_down_stud(container, file_path, basename(file_path), 'up', SHOW_SPEED_AND_PROGRESS)
 	
-	def download(self, container, local_file_path, remote_file_path, measure_speed=True):
-		self.__up_down_stud(container, local_file_path, remote_file_path, 'down', measure_speed)
+	# clem 05/09/2017
+	def download(self, target_path, file_path, container=None, verbose=True):
+		""" Download wrapper for * storage :\n
+		download a blob from the default container (or a specified one) from * storage and save it as a local file
+		if the container does not exists, the operation will fail
+
+		:param target_path: Name of the blob to retrieve from * storage
+		:type target_path: str
+		:param file_path: Path of the local file to save the downloaded blob
+		:type file_path: str
+		:param container: Name of the container to use to store the blob (default to self.container)
+		:type container: str or None
+		:param verbose: Print actions (default to True)
+		:type verbose: bool or None
+		:return: success?
+		:rtype: bool
+		:raise: self.missing_res_error
+		"""
+		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
+	# clem 05/09/2017
+	def erase(self, target_path, container=None, verbose=True, no_fail=False):
+		""" Delete the specified blob in self.container or in the specified container if said blob exists
+
+		:param target_path: Name of the blob to delete from * storage
+		:type target_path: str
+		:param container: Name of the container where the blob is stored (default to self.container)
+		:type container: str or None
+		:param verbose: Print actions (default to True)
+		:type verbose: bool or None
+		:param no_fail: suppress error messages (default to False)
+		:type no_fail: bool or None
+		:return: success?
+		:rtype: bool
+		:raise: self.missing_res_error
+		"""
+		try:
+			self.hubic.delete_object(container, target_path)
+			return True
+		except Exception:
+			return False
+
 
 my_hubic = HubicClient()
-
-
-# send_file = 'LICENSE.txt'
-select_container = 'default'
-local_path = '/bin/ccat'
-target_path = 'test/%s' % basename(local_path)
-# print(my_hubic.hubic.head_object(select_container, target_path))
-# my_hubic.download(select_container, local_path, target_path)
-my_hubic.upload(select_container, local_path, target_path)
-
-# my_hubic.download(container, '_%s' % local_path, 'target_path')

@@ -77,11 +77,15 @@ class HubicAuthFailure(Exception):
     pass
 
 
-class HubicTokenFailure(Exception):
+class HubicTokenFailure(HubicAuthFailure):
     pass
 
 
 class HubicAccessFailure(Exception):
+    pass
+
+
+class HubicObjectNotFound(HubicAccessFailure):
     pass
 
 

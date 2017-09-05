@@ -3,13 +3,13 @@ from docker_client import *
 from django.conf import settings
 from utils import safe_rm
 # from blob_storage_module import StorageModule
-from storage_stub import StorageModuleAbstract
+from storage import StorageModuleAbstract
 from breeze.non_db_objects import RunServer
 import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.3'
+__version__ = '0.9.4'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug

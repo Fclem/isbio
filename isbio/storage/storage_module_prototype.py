@@ -1,4 +1,5 @@
 from __future__ import print_function
+import time
 import os
 import sys
 import abc
@@ -40,6 +41,7 @@ ACT_CONT_MAPPING = {
 PYTHON_VERSION = sys.version_info.major
 IS_PYTHON2 = PYTHON_VERSION == 2
 IS_PYTHON3 = PYTHON_VERSION == 3
+FROM_COMMAND_LINE = __name__ == '__main__' # restrict access
 
 
 if IS_PYTHON2:
@@ -158,7 +160,7 @@ class StorageModuleAbstract(object):
 		print(Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2])
 	
 	# clem 29/04/2016
-	def _update_self_sub(self, blob_name, file_name, container=None):
+	def _update_self_do(self, blob_name, file_name, container=None):
 		if not container:
 			container = MNGT_CONTAINER
 		# try:
@@ -179,21 +181,42 @@ class StorageModuleAbstract(object):
 		:rtype: bool
 		:raise: AssertionError
 		"""
-		return self._update_self_sub(__file_name__, __file__, container)
-
+		assert FROM_COMMAND_LINE
+		return self._update_self_do(__file_name__, __file__, container)
+		
+	# clem 29/04/2016
+	def _upload_self_do(self, blob_name, file_name, container=None):
+		if not container:
+			container = MNGT_CONTAINER
+		blob_name = blob_name.replace('.pyc', '.py')
+		file_name = file_name.replace('.pyc', '.py')
+		self.erase(blob_name, container, no_fail=True)
+		return self.upload(blob_name, file_name, container)
+	
 	###
 	#   docker_interface access methods
 	###
+	
+	# clem 20/04/2016 @override
+	def upload_self(self, container=None):
+		""" Upload this script to target storage system, provides auto-updating feature for the other end
+
+		:param container: target container (default to MNGT_CONTAINER)
+		:type container: str|None
+		:return: Info on the created blob as a Blob object
+		:rtype: Blob
+		"""
+		self._upload_self_do(__file_name__, __file__, container)
 
 	# clem 28/04/201
 	@abc.abstractmethod
-	def upload(self, blob_name, file_path, container=None, verbose=True):
+	def upload(self, target_path, file_path, container=None, verbose=True):
 		""" Upload wrapper for * storage :\n
 		upload a local file to the default container or a specified one on * storage
 		if the container does not exists, it will be created using *
 
-		:param blob_name: Name of the blob as to be stored in * storage
-		:type blob_name: str
+		:param target_path: Name/path of the object as to be stored in * storage
+		:type target_path: str
 		:param file_path: Path of the local file to upload
 		:type file_path: str
 		:param container: Name of the container to use to store the blob (default to self.container)
@@ -208,13 +231,13 @@ class StorageModuleAbstract(object):
 
 	# clem 28/04/201
 	@abc.abstractmethod
-	def download(self, blob_name, file_path, container=None, verbose=True):
+	def download(self, target_path, file_path, container=None, verbose=True):
 		""" Download wrapper for * storage :\n
 		download a blob from the default container (or a specified one) from * storage and save it as a local file
 		if the container does not exists, the operation will fail
 
-		:param blob_name: Name of the blob to retrieve from * storage
-		:type blob_name: str
+		:param target_path: Name/path of the object to retrieve from * storage
+		:type target_path: str
 		:param file_path: Path of the local file to save the downloaded blob
 		:type file_path: str
 		:param container: Name of the container to use to store the blob (default to self.container)
@@ -229,11 +252,11 @@ class StorageModuleAbstract(object):
 
 	# clem 28/04/201
 	@abc.abstractmethod
-	def erase(self, blob_name, container=None, verbose=True, no_fail=False):
+	def erase(self, target_path, container=None, verbose=True, no_fail=False):
 		""" Delete the specified blob in self.container or in the specified container if said blob exists
 
-		:param blob_name: Name of the blob to delete from * storage
-		:type blob_name: str
+		:param target_path: Name/path of the object to delete from * storage
+		:type target_path: str
 		:param container: Name of the container where the blob is stored (default to self.container)
 		:type container: str or None
 		:param verbose: Print actions (default to True)
@@ -332,6 +355,7 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 			code = e.code
 		exit(code)
 
+
 # TODO : in your concrete class, simply add those four line at the end
 if __name__ == '__main__':
 	a, b, c = input_pre_handling()
@@ -339,3 +363,69 @@ if __name__ == '__main__':
 	# storage_inst = StorageModuleAbstract('account', 'key', ACT_CONT_MAPPING[a])
 	storage_inst = StorageModuleAbstract()
 	command_line_interface(storage_inst, a, b, c)
+
+
+class BlockingTransfer(object): # TODO move elsewhere
+	_completed = False
+	_per100 = 0.
+	_last_progress = 0.
+	_started = False
+	_start_time = 0
+	_transfer_func = None
+	_waiting = False
+	_failed = False
+	_verbose = False
+	
+	def __init__(self, transfer_func, verbose=True):
+		"""
+
+		:param transfer_func: The actual transfer function, that takes as first and only parameter the
+			progress_func(current, total)
+		:type transfer_func: callable
+		"""
+		assert callable(transfer_func)
+		self._verbose = verbose
+		self._transfer_func = transfer_func
+	
+	def do_blocking_transfer(self):
+		if not self._started:
+			try:
+				self._start_time = time.time()
+				self._transfer_func(self._progress_func)
+				self._started = True
+				self._wait()
+				return True
+			except Exception:
+				self._failed = True
+				self._waiting = False
+				raise
+		return False
+	
+	def _wait(self):
+		if self._started and not self._waiting:
+			self._waiting = True
+			while not self.is_complete:
+				time.sleep(0.005)
+				if (time.time() - self._start_time) % 2 == 0:
+					# check every two seconds if some progress was made
+					if self._per100 == self._last_progress:
+						print('TimeoutError')
+						raise TimeoutError
+	
+	def _progress_func(self, current, total):
+		self._last_progress = self._per100
+		self._per100 = (current // total) * 100
+		if self._verbose:
+			print('transfer: %.2f%%   \r' % self._per100, end='')
+		if current == total:
+			self._completed = True
+			if self._verbose:
+				print('transfer complete')
+	
+	@property
+	def is_complete(self):
+		return self._completed and not self._failed
+	
+	@property
+	def progress(self):
+		return self._per100

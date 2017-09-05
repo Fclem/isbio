@@ -3,6 +3,7 @@ import time
 import logging
 from os.path import isfile, getsize, basename
 from logging import getLogger
+from sys import version_info
 
 PRINT_LOG = True
 LOG_LEVEL = logging.DEBUG
@@ -92,3 +93,4 @@ def get_key(name=''):
 		pass
 	log.warning('could not read key %s from %s' % (name, secrets_root))
 	return ''
+
