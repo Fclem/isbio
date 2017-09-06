@@ -28,11 +28,6 @@ class AzureStorage(BlobStorageService):
 	_interface = BlockBlobService
 	missing_res_exception = MissingResException
 
-	# clem 06/09/2017
-	@property
-	def load_environement(self):
-		return { 'AZURE_KEY': azure_key() }
-
 	# clem 19/04/2016
 	def _container_url(self, container):
 		return SERVICE_BLOB_BASE_URL % (self.ACCOUNT_LOGIN, container)
@@ -99,6 +94,11 @@ class AzureStorage(BlobStorageService):
 		assert FROM_COMMAND_LINE # restrict access
 		return super(AzureStorage, self).update_self(container) and \
 			self._update_self_do(__file_name__, __file__, container)
+	
+	# clem 06/09/2017
+	@property
+	def load_environement(self):
+		return {'AZURE_KEY': azure_key()}
 
 	# clem 15/04/2016
 	def upload(self, blob_name, file_path, container=None, verbose=True):

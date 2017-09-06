@@ -35,18 +35,6 @@ class HubicClient(StorageServicePrototype):
 		self.container = container
 		if self._auth():
 			self._save_token()
-		
-	# clem 06/09/2017
-	@property
-	def load_environement(self):
-		# TODO send fewer info when refresh token is available
-		return {
-			'HUBIC_CLIENT_ID': self.client_id,
-			'HUBIC_CLIENT_SECRET': self.client_secret,
-			'HUBIC_USERNAME': self.username,
-			'HUBIC_PASSWORD': self.password,
-			'HUBIC_REFRESH_TOKEN': self.refresh_token,
-		}
 	
 	@property
 	def __token_connection_args(self):
@@ -211,8 +199,26 @@ class HubicClient(StorageServicePrototype):
 		except Exception as e:
 			log.error('ERROR: %s' % e)
 			return False
+		
+	# clem 06/09/2017
+	@property
+	def load_environement(self):
+		""" define here ENV vars you want to be set on the target execution environement in
+		relation with storage, like storage account credentials.
+
+		:return: ENV vars to be set on target
+		:rtype: dict
+		"""
+		# TODO send fewer info when refresh token is available
+		return {
+			'HUBIC_CLIENT_ID':     self.client_id,
+			'HUBIC_CLIENT_SECRET': self.client_secret,
+			'HUBIC_USERNAME':      self.username,
+			'HUBIC_PASSWORD':      self.password,
+			'HUBIC_REFRESH_TOKEN': self.refresh_token,
+		}
 	
-	# clem 05/09/2017 # FIXME
+	# clem 05/09/2017
 	def upload(self, target_path, file_path, container=None, verbose=True):
 		""" Upload wrapper for * storage :\n
 		upload a local file to the default container or a specified one on * storage
@@ -232,7 +238,7 @@ class HubicClient(StorageServicePrototype):
 		"""
 		return self.__up_down_stud(container, file_path, basename(file_path), 'up', SHOW_SPEED_AND_PROGRESS)
 	
-	# clem 05/09/2017 # FIXME
+	# clem 05/09/2017
 	def download(self, target_path, file_path, container=None, verbose=True):
 		""" Download wrapper for * storage :\n
 		download a blob from the default container (or a specified one) from * storage and save it as a local file
@@ -252,7 +258,7 @@ class HubicClient(StorageServicePrototype):
 		"""
 		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
-	# clem 05/09/2017 # FIXME
+	# clem 05/09/2017
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
 		""" Delete the specified blob in self.container or in the specified container if said blob exists
 

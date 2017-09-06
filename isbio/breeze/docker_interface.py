@@ -796,7 +796,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
 		if self._upload_assembly():
 			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
-			env = self.storage_backend.ENV_SET
+			env = self._job_storage.load_environement
 			# TODO add host_sup passing
 			self.my_run = DockerRun(self.config_container, self.config_cmd % self.run_id, self.my_volume, env=env,
 				cont_name='%s_%s' % (self._runnable.short_id , self._runnable.author))
