@@ -1,38 +1,60 @@
 #!/usr/bin/python2
 from __future__ import print_function
 import lhubic
-from utils import *
 from storage_module_prototype import *
 from concurrent.futures import ThreadPoolExecutor
+from os.path import isfile, getsize, basename
 # clem 31/08/2017
 
 
 HUBIC_TOKEN_FILE = '.hubic_token'
 HUBIC_CLIENT_ID = get_key('hubic_api_id')
 HUBIC_CLIENT_SECRET = get_key('hubic_api_secret')
+HUBIC_USERNAME = get_key('hubic_username')
+HUBIC_PASSWORD = get_key('hubic_password')
 SHOW_SPEED_AND_PROGRESS = True
 _100_KiBi = 100 * 1024
 _512_KiBi = 512 * 1024
 _1_MiBi = 1 * 1024 * 1024
 _2_MiBi = 2 * 1024 * 1024
 
+MissingResException = lhubic.HubicObjectNotFound
 
-class HubicClient(StorageModuleAbstract):
+
+class HubicClient(StorageServicePrototype):
 	missing_res_exception = lhubic.HubicObjectNotFound
 	__hubic = None
-	__auth_token = ''
+	__auth_token = None
 	
-	def __init__(self):
+	def __init__(self, username, password, client_id, client_secret, refresh_token='', container=''):
+		self.client_id = client_id
+		self.client_secret = client_secret
+		self.username = username
+		self.password = password
+		self.refresh_token = refresh_token
+		self.container = container
 		if self._auth():
 			self._save_token()
 		
+	# clem 06/09/2017
+	@property
+	def load_environement(self):
+		# TODO send fewer info when refresh token is available
+		return {
+			'HUBIC_CLIENT_ID': self.client_id,
+			'HUBIC_CLIENT_SECRET': self.client_secret,
+			'HUBIC_USERNAME': self.username,
+			'HUBIC_PASSWORD': self.password,
+			'HUBIC_REFRESH_TOKEN': self.refresh_token,
+		}
+	
 	@property
 	def __token_connection_args(self):
-		return {'client_id': HUBIC_CLIENT_ID, 'client_secret': HUBIC_CLIENT_SECRET, 'refresh_token': self._auth_token}
+		return {'client_id': self.client_id, 'client_secret': self.client_secret, 'refresh_token': self._auth_token}
 	
 	@property
 	def __creds_connection_args(self):
-		return HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, get_key('hubic_username'), get_key('hubic_password')
+		return self.client_id, self.client_secret, self.username, self.password
 	
 	@property
 	def _auth_token(self):
@@ -158,9 +180,7 @@ class HubicClient(StorageModuleAbstract):
 							raise TimeoutError('Transfer exceeded maximum allowed time of %s sec' %
 								str(io_timeout * interval))
 						sleep(interval)
-					
-					file_md5 = future.result()
-				return file_md5
+				return future.result() # file_md5
 			
 		def _download_wrapper():
 			header = self.hubic.head_object(container, remote_file_path)
@@ -192,7 +212,7 @@ class HubicClient(StorageModuleAbstract):
 			log.error('ERROR: %s' % e)
 			return False
 	
-	# clem 05/09/2017
+	# clem 05/09/2017 # FIXME
 	def upload(self, target_path, file_path, container=None, verbose=True):
 		""" Upload wrapper for * storage :\n
 		upload a local file to the default container or a specified one on * storage
@@ -212,7 +232,7 @@ class HubicClient(StorageModuleAbstract):
 		"""
 		return self.__up_down_stud(container, file_path, basename(file_path), 'up', SHOW_SPEED_AND_PROGRESS)
 	
-	# clem 05/09/2017
+	# clem 05/09/2017 # FIXME
 	def download(self, target_path, file_path, container=None, verbose=True):
 		""" Download wrapper for * storage :\n
 		download a blob from the default container (or a specified one) from * storage and save it as a local file
@@ -232,7 +252,7 @@ class HubicClient(StorageModuleAbstract):
 		"""
 		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
-	# clem 05/09/2017
+	# clem 05/09/2017 # FIXME
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
 		""" Delete the specified blob in self.container or in the specified container if said blob exists
 
@@ -253,6 +273,8 @@ class HubicClient(StorageModuleAbstract):
 			return True
 		except Exception:
 			return False
+		
 
-
-my_hubic = HubicClient()
+def back_end_initiator(container):
+	return HubicClient(HUBIC_USERNAME, HUBIC_PASSWORD,  HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, container)
+# my_hubic = HubicClient()

@@ -1,5 +1,6 @@
 from utilz import *
 from breeze.models import JobStat, Runnable, ComputeTarget
+from storage import StorageModulePrototype
 import abc
 
 __version__ = '0.1.6'
@@ -15,23 +16,45 @@ __date__ = '04/05/2016'
 class ComputeInterfaceBase(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
-	storage_backend = None
+	_storage_backend = None
 	_missing_exception = None
 	_compute_target = None
 	_runnable = None
 	
 	def __init__(self, compute_target, storage_backend=None): # TODO call from child-class, as the first instruction
+		"""
+		
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: the storage backend python module as defined in the target
+		:type storage_backend: StorageModulePrototype
+		"""
 		assert isinstance(compute_target, ComputeTarget)
 		self._compute_target = compute_target
 		self._runnable = self._compute_target.runnable
 		# assert isinstance(self._runnable, Runnable)
 		
-		self.storage_backend = storage_backend
-		if not self.storage_backend:
-			self.storage_backend = self._compute_target.storage_module
-		assert hasattr(self.storage_backend, 'MissingResException')
+		self._storage_backend = storage_backend
+		self.__storage_backend_getter()
+	
+	# clem 06/09/2017
+	def __storage_backend_getter(self):
+		""" return the storage backend module
+
+		:return:
+		:rtype: StorageModulePrototype
+		"""
+		if not self._storage_backend:
+			self._storage_backend = self._compute_target.storage_module
+		assert hasattr(self._storage_backend, 'MissingResException')
 		
-		self._missing_exception = self.storage_backend.MissingResException
+		self._missing_exception = self._storage_backend.MissingResException
+		return self._storage_backend
+	
+	# clem 06/09/2017
+	@property
+	def storage_backend(self):
+		return self.__storage_backend_getter()
 	
 	# clem 20/10/2016
 	@property

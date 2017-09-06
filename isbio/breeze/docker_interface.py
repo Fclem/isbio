@@ -2,8 +2,8 @@ from compute_interface_module import * # has os, abc, self.js, Runnable, Compute
 from docker_client import *
 from django.conf import settings
 from utils import safe_rm
-# from blob_storage_module import StorageModule
-from storage import StorageModuleAbstract
+# from blob_storage_module import BlobStorageService
+from storage import StorageServicePrototype, StorageModulePrototype
 from breeze.non_db_objects import RunServer
 import os
 a_lock = Lock()
@@ -43,7 +43,10 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
 		"""
 
-		:type storage_backend: module
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: the storage backend python module as defined in the target
+		:type storage_backend: StorageModulePrototype
 		"""
 		super(DockerInterfaceConnector, self).__init__(compute_target, storage_backend)
 		# TODO rework the ssh configuration vs daemon conf
@@ -499,7 +502,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the jobs-to-run archives
 
 		:return: an implementation of
-		:rtype: StorageModuleAbstract
+		:rtype: StorageServicePrototype
 		"""
 		if not self._jobs_storage:
 			self._jobs_storage = self._get_storage(self.storage_backend.jobs_container())
@@ -511,7 +514,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the results archives
 
 		:return: an implementation of
-		:rtype: StorageModuleAbstract
+		:rtype: StorageServicePrototype
 		"""
 		if not self._data_storage:
 			self._data_storage = self._get_storage(self.storage_backend.data_container())
@@ -523,7 +526,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		""" The storage backend to use to store the storage backend files
 
 		:return: an implementation of
-		:rtype: StorageModuleAbstract
+		:rtype: StorageServicePrototype
 		"""
 		if not self.__docker_storage:
 			self.__docker_storage = self._get_storage(self.storage_backend.management_container())
@@ -792,7 +795,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	def send_job(self):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
 		if self._upload_assembly():
-			env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
+			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
+			env = self.storage_backend.ENV_SET
 			# TODO add host_sup passing
 			self.my_run = DockerRun(self.config_container, self.config_cmd % self.run_id, self.my_volume, env=env,
 				cont_name='%s_%s' % (self._runnable.short_id , self._runnable.author))

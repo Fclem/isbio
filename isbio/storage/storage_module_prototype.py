@@ -1,5 +1,6 @@
 from __future__ import print_function
 import time
+import logging
 import os
 import sys
 import abc
@@ -8,10 +9,19 @@ __version__ = '0.5'
 __author__ = 'clem'
 __date__ = '29/08/2017'
 
-
 __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
+
+PRINT_LOG = True
+LOG_LEVEL = logging.DEBUG
+
+log = logging.getLogger("hubic_client")
+log.setLevel(LOG_LEVEL)
+if PRINT_LOG:
+	ch = logging.StreamHandler()
+	ch.setLevel(LOG_LEVEL)
+	log.addHandler(ch)
 
 # general config
 ENV_OUT_FILE = ('OUT_FILE', 'out.tar.xz')
@@ -43,7 +53,6 @@ IS_PYTHON2 = PYTHON_VERSION == 2
 IS_PYTHON3 = PYTHON_VERSION == 3
 FROM_COMMAND_LINE = __name__ == '__main__' # restrict access
 
-
 if IS_PYTHON2:
 	basestring_t = basestring
 	
@@ -61,95 +70,15 @@ if IS_PYTHON2:
 elif IS_PYTHON3:
 	basestring_t = str
 
-
-# clem 08/04/2016 (from utilities)
-def function_name(delta=0):
-	return sys._getframe(1 + delta).f_code.co_name
-
-
-# clem on 21/08/2015 (from utilities)
-def get_md5(content):
-	""" compute the md5 checksum of the content argument
-
-	:param content: the content to be hashed
-	:type content: list or str
-	:return: md5 checksum of the provided content
-	:rtype: str
-	"""
-	import hashlib
-	m = hashlib.md5()
-	if type(content) == list:
-		for eachLine in content:
-			m.update(eachLine)
-	else:
-		m.update(content)
-	return m.hexdigest()
-
-
-# clem on 21/08/2015 (from utilities)
-def get_file_md5(file_path):
-	""" compute the md5 checksum of a file
-
-	:param file_path: path of the local file to hash
-	:type file_path: str
-	:return: md5 checksum of file
-	:rtype: str
-	"""
-	try:
-		fd = open(file_path, "rb")
-		content = fd.readlines()
-		fd.close()
-		return get_md5(content)
-	except IOError:
-		return ''
-
-
-# from utilities
-class Bcolors(object):
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[33m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
-
-	@staticmethod
-	def ok_blue(text):
-		return Bcolors.OKBLUE + text + Bcolors.ENDC
-
-	@staticmethod
-	def ok_green(text):
-		return Bcolors.OKGREEN + text + Bcolors.ENDC
-
-	@staticmethod
-	def fail(text):
-		return Bcolors.FAIL + text + Bcolors.ENDC + ' (%s)' % __name__
-
-	@staticmethod
-	def warning(text):
-		return Bcolors.WARNING + text + Bcolors.ENDC
-
-	@staticmethod
-	def header(text):
-		return Bcolors.HEADER + text + Bcolors.ENDC
-
-	@staticmethod
-	def bold(text):
-		return Bcolors.BOLD + text + Bcolors.ENDC
-
-	@staticmethod
-	def underlined(text):
-		return Bcolors.UNDERLINE + text + Bcolors.ENDC
+MissingResException = FileNotFoundError
 
 
 # clem 14/04/2016
-class StorageModuleAbstract(object):
+class StorageServicePrototype(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	missing_res_exception = None
-
+	
 	# clem 20/04/2016
 	def _print_call(self, fun_name, args):
 		arg_list = ''
@@ -207,6 +136,17 @@ class StorageModuleAbstract(object):
 		:rtype: Blob
 		"""
 		self._upload_self_do(__file_name__, __file__, container)
+		
+	# clem 06/09/2017
+	@abc.abstractproperty
+	def load_environement(self):
+		""" define here ENV vars you want to be set on the target execution environement in
+		relation with storage, like storage account credentials.
+
+		:return: ENV vars to be set on target
+		:rtype: dict
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
 
 	# clem 28/04/201
 	@abc.abstractmethod
@@ -284,6 +224,11 @@ def management_container():
 
 # clem on 28/04/2016
 def input_pre_handling():
+	""" Parse arguments from command line
+	
+	:return: (action, object_id, file_name)
+	:rtype: tuple[basestring, basestring, basestring]
+	"""
 	assert len(sys.argv) >= 2
 
 	aa = str(sys.argv[1])
@@ -297,16 +242,17 @@ def input_pre_handling():
 # clem on 28/04/2016
 def command_line_interface(storage_implementation_instance, action, obj_id='', file_n=''):
 	"""	Command line interface of the module, it's the interface the docker container will use.
+	
 	original base code by clem 14/04/2016
 
-	:type storage_implementation_instance: StorageModule
+	:type storage_implementation_instance: BlobStorageService
 	:type action: basestring_t
 	:type obj_id: basestring_t
 	:type file_n: basestring_t
 	:return: exit code
 	:rtype: int
 	"""
-	assert isinstance(storage_implementation_instance, StorageModuleAbstract)
+	assert isinstance(storage_implementation_instance, StorageServicePrototype)
 	__DEV__ = False
 	try:
 		storage = storage_implementation_instance
@@ -354,14 +300,18 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 		elif hasattr(e, 'code'):
 			code = e.code
 		exit(code)
+	
 
+#
+# Only utilities after this point
+#
 
 # TODO : in your concrete class, simply add those four line at the end
 if __name__ == '__main__':
 	a, b, c = input_pre_handling()
-	# TODO : replace StorageModule with your implemented class
-	# storage_inst = StorageModuleAbstract('account', 'key', ACT_CONT_MAPPING[a])
-	storage_inst = StorageModuleAbstract()
+	# TODO : replace BlobStorageService with your implemented class
+	# storage_inst = StorageServicePrototype('account', 'key', ACT_CONT_MAPPING[a])
+	storage_inst = StorageServicePrototype()
 	command_line_interface(storage_inst, a, b, c)
 
 
@@ -429,3 +379,258 @@ class BlockingTransfer(object): # TODO move elsewhere
 	@property
 	def progress(self):
 		return self._per100
+
+
+# module prototype to be used as a type abstract for the dynamic import of storage modules
+# the imported module is type annotated as this class, while it is really in fact a module that have at least
+# clem 06/09/2017
+class StorageModulePrototype(object):
+	__metaclass__ = abc.ABCMeta
+	_not = "Class %s doesn't implement %s()"
+	
+	@abc.abstractmethod # FIXME un-used
+	def command_line_interface(self, storage_implementation_instance, action, obj_id='', file_n=''):
+		"""	Command line interface of the module, it's the interface the docker container will use.
+		
+		original base code by clem 14/04/2016
+
+		:type storage_implementation_instance: BlobStorageService
+		:type action: basestring_t
+		:type obj_id: basestring_t
+		:type file_n: basestring_t
+		:return: exit code
+		:rtype: int
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	@abc.abstractmethod
+	def back_end_initiator(self, container):
+		""" Provide a way to override storage instance initialization
+		
+		:param container: the name of the storage container in the storage service
+		:type container: basestring
+		:return: an instance of an implementation of StorageServicePrototype
+		:rtype: StorageServicePrototype
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	@abc.abstractmethod
+	def input_pre_handling(self): # FIXME un-used
+		""" Parse arguments from command line
+
+		:return: (action, object_id, file_name)
+		:rtype: tuple[basestring, basestring, basestring]
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	@abc.abstractmethod
+	def management_container(self):
+		""" give the name of the management container (where this script will be stored for auto-updates)
+		
+		:return: The name of the management container
+		:rtype: basestring
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	@abc.abstractmethod
+	def data_container(self):
+		""" give the name of the data container (the one used to stock results)
+
+		:return: The name of the management container
+		:rtype: basestring
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	@abc.abstractmethod
+	def jobs_container(self):
+		""" give the name of the job container (the one in charge of workloads)
+
+		:return: The name of the job container
+		:rtype: basestring
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# utils for prototyping, do not implement
+	FileExistsError = FileExistsError
+	TimeoutError = TimeoutError
+	FileNotFoundError = FileNotFoundError
+	StorageServicePrototype = StorageServicePrototype
+	MissingResException = FileNotFoundError
+
+
+# TODO throw an error if key is invalid, otherwise azure keeps on returning "resource not found" error
+# clem 22/09/2016 duplicated from utilities/__init__
+def get_key_bis(name=''):
+	if name.endswith('_secret'):
+		name = name[:-7]
+	if name.startswith('.'):
+		name = name[1:]
+	try:
+		full_path = '%s/.%s_secret' % (__dir_path__, name)
+		print('accessing key at %s' % full_path)
+		with open(full_path) as f:
+			return str(f.read())[:-1]
+	except Exception:
+		pass
+	return ''
+
+
+# clem 08/04/2016 (from utilities)
+def function_name(delta=0):
+	return sys._getframe(1 + delta).f_code.co_name
+
+
+# clem on 21/08/2015 (from utilities)
+def get_md5(content):
+	""" compute the md5 checksum of the content argument
+
+	:param content: the content to be hashed
+	:type content: list or str
+	:return: md5 checksum of the provided content
+	:rtype: str
+	"""
+	import hashlib
+	m = hashlib.md5()
+	if type(content) == list:
+		for eachLine in content:
+			m.update(eachLine)
+	else:
+		m.update(content)
+	return m.hexdigest()
+
+
+# clem on 21/08/2015 (from utilities)
+def get_file_md5(file_path):
+	""" compute the md5 checksum of a file
+
+	:param file_path: path of the local file to hash
+	:type file_path: str
+	:return: md5 checksum of file
+	:rtype: str
+	"""
+	try:
+		fd = open(file_path, "rb")
+		content = fd.readlines()
+		fd.close()
+		return get_md5(content)
+	except IOError:
+		return ''
+
+
+# from utilities
+class Bcolors(object):
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[33m'
+	FAIL = '\033[91m'
+	ENDC = '\033[0m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+	
+	@staticmethod
+	def ok_blue(text):
+		return Bcolors.OKBLUE + text + Bcolors.ENDC
+	
+	@staticmethod
+	def ok_green(text):
+		return Bcolors.OKGREEN + text + Bcolors.ENDC
+	
+	@staticmethod
+	def fail(text):
+		return Bcolors.FAIL + text + Bcolors.ENDC + ' (%s)' % __name__
+	
+	@staticmethod
+	def warning(text):
+		return Bcolors.WARNING + text + Bcolors.ENDC
+	
+	@staticmethod
+	def header(text):
+		return Bcolors.HEADER + text + Bcolors.ENDC
+	
+	@staticmethod
+	def bold(text):
+		return Bcolors.BOLD + text + Bcolors.ENDC
+	
+	@staticmethod
+	def underlined(text):
+		return Bcolors.UNDERLINE + text + Bcolors.ENDC
+
+
+# clem 30/08/2017
+def timed(fun, *args):
+	s = time.time()
+	r = fun(*args)
+	total_time = time.time() - s
+	return r, total_time
+
+
+# clem 30/08/2017
+def waiter(message, wait_sec):
+	message += '      \r'
+	while wait_sec > 0:
+		print(message % wait_sec, end='')
+		wait_sec -= 1
+		time.sleep(1)
+	print()
+
+
+# clem 30/08/2017 from line 6 @ https://goo.gl/BLuUFD 03/02/2016
+def human_readable_byte_size(num, suffix='B'):
+	if type(num) is not int:
+		if os.path.isfile(num):
+			num = os.path.getsize(num)
+		else:
+			raise TypeError('num should either be a integer file size, or a valid file path')
+	for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+		if abs(num) < 1024.0:
+			return "%3.1f%s%s" % (num, unit, suffix)
+		num /= 1024.0
+	return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+# clem 30/08/2017
+def compute_speed(file_path, transfer_time):
+	if not transfer_time:
+		return ''
+	try:
+		size = os.path.getsize(file_path)
+		return human_readable_byte_size(int(size / transfer_time)) + '/s'
+	except (IOError, FileNotFoundError):
+		return ''
+
+
+# clem 30/08/2017 form line 203 @ https://goo.gl/Wquh6Z clem 08/04/2016 + 10/10/2016
+def this_function_caller_name(delta=0):
+	""" Return the name of the calling function's caller
+
+	:param delta: change the depth of the call stack inspection
+	:type delta: int
+
+	:rtype: str
+	"""
+	import sys
+	return sys._getframe(2 + delta).f_code.co_name if hasattr(sys, "_getframe") else ''
+
+
+# clem 30/08/2017 from line 154 @ https://goo.gl/PeiZDk 19/05/2016
+def get_key(name=''):
+	secrets_root = '.secret/'
+	if name.endswith('_secret'):
+		name = name[:-7]
+	if name.startswith('.'):
+		name = name[1:]
+	full_path = '%s.%s_secret' % (secrets_root, name)
+	
+	def read_key():
+		with open(full_path) as f:
+			log.debug('Read key %s from %s' % (full_path, this_function_caller_name(1)))
+			return str(f.read())[:-1]
+	
+	try:
+		return read_key()
+	except Exception as e:
+		log.exception(str(e))
+		pass
+	log.warning('could not read key %s from %s' % (name, secrets_root))
+	return ''

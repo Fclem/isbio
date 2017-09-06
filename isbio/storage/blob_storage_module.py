@@ -1,4 +1,5 @@
 # from docker.api import container
+from __future__ import print_function
 from storage_module_prototype import *
 
 __version__ = '0.5'
@@ -14,25 +15,11 @@ __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
 
-# TODO throw an error if key is invalid, otherwise azure keeps on returning "resource not found" error
-# clem 22/09/2016 duplicated from utilities/__init__
-def get_key_bis(name=''):
-	if name.endswith('_secret'):
-		name = name[:-7]
-	if name.startswith('.'):
-		name = name[1:]
-	try:
-		full_path = '%s/.%s_secret' % (__dir_path__, name)
-		print 'accessing key at %s' % full_path
-		with open(full_path) as f:
-			return str(f.read())[:-1]
-	except Exception:
-		pass
-	return ''
-
-
 # clem 14/04/2016
-class StorageModule(StorageModuleAbstract):
+# this is an extension to StorageServicePrototype that describes an abstract BlobStorageService
+# this abstract was derived from BlockBlobService in order to be able to use it as a potential prototype
+# for other object storage
+class BlobStorageService(StorageServicePrototype):
 	__metaclass__ = abc.ABCMeta
 	_blob_service = None
 	container = None
@@ -40,8 +27,8 @@ class StorageModule(StorageModuleAbstract):
 	ACCOUNT_KEY = ''
 	old_md5 = ''
 	# TODO : populate these values accordingly in concrete class
-	_interface = None # as to be defined as a BlobStorageObject that support argument list : (account_name=self
-	# .ACCOUNT_LOGIN, account_key=self.ACCOUNT_KEY). OR you can override the 'blob_service' property
+	_interface = None # as to be defined as a BaseBlobServicePrototype implementation
+	# OR you can override the 'blob_service' property
 
 	def __init__(self, login, key, container):
 		assert isinstance(login, basestring)
@@ -106,7 +93,7 @@ class StorageModule(StorageModuleAbstract):
 		:raise: AssertionError
 		"""
 		assert FROM_COMMAND_LINE
-		return super(StorageModule, self).update_self(container) and \
+		return super(BlobStorageService, self).update_self(container) and \
 			self._update_self_do(__file_name__, __file__, container)
 
 	# clem 20/04/2016
@@ -118,7 +105,7 @@ class StorageModule(StorageModuleAbstract):
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		return super(StorageModule, self).upload_self(container) and \
+		return super(BlobStorageService, self).upload_self(container) and \
 			self._upload_self_do(__file_name__, __file__, container)
 
 	# clem 28/04/201
@@ -218,8 +205,8 @@ class StorageModule(StorageModuleAbstract):
 # TODO : in your concrete class, simply add those four line at the end
 if __name__ == '__main__':
 	a, b, c = input_pre_handling()
-	# TODO : replace StorageModule with your implemented class
-	storage_inst = StorageModule('account', 'key', ACT_CONT_MAPPING[a])
+	# TODO : replace BlobStorageService with your implemented class
+	storage_inst = BlobStorageService('account', 'key', ACT_CONT_MAPPING[a])
 	command_line_interface(storage_inst, a, b, c)
 
 SERVICE_HOST_BASE = 'core.windows.net'
@@ -260,10 +247,10 @@ class BaseBlobServicePrototype(object):
 			If neither account key or sas token is specified, anonymous access
 			will be used.
 		:param str sas_token:
-			 A shared access signature token to use to authenticate requests
-			 instead of the account key. If account key and sas token are both
-			 specified, account key will be used to sign. If neither are
-			 specified, anonymous access will be used.
+			A shared access signature token to use to authenticate requests
+			instead of the account key. If account key and sas token are both
+			specified, account key will be used to sign. If neither are
+			specified, anonymous access will be used.
 		:param bool is_emulated:
 			Whether to use the emulator. Defaults to False. If specified, will
 			override all other parameters besides connection string and request

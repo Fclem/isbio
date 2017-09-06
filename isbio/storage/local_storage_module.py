@@ -1,9 +1,6 @@
-from utils import TermColoring
-import os
-import abc
-from b_exceptions import ObjectNotFound as MissingResException
+from storage_module_prototype import *
 
-__version__ = '0.1'
+__version__ = '0.1.1'
 __author__ = 'clem'
 __date__ = '04/05/2016'
 
@@ -30,8 +27,8 @@ __file_name__ = os.path.basename(__file__)
 class StorageModule(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
-	_interface = None # as to be defined as a BlobStorageObject that support argument list : (account_name=self
-	missing_res_exception = MissingResException
+	_interface = None
+	missing_res_exception = FileNotFoundError
 
 	def __init__(self):
 		pass
@@ -41,5 +38,5 @@ class StorageModule(object):
 		if isinstance(args, basestring):
 			args = [args]
 		for each in args:
-			arg_list += "'%s', " % TermColoring.warning(each)
-		print TermColoring.bold(fun_name) + "(%s)" % arg_list[:-2]
+			arg_list += "'%s', " % Bcolors.warning(each)
+		print Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2]

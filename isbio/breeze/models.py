@@ -460,7 +460,7 @@ class EngineConfig(ConfigObject, CustomModel):
 	# institute = ForeignKey(Institute, default=Institute.default)
 
 	# def file_name(self, filename):
-	#	return super(EngineConfig, self).file_name(filename)
+	# 	return super(EngineConfig, self).file_name(filename)
 
 	config_file = models.FileField(upload_to=generic_super_fn_spe, blank=False, db_column='config',
 		help_text="The config file for this engine resource")
@@ -725,12 +725,12 @@ class ComputeTarget(ConfigObject, CustomModel):
 	@property
 	def storage_module(self):
 		""" The python module used as the storage interface for this target
-
-		:rtype: module
 		"""
 		if not self._storage_module:
 			try:
-				self._storage_module = importlib.import_module('breeze.%s' % self.target_storage_engine)
+				# from storage import StorageModulePrototype
+				self._storage_module = importlib.import_module('storage.%s' % self.target_storage_engine)
+				# assert isinstance(self._storage_module, StorageModulePrototype)
 			except ImportError as e:
 				self.log.error(str(e))
 				raise e
