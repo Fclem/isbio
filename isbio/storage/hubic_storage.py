@@ -120,9 +120,12 @@ class HubicClient(StorageServicePrototype):
 			return True
 		except lhubic.HubicTokenFailure:
 			self.reset()
-		except lhubic.HubicAccessFailure:
+		except lhubic.HubicAccessFailure as e:
+			log.warning('HubicAccessFailure: %s' % e)
 			waiter('Waiting %s sec before next retry', 65)
-			# waiter('Waiting %s sec before next retry', 2)
+		except AttributeError as e:
+			log.warning('AttributeError: %s' % e)
+			waiter('Waiting %s sec before next retry', 2)
 		return self._auth()
 	
 	def _save_token(self):
