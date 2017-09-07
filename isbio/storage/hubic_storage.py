@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from os.path import isfile, getsize, basename
 # clem 31/08/2017
 
+__path__ = os.path.realpath(__file__)
+__dir_path__ = os.path.dirname(__path__)
+__file_name__ = os.path.basename(__file__)
 
 HUBIC_TOKEN_FILE = '.hubic_token'
 HUBIC_CLIENT_ID = get_key_bis('hubic_api_id')
@@ -214,16 +217,56 @@ class HubicClient(StorageServicePrototype):
 	
 	# clem 07/09/2017
 	def _handle_container(self, target_path, container=None):
+		""" This is a fix for lack of storage container in Hubic, it adds the purported container name (if provided)
+		
+		to the beginning of the target_path. If no container is provided target_path is returned unchanged.
+		
+		:param target_path:
+		:type target_path: basestring
+		:param container:
+		:type container: basestring | None
+		"""
 		if HUBIC_SOLE_CONTAINER:
 			if container:
 				target_path = '%s/%s' % (container, target_path)
 			container = HUBIC_SOLE_CONTAINER
 		return target_path, container
 	
+	# clem 07/09/2017
+	def update_self(self, container=None):
+		""" Download a possibly updated version of this script from *
+
+		:param container: target container (default to MNGT_CONTAINER)
+		:type container: str|None
+		:return: success ?
+		:rtype: bool
+		:raise: AssertionError
+		"""
+		assert FROM_COMMAND_LINE
+		return super(HubicClient, self).update_self(container) and \
+			self._update_self_do(__file_name__, __file__, container)
+	
+	###
+	#   INTERFACE
+	###
+	
+	# clem 07/09/2017
+	def upload_self(self, container=None):
+		""" Upload this script to target storage system, provides auto-updating feature for the other end
+
+		:param container: target container (default to MNGT_CONTAINER)
+		:type container: str|None
+		:return: Info on the created blob as a Blob object
+		:rtype: Blob
+		"""
+		return super(HubicClient, self).upload_self(container) and \
+			self._upload_self_do(__file_name__, __file__, container)
+		
 	# clem 06/09/2017
 	@property
 	def load_environement(self):
 		""" define here ENV vars you want to be set on the target execution environement in
+		
 		relation with storage, like storage account credentials.
 
 		:return: ENV vars to be set on target

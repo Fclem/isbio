@@ -9,9 +9,11 @@ __version__ = '0.5'
 __author__ = 'clem'
 __date__ = '29/08/2017'
 
+# ## Copy this part in your module ###
 __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
+# ## /copy ###
 
 PRINT_LOG = True
 LOG_LEVEL = logging.DEBUG
@@ -115,11 +117,18 @@ class StorageServicePrototype(object):
 		return self.download(blob_name, file_name, container)
 	
 	# clem 20/04/2016
+	@abc.abstractmethod
 	def update_self(self, container=None):
 		""" Download a possibly updated version of this script from *
+		
 		Will only work from command line for the implementation.
-		You must override this method, use _update_self_sub, and call it using super, like so :
-		return super(__class_name__, self).update_self() and self._update_self_sub(__file_name__, __file__, container)
+		
+		YOU MUST COPY THE FOLLOWING IN YOUR MODULE :
+				def update_self(self, container=None):
+					assert FROM_COMMAND_LINE
+					
+					return super(YourClassName, self).update_self(container) and \
+						self._update_self_do(__file_name__, __file__, container)
 
 		:param container: target container (default to MNGT_CONTAINER)
 		:type container: str|None
@@ -129,7 +138,7 @@ class StorageServicePrototype(object):
 		"""
 		assert FROM_COMMAND_LINE
 		return self._update_self_do(__file_name__, __file__, container)
-		
+
 	# clem 29/04/2016
 	def _upload_self_do(self, blob_name, file_name, container=None):
 		if not container:
@@ -144,16 +153,22 @@ class StorageServicePrototype(object):
 	###
 	
 	# clem 20/04/2016 @override
+	@abc.abstractmethod
 	def upload_self(self, container=None):
 		""" Upload this script to target storage system, provides auto-updating feature for the other end
-
+		
+		YOU MUST COPY THE FOLLOWING IN YOUR MODULE :
+			def upload_self(self, container=None):
+				return super(YourClassName, self).upload_self(container) and \
+					self._upload_self_do(__file_name__, __file__, container)
+		
 		:param container: target container (default to MNGT_CONTAINER)
 		:type container: str|None
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
 		self._upload_self_do(__file_name__, __file__, container)
-		
+	
 	# clem 06/09/2017
 	@abc.abstractproperty
 	def load_environement(self):
