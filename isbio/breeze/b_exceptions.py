@@ -43,7 +43,19 @@ class RORAFailure(SystemCheckFailed):
 	pass
 
 
-class SGEImproperlyConfigured(SystemCheckFailed):
+class ConfigurationError(SystemCheckFailed):
+	pass
+
+
+class TargetConfigurationError(ConfigurationError):
+	pass
+
+
+class StorageModuleNotFound(ConfigurationError):
+	pass
+
+
+class SGEImproperlyConfigured(TargetConfigurationError):
 	pass
 
 

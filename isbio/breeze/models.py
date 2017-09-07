@@ -733,7 +733,7 @@ class ComputeTarget(ConfigObject, CustomModel):
 				# assert isinstance(self._storage_module, StorageModulePrototype)
 			except ImportError as e:
 				self.log.error(str(e))
-				raise e
+				raise StorageModuleNotFound
 		return self._storage_module
 
 	#
