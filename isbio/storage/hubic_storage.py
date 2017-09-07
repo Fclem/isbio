@@ -22,7 +22,7 @@ _2_MiBi = 2 * 1024 * 1024
 
 MissingResException = lhubic.HubicObjectNotFound
 HUBIC_SOLE_CONTAINER = 'default'
-MINIMUM_TIMEOUT = 5.
+MINIMUM_TIMEOUT = 10.
 
 
 class HubicClient(StorageServicePrototype):
@@ -196,6 +196,7 @@ class HubicClient(StorageServicePrototype):
 		
 		try:
 			func = _upload_wrapper if up_or_down == 'up' else _download_wrapper
+			self._print_call(func.im_func.func_name, (container, local_file_path, remote_file_path))
 			res = timed(func) if measure_speed else (func(), 0)
 			
 			sup = ''
@@ -252,9 +253,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: Blob
 		:raise: IOError or FileNotFoundError
 		"""
-		return self._verbose_print_and_call(verbose, self.__up_and_down_wrapper,
-			container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
-		# return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
+		return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def download(self, target_path, file_path, container=None, verbose=True):
@@ -274,9 +273,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
-		return self._verbose_print_and_call(verbose, self.__up_and_down_wrapper,
-			container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
-		# return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
+		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
