@@ -253,7 +253,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: Blob
 		:raise: IOError or FileNotFoundError
 		"""
-		return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
+		return self.__up_and_down_wrapper(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def download(self, target_path, file_path, container=None, verbose=True):
@@ -273,7 +273,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
-		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
+		return self.__up_and_down_wrapper(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
