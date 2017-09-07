@@ -93,8 +93,8 @@ class BlobStorageService(StorageServicePrototype):
 		:raise: AssertionError
 		"""
 		assert FROM_COMMAND_LINE
-		return super(BlobStorageService, self).update_self(container) and \
-			self._update_self_do(__file_name__, __file__, container)
+		super(BlobStorageService, self).update_self(container)
+		return self._update_self_do(__file_name__, __file__, container)
 
 	# clem 20/04/2016
 	def upload_self(self, container=None):
@@ -105,8 +105,8 @@ class BlobStorageService(StorageServicePrototype):
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		return super(BlobStorageService, self).upload_self(container) and \
-			self._upload_self_do(__file_name__, __file__, container)
+		super(BlobStorageService, self).upload_self(container)
+		return self._upload_self_do(__file_name__, __file__, container)
 
 	# clem 28/04/201
 	@abc.abstractmethod

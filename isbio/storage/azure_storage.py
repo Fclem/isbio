@@ -77,8 +77,8 @@ class AzureStorage(BlobStorageService):
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		return super(AzureStorage, self).upload_self(container) and \
-			self._upload_self_do(__file_name__, __file__, container)
+		super(AzureStorage, self).upload_self(container)
+		return self._upload_self_do(__file_name__, __file__, container)
 
 	# clem 20/04/2016
 	def update_self(self, container=None):
@@ -92,8 +92,8 @@ class AzureStorage(BlobStorageService):
 		:raise: AssertionError or AzureMissingResourceHttpError
 		"""
 		assert FROM_COMMAND_LINE # restrict access
-		return super(AzureStorage, self).update_self(container) and \
-			self._update_self_do(__file_name__, __file__, container)
+		super(AzureStorage, self).update_self(container)
+		return self._update_self_do(__file_name__, __file__, container)
 	
 	# clem 06/09/2017
 	@property

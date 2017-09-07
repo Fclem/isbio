@@ -127,8 +127,9 @@ class StorageServicePrototype(object):
 				def update_self(self, container=None):
 					assert FROM_COMMAND_LINE
 					
-					return super(YourClassName, self).update_self(container) and \
-						self._update_self_do(__file_name__, __file__, container)
+					super(YourClassName, self).update_self(container)
+					
+					return self._update_self_do(__file_name__, __file__, container)
 
 		:param container: target container (default to MNGT_CONTAINER)
 		:type container: str|None
@@ -159,15 +160,16 @@ class StorageServicePrototype(object):
 		
 		YOU MUST COPY THE FOLLOWING IN YOUR MODULE :
 			def upload_self(self, container=None):
-				return super(YourClassName, self).upload_self(container) and \
-					self._upload_self_do(__file_name__, __file__, container)
+				super(YourClassName, self).upload_self(container)
+				
+				return self._upload_self_do(__file_name__, __file__, container)
 		
 		:param container: target container (default to MNGT_CONTAINER)
 		:type container: str|None
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		self._upload_self_do(__file_name__, __file__, container)
+		return self._upload_self_do(__file_name__, __file__, container)
 	
 	# clem 06/09/2017
 	@abc.abstractproperty

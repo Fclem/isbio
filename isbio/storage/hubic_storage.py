@@ -243,8 +243,8 @@ class HubicClient(StorageServicePrototype):
 		:raise: AssertionError
 		"""
 		assert FROM_COMMAND_LINE
-		return super(HubicClient, self).update_self(container) and \
-			self._update_self_do(__file_name__, __file__, container)
+		super(HubicClient, self).update_self(container)
+		return self._update_self_do(__file_name__, __file__, container)
 	
 	###
 	#   INTERFACE
@@ -259,8 +259,8 @@ class HubicClient(StorageServicePrototype):
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
-		return super(HubicClient, self).upload_self(container) and \
-			self._upload_self_do(__file_name__, __file__, container)
+		super(HubicClient, self).upload_self(container)
+		return self._upload_self_do(__file_name__, __file__, container)
 		
 	# clem 06/09/2017
 	@property
