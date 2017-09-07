@@ -1347,6 +1347,20 @@ class Runnable(FolderObj, ObjectsWithACL):
 		from django.core.urlresolvers import reverse
 		from breeze.views import job_url_hook
 		md5 = get_file_md5(self._rexec.path)
+		try:
+			from django.contrib.sites.shortcuts import get_current_site
+			logger.info('Site : %s' % get_current_site())
+		except Exception as e:
+			logger.warning(e)
+		domain = None
+		try:
+			from django.contrib.sites.models import Site
+			logger.info('Site 2 : %s' % Site.objects.get(pk=settings.SITE_ID).domain)
+			domain = Site.objects.get(pk=settings.SITE_ID).domain
+		except Exception as e:
+			logger.warning(e)
+		domain = domain or get_public_ip()
+		
 		return 'http://%s%s' % (settings.FULL_HOST_NAME, reverse(job_url_hook, args=(self.instance_type[0], self.id, md5)))
 
 	# SPECIFICS

@@ -170,3 +170,7 @@ def is_ip_in_network(ip_addr, network):
 def get_fqdn():
 	import socket
 	return socket.getfqdn()
+
+
+def get_public_ip():
+	return get_http_response('https://ipinfo.io/ip', 1)

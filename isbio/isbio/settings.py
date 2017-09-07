@@ -285,7 +285,7 @@ LOGGING = {
 
 
 class DomainList(object):
-	CLOUD_PROD = ['breeze.fimm.fi', '52.169.249.211', ]
+	CLOUD_PROD = ['breeze.fimm.fi', '13.79.158.135', ]
 	CLOUD_DEV = ['breeze-dev.northeurope.cloudapp.azure.com', '52.164.209.61', ]
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
