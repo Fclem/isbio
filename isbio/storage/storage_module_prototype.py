@@ -102,7 +102,7 @@ class StorageServicePrototype(object):
 		"""
 		assert callable(fun_object)
 		if verbose:
-			self._print_call(str(fun_object.im_func.func_name), args)
+			self._print_call(str(fun_object.func_name), args)
 		return fun_object(*args)
 	
 	# clem 29/04/2016

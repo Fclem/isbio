@@ -199,7 +199,7 @@ class HubicClient(StorageServicePrototype):
 		
 		try:
 			func = _upload_wrapper if up_or_down == 'up' else _download_wrapper
-			self._print_call(func.im_func.func_name, (container, local_file_path, remote_file_path))
+			self._print_call(func.func_name, (container, local_file_path, remote_file_path))
 			res = timed(func) if measure_speed else (func(), 0)
 			
 			sup = ''
