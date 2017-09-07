@@ -289,9 +289,15 @@ class HubicClient(StorageServicePrototype):
 		"""
 		try:
 			target_path, container = self._handle_container(target_path, container)
-			self.hubic.delete_object(container, target_path)
+			# if verbose:
+			# 	self._print_call('delete_object')
+			# self.hubic.delete_object(container, target_path)
+			self._verbose_print_and_call(verbose, self.hubic.delete_object, container, target_path)
 			return True
-		except Exception:
+		except Exception as e:
+			log.error(e)
+			if not no_fail:
+				raise
 			return False
 		
 

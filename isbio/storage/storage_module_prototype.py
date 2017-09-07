@@ -88,6 +88,13 @@ class StorageServicePrototype(object):
 			arg_list += "'%s', " % Bcolors.warning(each)
 		print(Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2])
 	
+	# clem 07/09/2017
+	def _verbose_print_and_call(self, verbose, fun_name, *args):
+		assert callable(fun_name)
+		if verbose:
+			self._print_call(str(fun_name.im_func.func_name), args)
+		return fun_name(*args)
+	
 	# clem 29/04/2016
 	def _update_self_do(self, blob_name, file_name, container=None):
 		if not container:
