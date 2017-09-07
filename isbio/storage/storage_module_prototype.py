@@ -467,11 +467,11 @@ def get_key_bis(name=''):
 		name = name[1:]
 	try:
 		full_path = '%s/.%s_secret' % (__dir_path__, name)
-		print('accessing key at %s' % full_path)
+		print('accessing key at %s from %s' % (full_path, this_function_caller_name()))
 		with open(full_path) as f:
 			return str(f.read())[:-1]
-	except Exception:
-		pass
+	except IOError:
+		log.warning('could not read key %s' % name)
 	return ''
 
 

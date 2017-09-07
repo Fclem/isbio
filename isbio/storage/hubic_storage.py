@@ -8,10 +8,10 @@ from os.path import isfile, getsize, basename
 
 
 HUBIC_TOKEN_FILE = '.hubic_token'
-HUBIC_CLIENT_ID = get_key('hubic_api_id')
-HUBIC_CLIENT_SECRET = get_key('hubic_api_secret')
-HUBIC_USERNAME = get_key('hubic_username')
-HUBIC_PASSWORD = get_key('hubic_password')
+HUBIC_CLIENT_ID = get_key_bis('hubic_api_id')
+HUBIC_CLIENT_SECRET = get_key_bis('hubic_api_secret')
+HUBIC_USERNAME = get_key_bis('hubic_username')
+HUBIC_PASSWORD = get_key_bis('hubic_password')
 SHOW_SPEED_AND_PROGRESS = True
 _100_KiBi = 100 * 1024
 _512_KiBi = 512 * 1024
