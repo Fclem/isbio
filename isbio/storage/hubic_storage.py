@@ -22,6 +22,7 @@ _2_MiBi = 2 * 1024 * 1024
 
 MissingResException = lhubic.HubicObjectNotFound
 HUBIC_SOLE_CONTAINER = 'default'
+MINIMUM_TIMEOUT = 5.
 
 
 class HubicClient(StorageServicePrototype):
@@ -153,7 +154,7 @@ class HubicClient(StorageServicePrototype):
 				from time import sleep
 				i = 0.
 				interval = .25 # refresh interval
-				io_timeout = (float(total_size) / _50_KiBi) / interval # Timeout based on 50KiBi/s transfer speed
+				io_timeout = MINIMUM_TIMEOUT + (float(total_size) / _50_KiBi) / interval # Timeout based on 50KiBi/s transfer speed
 				with ThreadPoolExecutor(max_workers=1) as executor:
 					future = executor.submit(self.hubic.put_object, container, remote_file_path, f)
 					start = time.time()
