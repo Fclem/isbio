@@ -154,7 +154,7 @@ class HubicClient(StorageServicePrototype):
 				from time import sleep
 				i = 0.
 				interval = .25 # refresh interval
-				io_timeout = MINIMUM_TIMEOUT + (float(total_size) / _50_KiBi) / interval # Timeout based on 50KiBi/s transfer speed
+				io_timeout = MINIMUM_TIMEOUT + (float(total_size) / _50_KiBi) # Timeout based on 50KiBi/s transfer speed
 				with ThreadPoolExecutor(max_workers=1) as executor:
 					future = executor.submit(self.hubic.put_object, container, remote_file_path, f)
 					start = time.time()
@@ -169,11 +169,11 @@ class HubicClient(StorageServicePrototype):
 							current_speed_avg = human_readable_byte_size(0)
 						print('%.02i%% %s at avg %s/s        \r' %
 							(progress, human_readable_byte_size(read_position), current_speed_avg), end='')
-						i += 1.
+						i += interval
 						if i >= io_timeout:
 							print()
 							raise TimeoutError('Transfer exceeded maximum allowed time of %s sec' %
-								str(io_timeout * interval))
+								str(io_timeout))
 						sleep(interval)
 					print()
 				return future.result() # file_md5
