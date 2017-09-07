@@ -1,5 +1,7 @@
 import socket
+
 from . import get_logger, sp
+
 __version__ = '0.1.1'
 __author__ = 'clem'
 __date__ = '27/05/2016'
@@ -124,8 +126,6 @@ def test_url(target_url, timeout=5):
 
 # clem 18/10/2016
 def network_info(network_addr):
-	import sys
-	
 	# Get address string and CIDR string from command line
 	(ip_addr, cidr) = network_addr.split('/')
 	
@@ -166,17 +166,6 @@ def is_ip_in_network(ip_addr, network):
 	return ip_address(ip_addr) in ip_network(network)
 	
 	
-# clem 19/10/2016
-def is_ip_in_fimm_network(ip_addr):
-	return is_ip_in_network(ip_addr, '128.214.0.0/16')
-
-
-# clem 19/10/2016
-def is_http_client_in_fimm_network(request):
-	from webhooks.hooker import HookWSGIReq
-	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
-
-
 # clem 02/07/2017
 def get_fqdn():
 	import socket

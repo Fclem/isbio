@@ -73,6 +73,9 @@ from decorators import *
 
 
 # 25/06/2015 Clem
+from utilz import is_ip_in_network
+
+
 def console_print(text, date_f=None):
 	print console_print_sub(text, date_f=date_f)
 
@@ -360,3 +363,14 @@ def autogen_context_dict(request, flat=False):
 		a_dict.update({each.__name__: data}) if not flat else a_dict.update(data)
 	
 	return a_dict
+
+
+# clem 19/10/2016
+def is_ip_in_fimm_network(ip_addr):
+	return is_ip_in_network(ip_addr, settings.FIMM_NETWORK)
+
+
+# clem 19/10/2016
+def is_http_client_in_fimm_network(request):
+	from webhooks.hooker import HookWSGIReq
+	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
