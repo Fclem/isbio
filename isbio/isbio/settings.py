@@ -285,7 +285,7 @@ LOGGING = {
 
 
 class DomainList(object):
-	CLOUD_PROD = ['breeze.fimm.fi', '52.169.249.211', ]
+	CLOUD_PROD = ['breeze.fimm.fi', '13.79.158.135', ]
 	CLOUD_DEV = ['breeze-dev.northeurope.cloudapp.azure.com', '52.164.209.61', ]
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
@@ -323,8 +323,12 @@ os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 
 CONSOLE_DATE_F = "%d/%b/%Y %H:%M:%S"
 # auto-sensing if running on dev or prod, for dynamic environment configuration
+# FIXME broken in docker container
 FULL_HOST_NAME = socket.gethostname()
 HOST_NAME = str.split(FULL_HOST_NAME, '.')[0]
+
+# do not move. here because some utils function useses it
+FIMM_NETWORK = '128.214.0.0/16'
 
 from config import *
 
@@ -449,6 +453,7 @@ JOBS_SH = '_config.sh'
 #
 # WATCHER RELATED CONFIG
 #
+# FIXME make this target_config specific
 WATCHER_DB_REFRESH = 2 # number of seconds to wait before refreshing reports from DB
 WATCHER_PROC_REFRESH = 2 # number of seconds to wait before refreshing processes
 

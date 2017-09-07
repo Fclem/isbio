@@ -1,5 +1,7 @@
 import socket
+
 from . import get_logger, sp
+
 __version__ = '0.1.1'
 __author__ = 'clem'
 __date__ = '27/05/2016'
@@ -124,8 +126,6 @@ def test_url(target_url, timeout=5):
 
 # clem 18/10/2016
 def network_info(network_addr):
-	import sys
-	
 	# Get address string and CIDR string from command line
 	(ip_addr, cidr) = network_addr.split('/')
 	
@@ -165,19 +165,23 @@ def is_ip_in_network(ip_addr, network):
 	from ipaddress import ip_network, ip_address
 	return ip_address(ip_addr) in ip_network(network)
 	
-	
-# clem 19/10/2016
-def is_ip_in_fimm_network(ip_addr):
-	return is_ip_in_network(ip_addr, '128.214.0.0/16')
+
+# clem 07/07/2017
+def resolve_dns(hostname):
+	return socket.gethostbyname_ex(hostname)[2][0]
 
 
-# clem 19/10/2016
-def is_http_client_in_fimm_network(request):
-	from webhooks.hooker import HookWSGIReq
-	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
+# clem 07/07/2017
+def get_HTTP_body(url, timeout=5):
+	import urllib2
+	return str(urllib2.urlopen(url, timeout=timeout).read())
 
 
-# clem 02/07/2017
-def get_fqdn():
-	import socket
-	return socket.getfqdn()
+# clem 07/07/2017
+def get_public_ip():
+	return get_HTTP_body('https://ipinfo.io/ip', 1).replace('\n', '').strip()
+
+
+# clem 07/07/2017
+def validate_fqdn(alleged_fqdn):
+	return get_public_ip() == resolve_dns(alleged_fqdn)

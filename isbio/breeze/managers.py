@@ -9,7 +9,7 @@ from django.contrib.auth.models import UserManager, User
 from breeze.b_exceptions import InvalidArguments, ObjectHasNoReadOnlySupport, PermissionDenied, DisabledByCurrentSettings
 from comp import translate
 from utilz import logger, time
-from utils import timezone
+from utils import timezone, get_FQDN
 
 org_Q = django.db.models.query_utils.Q
 
@@ -790,10 +790,9 @@ class BreezeUserManager(UserManager):
 	@staticmethod
 	def __send_mail(user):
 		from django.core.mail import EmailMessage
-		from breeze.utils import get_fqdn
 		try:
 			msg_text = 'User %s : %s %s (%s) was just created at %s.' % \
-				(user.username, user.first_name, user.last_name, user.email, get_fqdn())
+				(user.username, user.first_name, user.last_name, user.email, get_FQDN())
 			msg = EmailMessage('New user "%s" created' % user.username, msg_text, settings.EMAIL_SENDER, [settings.ADMINS[0][1]])
 			result = msg.send()
 		except Exception as e:
