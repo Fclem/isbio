@@ -313,7 +313,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 # clem 15/03/2016
 class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	# ssh_tunnel = None
-	auto_remove = True
+	auto_remove = False # True
 	__docker_storage = None
 	_data_storage = None
 	_jobs_storage = None
@@ -706,6 +706,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
+		settings.NO_SGEID_EXPIRY = 60 # FIXME
 		self._docker_storage.upload_self() # update the cloud version of azure_storage.py
 		self.run_id = get_file_md5(self.assembly_archive_path) # use the archive hash as an id for storage
 		if self._job_storage.upload(self.run_id, self.assembly_archive_path):
