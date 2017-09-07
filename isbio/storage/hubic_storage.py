@@ -13,6 +13,8 @@ HUBIC_CLIENT_SECRET = get_key_bis('hubic_api_secret')
 HUBIC_USERNAME = get_key_bis('hubic_username')
 HUBIC_PASSWORD = get_key_bis('hubic_password')
 SHOW_SPEED_AND_PROGRESS = True
+_10_KiBi = 10 * 1024
+_50_KiBi = 50 * 1024
 _100_KiBi = 100 * 1024
 _512_KiBi = 512 * 1024
 _1_MiBi = 1 * 1024 * 1024
@@ -151,7 +153,7 @@ class HubicClient(StorageServicePrototype):
 				from time import sleep
 				i = 0.
 				interval = .25 # refresh interval
-				io_timeout = (total_size / _100_KiBi) / interval # Timeout based on 100KiBi/s transfer speed
+				io_timeout = (float(total_size) / _50_KiBi) / interval # Timeout based on 50KiBi/s transfer speed
 				with ThreadPoolExecutor(max_workers=1) as executor:
 					future = executor.submit(self.hubic.put_object, container, remote_file_path, f)
 					start = time.time()
