@@ -85,7 +85,7 @@ class StorageServicePrototype(object):
 		if isinstance(args, basestring_t):
 			args = [args]
 		for each in args:
-			arg_list += "'%s', " % Bcolors.warning(each)
+			arg_list += "'%s', " % Bcolors.warning(str(each))
 		print(Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2])
 	
 	# clem 07/09/2017
