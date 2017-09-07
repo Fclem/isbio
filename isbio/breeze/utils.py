@@ -392,8 +392,8 @@ def get_FQDN(request=None):
 			logger.warning(e)
 		from django.contrib.sites.models import Site
 		# if not detected use config
-		current_site = current_site or settings.SITE_ID
-		domain = Site.objects.get(pk=settings.SITE_ID).domain
+		current_site = current_site or Site.objects.get(pk=settings.SITE_ID)
+		domain = current_site.domain
 	except Exception as e:
 		logger.warning(e)
 	return domain if domain and validate_fqdn(domain) else get_public_ip()

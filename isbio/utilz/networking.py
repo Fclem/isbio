@@ -168,12 +168,20 @@ def is_ip_in_network(ip_addr, network):
 
 # clem 07/07/2017
 def resolve_dns(hostname):
-	return socket.gethostbyname_ex(hostname)
+	return socket.gethostbyname_ex(hostname)[2][0]
 
 
+# clem 07/07/2017
+def get_HTTP_body(url, data=None, timeout=5):
+	import urllib2
+	return urllib2.urlopen(url, data, timeout)
+
+
+# clem 07/07/2017
 def get_public_ip():
-	return get_http_response('https://ipinfo.io/ip', 1)
+	return get_HTTP_body('https://ipinfo.io/ip', 1)
 
 
+# clem 07/07/2017
 def validate_fqdn(alleged_fqdn):
 	return get_public_ip() == resolve_dns(alleged_fqdn)
