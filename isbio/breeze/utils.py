@@ -73,6 +73,9 @@ from decorators import *
 
 
 # 25/06/2015 Clem
+from utilz import is_ip_in_network
+
+
 def console_print(text, date_f=None):
 	print console_print_sub(text, date_f=date_f)
 
@@ -360,3 +363,37 @@ def autogen_context_dict(request, flat=False):
 		a_dict.update({each.__name__: data}) if not flat else a_dict.update(data)
 	
 	return a_dict
+
+
+# clem 19/10/2016
+def is_ip_in_fimm_network(ip_addr):
+	return is_ip_in_network(ip_addr, settings.FIMM_NETWORK)
+
+
+# clem 19/10/2016
+def is_http_client_in_fimm_network(request):
+	from webhooks.hooker import HookWSGIReq
+	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
+
+
+# clem 07/09/2017
+def get_FQDN(request=None):
+	""" Return the FQDN from Site.domain with validation against public ip, or public IP
+	
+	:rtype: str
+	"""
+	domain = ''
+	try:
+		current_site = None
+		try: # auto detect current site
+			from django.contrib.sites.shortcuts import get_current_site
+			current_site = get_current_site(request)
+		except Exception as e:
+			logger.warning(e)
+		from django.contrib.sites.models import Site
+		# if not detected use config
+		current_site = current_site or Site.objects.get(pk=settings.SITE_ID)
+		domain = current_site.domain
+	except Exception as e:
+		logger.warning(e)
+	return domain if domain and validate_fqdn(domain) else get_public_ip()
