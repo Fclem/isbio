@@ -89,11 +89,21 @@ class StorageServicePrototype(object):
 		print(Bcolors.bold(fun_name) + "(%s)" % arg_list[:-2])
 	
 	# clem 07/09/2017
-	def _verbose_print_and_call(self, verbose, fun_name, *args):
-		assert callable(fun_name)
+	def _verbose_print_and_call(self, verbose, fun_object, *args):
+		""" Print the function call if verbose, and call the function with args
+		
+		:param verbose: wether to print or not the call
+		:type verbose: bool
+		:param fun_object: function to call
+		:type fun_object: function
+		:param args: argument list
+		:type args: *list
+		:return: the function result
+		"""
+		assert callable(fun_object)
 		if verbose:
-			self._print_call(str(fun_name.im_func.func_name), args)
-		return fun_name(*args)
+			self._print_call(str(fun_object.im_func.func_name), args)
+		return fun_object(*args)
 	
 	# clem 29/04/2016
 	def _update_self_do(self, blob_name, file_name, container=None):

@@ -142,7 +142,7 @@ class HubicClient(StorageServicePrototype):
 			log.exception(e)
 		return False
 	
-	def __up_down_stud(self, container, local_file_path, remote_file_path, up_or_down, measure_speed=True):
+	def __up_and_down_wrapper(self, container, local_file_path, remote_file_path, up_or_down, measure_speed=True):
 		remote_file_path, container = self._handle_container(remote_file_path, container)
 		
 		def _upload_wrapper():
@@ -171,9 +171,11 @@ class HubicClient(StorageServicePrototype):
 							(progress, human_readable_byte_size(read_position), current_speed_avg), end='')
 						i += 1.
 						if i >= io_timeout:
+							print()
 							raise TimeoutError('Transfer exceeded maximum allowed time of %s sec' %
 								str(io_timeout * interval))
 						sleep(interval)
+					print()
 				return future.result() # file_md5
 			
 		def _download_wrapper():
@@ -249,7 +251,9 @@ class HubicClient(StorageServicePrototype):
 		:rtype: Blob
 		:raise: IOError or FileNotFoundError
 		"""
-		return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
+		return self._verbose_print_and_call(verbose, self.__up_and_down_wrapper,
+			container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
+		# return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def download(self, target_path, file_path, container=None, verbose=True):
@@ -269,7 +273,9 @@ class HubicClient(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
-		return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
+		return self._verbose_print_and_call(verbose, self.__up_and_down_wrapper,
+			container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
+		# return self.__up_down_stud(container, file_path, target_path, 'down', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
@@ -289,9 +295,6 @@ class HubicClient(StorageServicePrototype):
 		"""
 		try:
 			target_path, container = self._handle_container(target_path, container)
-			# if verbose:
-			# 	self._print_call('delete_object')
-			# self.hubic.delete_object(container, target_path)
 			self._verbose_print_and_call(verbose, self.hubic.delete_object, container, target_path)
 			return True
 		except Exception as e:
