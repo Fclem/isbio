@@ -19,6 +19,7 @@ _1_MiBi = 1 * 1024 * 1024
 _2_MiBi = 2 * 1024 * 1024
 
 MissingResException = lhubic.HubicObjectNotFound
+HUBIC_SOLE_CONTAINER = 'default'
 
 
 class HubicClient(StorageServicePrototype):
@@ -139,6 +140,8 @@ class HubicClient(StorageServicePrototype):
 		return False
 	
 	def __up_down_stud(self, container, local_file_path, remote_file_path, up_or_down, measure_speed=True):
+		remote_file_path, container = self._handle_container(remote_file_path, container)
+		
 		def _upload_wrapper():
 			total_size = getsize(local_file_path)
 			total_size_str = human_readable_byte_size(total_size)
@@ -199,7 +202,14 @@ class HubicClient(StorageServicePrototype):
 		except Exception as e:
 			log.error('ERROR: %s' % e)
 			return False
-		
+	
+	# clem 07/09/2017
+	def _handle_container(self, target_path, container=None):
+		if container and HUBIC_SOLE_CONTAINER:
+			target_path = '%s/%s' % (container, target_path)
+			container = HUBIC_SOLE_CONTAINER
+		return target_path, container
+	
 	# clem 06/09/2017
 	@property
 	def load_environement(self):
@@ -236,7 +246,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: Blob
 		:raise: IOError or FileNotFoundError
 		"""
-		return self.__up_down_stud(container, file_path, basename(file_path), 'up', SHOW_SPEED_AND_PROGRESS)
+		return self.__up_down_stud(container, file_path, target_path, 'up', SHOW_SPEED_AND_PROGRESS)
 	
 	# clem 05/09/2017
 	def download(self, target_path, file_path, container=None, verbose=True):
@@ -275,6 +285,7 @@ class HubicClient(StorageServicePrototype):
 		:raise: self.missing_res_error
 		"""
 		try:
+			target_path, container = self._handle_container(target_path, container)
 			self.hubic.delete_object(container, target_path)
 			return True
 		except Exception:
@@ -283,4 +294,3 @@ class HubicClient(StorageServicePrototype):
 
 def back_end_initiator(container):
 	return HubicClient(HUBIC_USERNAME, HUBIC_PASSWORD,  HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, container)
-# my_hubic = HubicClient()
