@@ -114,6 +114,7 @@ class StorageServicePrototype(object):
 		# try:
 		blob_name = blob_name.replace('.pyc', '.py')
 		file_name = file_name.replace('.pyc', '.py')
+		# TODO check against md5 and download only if different
 		return self.download(blob_name, file_name, container)
 	
 	# clem 20/04/2016
@@ -146,6 +147,7 @@ class StorageServicePrototype(object):
 			container = MNGT_CONTAINER
 		blob_name = blob_name.replace('.pyc', '.py')
 		file_name = file_name.replace('.pyc', '.py')
+		# TODO check against md5 and upload/overwrite only if different
 		self.erase(blob_name, container, no_fail=True)
 		return self.upload(blob_name, file_name, container)
 	
