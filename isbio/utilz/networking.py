@@ -174,7 +174,7 @@ def resolve_dns(hostname):
 # clem 07/07/2017
 def get_HTTP_body(url, data=None, timeout=5):
 	import urllib2
-	return urllib2.urlopen(url, data, timeout)
+	return urllib2.urlopen(url, data, timeout).read()
 
 
 # clem 07/07/2017
