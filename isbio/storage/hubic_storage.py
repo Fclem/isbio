@@ -210,8 +210,9 @@ class HubicClient(StorageServicePrototype):
 	
 	# clem 07/09/2017
 	def _handle_container(self, target_path, container=None):
-		if container and HUBIC_SOLE_CONTAINER:
-			target_path = '%s/%s' % (container, target_path)
+		if HUBIC_SOLE_CONTAINER:
+			if container:
+				target_path = '%s/%s' % (container, target_path)
 			container = HUBIC_SOLE_CONTAINER
 		return target_path, container
 	
