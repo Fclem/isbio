@@ -631,5 +631,5 @@ def get_key(name=''):
 		return read_key()
 	except Exception as e:
 		log.warning('could not read key %s from %s' % (name, secrets_root))
-		log.exception(str(e))
+		# log.exception(str(e))
 	return ''
