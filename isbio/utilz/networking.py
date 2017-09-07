@@ -174,12 +174,12 @@ def resolve_dns(hostname):
 # clem 07/07/2017
 def get_HTTP_body(url, timeout=5):
 	import urllib2
-	return urllib2.urlopen(url, timeout=timeout).read()
+	return str(urllib2.urlopen(url, timeout=timeout).read())
 
 
 # clem 07/07/2017
 def get_public_ip():
-	return get_HTTP_body('https://ipinfo.io/ip', 1)
+	return get_HTTP_body('https://ipinfo.io/ip', 1).replace('\n', '').strip()
 
 
 # clem 07/07/2017
