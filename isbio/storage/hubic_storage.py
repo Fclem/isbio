@@ -103,7 +103,7 @@ class HubicClient(StorageServicePrototype):
 			self.__hubic.close()
 			log.debug('connection closed')
 		except Exception as e:
-			log.warning(str(e))
+			log.error(str(e))
 		self.__hubic = None
 		self.__auth_token = ''
 		if isfile(HUBIC_TOKEN_FILE):
@@ -145,7 +145,7 @@ class HubicClient(StorageServicePrototype):
 				log.debug('auth token saved')
 			return True
 		except Exception as e:
-			log.exception(e)
+			log.error(e)
 		return False
 	
 	def __up_and_down_wrapper(self, container, local_file_path, remote_file_path, up_or_down, measure_speed=True):
@@ -209,7 +209,7 @@ class HubicClient(StorageServicePrototype):
 			speed = compute_speed(local_file_path, res[1])
 			if speed:
 				sup = ' in %.02s sec, avg %s' % (res[1], speed)
-			log.info('%s %s%s' % (local_file_path, res[0], sup))
+			log.debug('%s %s%s' % (local_file_path, res[0], sup))
 			return True
 		except Exception as e:
 			log.error('ERROR: %s' % e)
