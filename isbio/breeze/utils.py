@@ -374,3 +374,26 @@ def is_ip_in_fimm_network(ip_addr):
 def is_http_client_in_fimm_network(request):
 	from webhooks.hooker import HookWSGIReq
 	return is_ip_in_fimm_network(HookWSGIReq(request).http_remote_ip)
+
+
+# clem 07/09/2017
+def get_FQDN(request=None):
+	""" Return the FQDN from Site.domain with validation against public ip, or public IP
+	
+	:rtype: str
+	"""
+	domain = ''
+	try:
+		current_site = None
+		try: # auto detect current site
+			from django.contrib.sites.shortcuts import get_current_site
+			current_site = get_current_site(request)
+		except Exception as e:
+			logger.warning(e)
+		from django.contrib.sites.models import Site
+		# if not detected use config
+		current_site = current_site or settings.SITE_ID
+		domain = Site.objects.get(pk=settings.SITE_ID).domain
+	except Exception as e:
+		logger.warning(e)
+	return domain if domain and validate_fqdn(domain) else get_public_ip()

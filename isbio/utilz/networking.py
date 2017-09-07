@@ -165,12 +165,15 @@ def is_ip_in_network(ip_addr, network):
 	from ipaddress import ip_network, ip_address
 	return ip_address(ip_addr) in ip_network(network)
 	
-	
-# clem 02/07/2017
-def get_fqdn():
-	import socket
-	return socket.getfqdn()
+
+# clem 07/07/2017
+def resolve_dns(hostname):
+	return socket.gethostbyname_ex(hostname)
 
 
 def get_public_ip():
 	return get_http_response('https://ipinfo.io/ip', 1)
+
+
+def validate_fqdn(alleged_fqdn):
+	return get_public_ip() == resolve_dns(alleged_fqdn)
