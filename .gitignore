@@ -23,7 +23,7 @@ running
 *.*~
 .*~
 .*_secret
-*/.*_secret
+.*_secret
 static_source
 .*
 !.gitignore
