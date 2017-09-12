@@ -115,6 +115,8 @@ class StorageServicePrototype(object):
 		# try:
 		blob_name = blob_name.replace('.pyc', '.py')
 		file_name = file_name.replace('.pyc', '.py')
+		if os.path.exists(file_name):
+			os.chmod(file_name, RWX__) # make the target file writeable for overwrite
 		# TODO check against md5 and download only if different
 		return self.download(blob_name, file_name, container)
 	

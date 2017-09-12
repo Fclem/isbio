@@ -1,5 +1,8 @@
 #!/usr/bin/python
 from __future__ import print_function
+
+from __builtin__ import file
+
 from blob_storage_module import * # import interface, already has os, sys and abc
 from azure.common import AzureMissingResourceHttpError as MissingResException
 from azure.storage.blob import BlockBlobService
@@ -172,7 +175,6 @@ class AzureStorage(BlobStorageService):
 		
 		if self.blob_service.exists(container, blob_name): # avoid error, and having blank files on error
 			# purposely not catching AzureMissingResourceHttpError (to be managed from caller code)
-			os.chmod(file_path, RWX__) # make the target file writeable for overwrite
 			trans = BlockingTransfer(do_download).do_blocking_transfer()
 			if not trans:
 				raise IOError("Blocking Download failed")
