@@ -172,6 +172,7 @@ class AzureStorage(BlobStorageService):
 		
 		if self.blob_service.exists(container, blob_name): # avoid error, and having blank files on error
 			# purposely not catching AzureMissingResourceHttpError (to be managed from caller code)
+			os.chmod(file_path, RWX__) # make the target file writeable for overwrite
 			trans = BlockingTransfer(do_download).do_blocking_transfer()
 			if not trans:
 				raise IOError("Blocking Download failed")
