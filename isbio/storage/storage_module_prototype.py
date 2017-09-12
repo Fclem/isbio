@@ -53,7 +53,7 @@ ACT_CONT_MAPPING = {
 PYTHON_VERSION = sys.version_info.major
 IS_PYTHON2 = PYTHON_VERSION == 2
 IS_PYTHON3 = PYTHON_VERSION == 3
-FROM_COMMAND_LINE = __name__ == '__main__' # restrict access
+FROM_COMMAND_LINE = lambda: __name__ == '__main__' # restrict access
 
 if IS_PYTHON2:
 	basestring_t = basestring
