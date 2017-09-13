@@ -23,7 +23,7 @@ AZURE_PWD_FILE = 'azure_pwd_%s' % AZURE_ACCOUNT
 
 
 def azure_key():
-	return get_key_bis(AZURE_PWD_FILE)
+	return get_key_bis(AZURE_PWD_FILE) or os.getenv('AZURE_KEY')
 
 
 # clem 14/04/2016
