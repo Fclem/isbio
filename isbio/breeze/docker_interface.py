@@ -9,7 +9,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -799,8 +799,9 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
 			env = self._job_storage.load_environement
 			# TODO add host_sup passing
-			self.my_run = DockerRun(self.config_container, self.config_cmd % self.run_id, self.my_volume, env=env,
-				cont_name='%s_%s' % (self._runnable.short_id , self._runnable.author))
+			self.my_run = DockerRun(self.config_container,
+				self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
+				self.my_volume, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
 			self._attach_event_manager()
 			if self._run():
 				return True
