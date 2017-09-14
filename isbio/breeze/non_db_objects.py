@@ -6,7 +6,7 @@ from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
 from django.http import HttpRequest
-from ConfigParser import SafeConfigParser, NoSectionError
+from ConfigParser import SafeConfigParser, NoSectionError, DEFAULTSECT
 
 __version__ = '0.2.1'
 __author__ = 'clem'
@@ -604,18 +604,41 @@ class FolderObj(object):
 
 
 # clem 14/09/2017
-class MySageConfigParser(SafeConfigParser):
+class MySafeConfigParser(SafeConfigParser):
 	"""Can get options() without defaults
 	"""
+
+	def items(self, section, raw=False, vars=None, no_defaults=True):
+		"""Return a list of tuples with (name, value) for each option
+	        in the section.
 	
-	def options(self, section, no_defaults=True):
-		if no_defaults:
-			try:
-				return list(self._sections[section].keys())
-			except KeyError:
+	        All % interpolations are expanded in the return values, based on the
+	        defaults passed into the constructor, unless the optional argument
+	        `raw' is true.  Additional substitutions may be provided using the
+	        `vars' argument, which must be a dictionary whose contents overrides
+	        any pre-existing defaults.
+	
+	        The section DEFAULT is special.
+        """
+		d = dict() if no_defaults else self._defaults.copy()
+		try:
+			d.update(self._sections[section])
+		except KeyError:
+			if section != DEFAULTSECT:
 				raise NoSectionError(section)
+		# Update with the entry specific variables
+		if vars:
+			for key, value in vars.items():
+				d[self.optionxform(key)] = value
+		options = d.keys()
+		if "__name__" in options:
+			options.remove("__name__")
+		if raw:
+			return [(option, d[option])
+				for option in options]
 		else:
-			return super(MySageConfigParser, self).options(section)
+			return [(option, self._interpolate(section, option, d[option], d))
+				for option in options]
 
 
 # clem 13/05/2016
@@ -667,7 +690,7 @@ class ConfigObject(FolderObj):
 	def _load_config(self):
 		""" Load the config file in a ConfigParser.SafeConfigParser object """
 		# config = self.SafeConfigParser()
-		config = MySageConfigParser()
+		config = MySafeConfigParser()
 		config.optionxform = str
 		config.readfp(open(self.config_file.path))
 		self.log.debug(
