@@ -11,7 +11,7 @@ import time
 import re
 import string
 
-__version__ = '0.1.6.1'
+__version__ = '0.1.6.2'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
@@ -980,9 +980,9 @@ class DockerClient(object):
 			raise e
 
 	# clem 17/03/2016
-	def _exception_handler(self, e, msg='', force_log=False, force_raise=False):
+	def _exception_handler(self, e, msg='', force_log=False, force_raise=False, stack_offset=0):
 		msg = '%s:%s' % (type(e), str(e)) if not msg else str(msg)
-		msg = TermColoring.warning('ERR in %s: %s' % (this_function_caller_name(), msg))
+		msg = TermColoring.warning('ERR in %s: %s' % (this_function_caller_name(stack_offset), msg))
 		self._force_log(msg) if force_log else self._log(msg)
 		self._auto_raise(e, force_raise)
 
@@ -1122,6 +1122,10 @@ class DockerClient(object):
 
 		def decorated_func(self, arg):
 			assert isinstance(self, DockerClient) and isinstance(arg, (DockerRun, DockerContainer))
+			
+			def exception_handler(*args, **kwargs):
+				return self._exception_handler(*args, **kwargs, stack_offset=2)
+			
 			msg = 'creation' if isinstance(arg, DockerRun) else 'start'
 			try:
 				if isinstance(arg, DockerRun):
@@ -1129,7 +1133,7 @@ class DockerClient(object):
 				elif isinstance(arg, DockerContainer):
 					return func(self, arg)
 			except NotFound as e:
-				self._exception_handler(e, '%s: %s' % (msg, str(e)))
+				exception_handler(e, '%s: %s' % (msg, str(e)))
 			except APIError as e:
 				# self._log('Container %s failed : %s' % (msg, e))
 				self._log('Container %s failed : %s [%s]' % (msg, e, self._readable_time_stamp))
@@ -1139,9 +1143,9 @@ class DockerClient(object):
 						self._log('Container run log :\n%s' % advanced_pretty_print(out_log, get_output=True))
 				self._auto_raise(e)
 			except NullResource as e:
-				self._exception_handler(e, '%s: %s' % (msg, e))
+				exception_handler(e, '%s: %s' % (msg, e))
 			except Exception as e:
-				self._exception_handler(e, 'Unhandled %s exception : %s' % (msg, e))
+				exception_handler(e, 'Unhandled %s exception : %s' % (msg, e))
 
 		return decorated_func
 

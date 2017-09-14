@@ -37,7 +37,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	CONFIG_DAEMON_URL = 'daemon_url'
 	# from exec/docker
 	CONFIG_SUP_SECTION = 'docker'
-	CONFIG_SUP_CONTAINER = 'container'
+	CONFIG_SUP_IMAGE = 'image'
 	CONFIG_SUP_CONT_CMD = 'cont_cmd'
 	
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
@@ -81,9 +81,9 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	
 	# clem 17/06/2016
 	@property
-	def config_container(self):
+	def config_image(self):
 		# return self.engine_obj.get(self.CONFIG_CONTAINER)
-		return self.get_exec_specific(self.CONFIG_SUP_CONTAINER)
+		return self.get_exec_specific(self.CONFIG_SUP_IMAGE)
 	
 	# clem 17/06/2016
 	@property
@@ -382,8 +382,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	
 	# clem 06/10/2016
 	def name(self):
-		img = self.client.get_image(self.config_container)
-		return "docker image %s (%s)" % (self.config_container, img.Id)
+		img = self.client.get_image(self.config_image)
+		return "docker image %s (%s)" % (self.config_image, img.Id)
 
 	#####################
 	#  DOCKER SPECIFIC  #
@@ -802,7 +802,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			env.update(self.engine_obj.remote_env_config)
 			env.update(self.target_obj.remote_env_config)
 			# TODO add host_sup passing
-			self.my_run = DockerRun(self.config_container,
+			self.my_run = DockerRun(self.config_image,
 				self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
 				self.my_volume, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
 			self._attach_event_manager()

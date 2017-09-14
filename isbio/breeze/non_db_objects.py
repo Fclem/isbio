@@ -6,7 +6,7 @@ from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
 from django.http import HttpRequest
-from ConfigParser import SafeConfigParser, NoSectionError, DEFAULTSECT
+from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, DEFAULTSECT
 
 __version__ = '0.2.1'
 __author__ = 'clem'
@@ -610,16 +610,16 @@ class MySafeConfigParser(SafeConfigParser):
 
 	def items(self, section, raw=False, vars=None, no_defaults=True):
 		"""Return a list of tuples with (name, value) for each option
-	        in the section.
-	
-	        All % interpolations are expanded in the return values, based on the
-	        defaults passed into the constructor, unless the optional argument
-	        `raw' is true.  Additional substitutions may be provided using the
-	        `vars' argument, which must be a dictionary whose contents overrides
-	        any pre-existing defaults.
-	
-	        The section DEFAULT is special.
-        """
+			in the section.
+			
+			All % interpolations are expanded in the return values, based on the
+			defaults passed into the constructor, unless the optional argument
+			`raw' is true.  Additional substitutions may be provided using the
+			`vars' argument, which must be a dictionary whose contents overrides
+			any pre-existing defaults.
+			
+			The section DEFAULT is special.
+		"""
 		d = dict() if no_defaults else self._defaults.copy()
 		try:
 			d.update(self._sections[section])
@@ -645,7 +645,7 @@ class MySafeConfigParser(SafeConfigParser):
 # META_CLASS
 class ConfigObject(FolderObj):
 	# __metaclass__ = abc.ABCMeta # problem with meta-subclassing
-	from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError
+	# from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError
 	_not = "Class %s doesn't implement %s()"
 	BASE_FOLDER_NAME = settings.CONFIG_FN
 	ALLOW_DOWNLOAD = False
@@ -726,7 +726,7 @@ class ConfigObject(FolderObj):
 		"""
 		try:
 			return self.config.get(section, option)
-		except (self.NoSectionError, AttributeError, self.NoOptionError) as e:
+		except (NoSectionError, AttributeError, NoOptionError) as e:
 			self.log.warning('While parsing file ')
 			pp(self.config.__dict__)
 			raise
