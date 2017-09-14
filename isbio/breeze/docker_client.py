@@ -1315,7 +1315,7 @@ class DockerClient(object):
 		return DockerImage(self._inspect_image(image_desc))
 	
 	# clem 14/09/2017
-	def _update_image_data(self, image):
+	def _update_image_data(self, image): # FIXME design
 		""" Ask the API for updated info about the image
 
 		:type image: DockerImage
@@ -1327,13 +1327,11 @@ class DockerClient(object):
 	
 	# clem 14/09/2017
 	def _update_image_data_in_place(self, image_id):
-		""" Ask the API for updated info about the image, and update it
+		""" Ask the API for updated info about the image, and update it in situ
 
 		:type image_id: DockerImage | str
 		"""
 		self.get_image(str(image_id)).__dict__.update(self._inspect_image(str(image_id)))
-		# image.__dict__.update(self._inspect_image(str(image)))
-		# self.__image_dict_by_id[image.Id] = image
 
 	#
 	# CLASS INTERFACE
@@ -1397,8 +1395,8 @@ class DockerClient(object):
 				return images_tags.get(image_descriptor)
 			else: # image might not be present, trying to pull it
 				self._log('cannot find %s locally, trying to pull it' % image_descriptor)
-				self.pull(image_descriptor)
-				return self.get_image(image_descriptor)
+				if self.pull(image_descriptor):
+					return self.get_image(image_descriptor)
 		return None
 
 	# clem 18/03/2016
