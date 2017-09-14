@@ -11,7 +11,7 @@ import time
 import re
 import string
 
-__version__ = '0.1.6.2'
+__version__ = '0.1.7'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
@@ -1324,8 +1324,9 @@ class DockerClient(object):
 				return images_ids.get(image_descriptor)
 			elif image_descriptor in images_tags.keys():
 				return images_tags.get(image_descriptor)
-			else:
-				self._log('cannot find %s' % image_descriptor)
+			else: # image might not be present, trying to pull it
+				self._log('cannot find %s locally, trying to pull it' % image_descriptor)
+				self.pull(image_descriptor)
 		return None
 
 	# clem 18/03/2016
@@ -1496,9 +1497,11 @@ class DockerClient(object):
 					return True
 			return False
 
-		# TODO : parse full images_names
 		if not tag:
-			tag = 'latest'
+			if ':' not in image_name:
+				tag = 'latest'
+			else:
+				image_name, tag = image_name.split(':')
 		try:
 			self.login()
 			# do_stream = self.DEBUG or force_print
