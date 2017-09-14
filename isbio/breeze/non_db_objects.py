@@ -668,6 +668,7 @@ class ConfigObject(FolderObj):
 		""" Load the config file in a ConfigParser.SafeConfigParser object """
 		# config = self.SafeConfigParser()
 		config = MySageConfigParser()
+		config.optionxform = str
 		config.readfp(open(self.config_file.path))
 		self.log.debug(
 			'Config : loaded and parsed %s / %s ' % (os.path.basename(self.config_file.path), self.__class__.__name__))
