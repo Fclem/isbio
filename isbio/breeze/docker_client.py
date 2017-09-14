@@ -1124,7 +1124,8 @@ class DockerClient(object):
 			assert isinstance(self, DockerClient) and isinstance(arg, (DockerRun, DockerContainer))
 			
 			def exception_handler(*args, **kwargs):
-				return self._exception_handler(*args, **kwargs, stack_offset=2)
+				# kwargs.update('stack_off')
+				return self._exception_handler(*args, stack_offset=2, **kwargs)
 			
 			msg = 'creation' if isinstance(arg, DockerRun) else 'start'
 			try:
