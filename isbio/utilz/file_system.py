@@ -19,17 +19,17 @@ class ACL(enumerate):
 	__GROUP = 10
 	__OWNER = 100
 
-	R__ = 0400
-	RW__ = 0600
-	RWX__ = 0700
-	RW_RW_R = 0664
-	RW_RW_ = 0660
-	RW_R_ = 0640
-	R_R_ = 0440
-	RWX_RWX_R = 0774
-	RWX_RWX_ = 0770
-	RWX_RX_ = 0750
-	RX_RX_ = 0550
+	R__ = 0o400
+	RW__ = 0o600
+	RWX__ = 0o700
+	RW_RW_R = 0o664
+	RW_RW_ = 0o660
+	RW_R_ = 0o640
+	R_R_ = 0o440
+	RWX_RWX_R = 0o774
+	RWX_RWX_ = 0o770
+	RWX_RX_ = 0o750
+	RX_RX_ = 0o550
 
 
 # clem on 21/08/2015
