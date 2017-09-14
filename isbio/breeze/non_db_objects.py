@@ -6,6 +6,7 @@ from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
 from django.http import HttpRequest
+from ConfigParser import SafeConfigParser, NoSectionError
 
 __version__ = '0.2.1'
 __author__ = 'clem'
@@ -602,6 +603,21 @@ class FolderObj(object):
 		abstract = True
 
 
+# clem 14/09/2017
+class MySageConfigParser(SafeConfigParser):
+	"""Can get options() without defaults
+	"""
+	
+	def options(self, section, no_defaults=True):
+		if no_defaults:
+			try:
+				return list(self._sections[section].keys())
+			except KeyError:
+				raise NoSectionError(section)
+		else:
+			return super(MySageConfigParser, self).options(section)
+
+
 # clem 13/05/2016
 # META_CLASS
 class ConfigObject(FolderObj):
@@ -650,7 +666,8 @@ class ConfigObject(FolderObj):
 	# clem 27/05/2016
 	def _load_config(self):
 		""" Load the config file in a ConfigParser.SafeConfigParser object """
-		config = self.SafeConfigParser()
+		# config = self.SafeConfigParser()
+		config = MySageConfigParser()
 		config.readfp(open(self.config_file.path))
 		self.log.debug(
 			'Config : loaded and parsed %s / %s ' % (os.path.basename(self.config_file.path), self.__class__.__name__))
