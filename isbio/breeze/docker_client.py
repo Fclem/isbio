@@ -3,7 +3,7 @@ from docker.errors import NotFound, APIError, NullResource
 from threading import Thread, Lock
 from datetime import datetime
 from utilz import get_md5, advanced_pretty_print, TermColoring, new_thread, get_named_tuple, ObjectCache,\
-	this_function_caller_name
+	this_function_caller_name, classproperty
 import curses
 import json
 import requests
@@ -260,10 +260,21 @@ class DockerImage(object):
 	# clem 10/03/2016
 	@property
 	def full_name(self):
-		if type(self.RepoTags) is list and len(self.RepoTags) > 0:
-			return str(self.RepoTags[0])
-		else:
-			return str(self.RepoTags)
+		""" Return the full name of an image, using it's first tag
+		
+		:rtype: str
+		"""
+		return str(self.full_names[0])
+		
+	# clem 14/09/2017
+	@property
+	def full_names(self):
+		""" Return a list of full name of an image, i.e. all tags
+
+		:rtype: list
+		"""
+		ret = self.RepoTags
+		return ret if type(ret) is list else [ret]
 
 	# clem 15/03/2016
 	def pretty_print(self):
@@ -903,25 +914,25 @@ class DockerClient(object):
 	DEV = False
 	DEBUG = True
 	repo = None
-	_raw_cli = DockerApiClient
+	_raw_cli = None                     # type: DockerApiClient
 	_logged_in = False
-	__console_mutex = None # use to ensure exclusive access to console
-	__data_mutex = None # use to ensure exclusive access to console
+	__console_mutex = None              # use to ensure exclusive access to console
+	__data_mutex = None                 # use to ensure exclusive access to console
 
 	_daemon_url = ''
 
-	_images_list = list()
-	__image_dict_by_id = dict()
-	__image_dict_by_tag = dict()
-	__image_tree = dict()
-	__watcher = None
-	_container_list = list()
-	_container_dict_by_id = dict()
-	_container_dict_by_name = dict()
-	_event_list = list()
+	_images_list = list()               # type: list[DockerImage]
+	__image_dict_by_id = dict()         # type: dict[str, DockerImage]
+	__image_dict_by_tag = dict()        # type: dict[str, DockerImage]
+	__image_tree = dict()               # type: dict[str, dict[str, dict[str, DockerImage]]]
+	__watcher = None                    # type: Thread
+	_container_list = list()            # type: list[DockerContainer]
+	_container_dict_by_id = dict()      # type: dict[str, DockerContainer]
+	_container_dict_by_name = dict()    # type: dict[str, DockerContainer]
+	_event_list = list()                # type: list[DockerEvent]
 	_run_wait = 0
-	_run_dict = dict()
-	_destroyed_objects = dict()
+	_run_dict = dict()                  # FIXME unused ?
+	_destroyed_objects = dict()         # type: dict[str, DockerImage | DockerContainer]
 	_last_connection = ''
 
 	#
@@ -1075,33 +1086,37 @@ class DockerClient(object):
 	# __pp_cli removed on 19/05/2016 from azure_test / commit 3ae8f9d
 
 	# clem 01/04/2016
-	@classmethod
+	# @staticmethod
+	@classproperty
 	def _time_stamp(self):
-		from datetime import datetime
 		return datetime.now()
 
 	# clem 01/04/2016
-	@classmethod
-	def _readable_time(self, dt):
+	@staticmethod
+	def _readable_time(dt):
+		"""
+		
+		:type dt: datetime
+		"""
 		return dt.strftime('%Hh%M:%S.%f')
 
 	# clem 01/04/2016
 	@property
 	def _readable_time_stamp(self):
-		return self._readable_time(self._time_stamp())
+		return self._readable_time(self._time_stamp)
 
 	# _term_stream removed 29/03/2016 from 7398ad0 (replaced with class TermStreamer)
 
 	# clem 16/03/2016
 	def _img_exists_or_pulled(self, run):
-		"""
-		check if image exists locally, and pull it if not
+		""" Check if image exists locally, and pull it if not
+		
 		Return True if image exists, or pulled successfully, False otherwise
-
-		@params:
-			run  - Required  : current iteration (DockerRun)
-		@return: True if image exists, or pulled successfully, False otherwise
-		@rtype: bool
+		
+		:param run: current iteration (DockerRun)
+		:type run: DockerRun
+		:return: True if image exists, or pulled successfully, False otherwise
+		:rtype: bool
 		"""
 		# TODO check if connected to repo
 		image_name = run.image_full_name
@@ -1154,6 +1169,11 @@ class DockerClient(object):
 
 	# clem 28/11/2016
 	def _host_config_dict(self, run_instance):
+		""" TODO
+		
+		:param run_instance:
+		:type run_instance: DockerRun
+		"""
 		assert isinstance(run_instance, DockerRun)
 		return self.cli.create_host_config(**run_instance.config_dict)
 
@@ -1236,6 +1256,11 @@ class DockerClient(object):
 
 	# clem 18/03/2016
 	def _update_container_data(self, container):
+		""" Ask the API for updated info about the container
+		
+		:type container: DockerContainer
+		:rtype: DockerContainer
+		"""
 		assert isinstance(container, DockerContainer)
 		container.__dict__.update(self._inspect_container(str(container)))
 		return container
@@ -1309,8 +1334,8 @@ class DockerClient(object):
 
 	# clem 16/03/2016
 	def get_image(self, image_descriptor=None):
-		"""
-		Get the cached image, and if not found try to refresh the cache for this entry only
+		""" Get the cached image, and if not found try to refresh the cache for this entry only
+		
 		image_descriptor can be either the id, or the full name as repo/image:tag
 
 		:type image_descriptor: str | DockerImage | None
@@ -1332,15 +1357,25 @@ class DockerClient(object):
 
 	# clem 18/03/2016
 	def get_resource(self, res_id):
-		img = self.get_image(res_id)
-		if img:
-			return img
-		cont = self._get_container(res_id)
-		if cont:
-			return cont
+		""" Returns a container or image from a string (id/name)
+		
+		:param res_id: container or image id or name
+		:type res_id: str
+		:return:
+		:rtype: DockerImage | DockerContainer
+		"""
+		return self.get_image(res_id) or self._get_container(res_id)
 
 	# clem 18/03/2016
 	def remove_resource(self, res_id, force=False):
+		""" Removes a resource from the docker engine storage
+		
+		:param res_id: a container id/name/object or an image name/id/object
+		:type res_id: DockerContainer | DockerImage | str
+		:param force: docker argument force
+		:type force: bool
+		
+		"""
 		res_id = self.get_resource(res_id)
 		if isinstance(res_id, DockerContainer):
 			self.rm([res_id], force=force)
@@ -1362,6 +1397,13 @@ class DockerClient(object):
 
 	# clem 06/05/2016
 	def stop(self, container, timeout=10):
+		""" Stop a container
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		:param timeout: time out in seconds (default 10 sec)
+		:type timeout: int
+		"""
 		try:
 			self.cli.stop(str(container), timeout)
 			return True
@@ -1371,10 +1413,20 @@ class DockerClient(object):
 
 	# clem 12/05/2016
 	def start(self, container):
+		""" Start a container
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		"""
 		self._start(container)
 
 	# clem 06/05/2016
 	def pause(self, container):
+		""" Pause the execution of a container
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		"""
 		try:
 			self.cli.pause(str(container))
 			return True
@@ -1384,6 +1436,11 @@ class DockerClient(object):
 
 	# clem 06/05/2016
 	def unpause(self, container):
+		""" Resumes execution of a container (unpause command)
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		"""
 		try:
 			self.cli.unpause(str(container))
 			return True
@@ -1394,10 +1451,24 @@ class DockerClient(object):
 	# clem 06/05/2016
 	# Alias of unpause
 	def resume(self, container):
+		""" Resumes execution of a container (unpause command), alias of unpause
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		"""
 		self.unpause(container)
 
 	# clem 06/05/2016
 	def kill(self, container, signal):
+		""" Kills a container
+		
+		:param container: a container object, or it's id or name
+		:type container: DockerContainer | str
+		:param signal: a POSIX signal from signal python lib
+		:type signal: int
+		:return: is success
+		:rtype: bool
+		"""
 		try:
 			self.cli.kill(str(container), signal)
 			return True
@@ -1473,6 +1544,14 @@ class DockerClient(object):
 
 	# clem 16/03/2016
 	def pull(self, image_name, tag=''):
+		""" Pulls an image from DockerHub with progression display
+		
+		:param image_name: the full image name (repo/name:tag) or just repo/name (tag must then be filled)
+		:type image_name: str
+		:param tag: a specific tag of the image, if not specified and not included in image_name, will use latest
+		:type tag: str
+		:rtype: bool
+		"""
 		def printer(generator):
 			a_dict = dict()
 			count = 0
@@ -1525,7 +1604,7 @@ class DockerClient(object):
 			self._exception_handler(e, 'cli.logs: %s' % e)
 		return ''
 
-	# clem 10/03/2016 # TODO #notImplemented
+	# clem 10/03/2016 # TODO
 	def ps(self):
 		"""
 		Params:
@@ -1543,7 +1622,7 @@ class DockerClient(object):
 		status (str): One of restarting, running, paused, exited
 		label (str): format either "key" or "key=value"
 		"""
-		pass
+		raise NotImplementedError
 
 	#
 	# EVENTS LISTENER, PROCESSOR AND DISPATCHER
@@ -1583,7 +1662,7 @@ class DockerClient(object):
 	def _del_res(self, a_dict, res_id):
 		""" Delete res_id from a_dict with error handling
 
-		:type a_dict: dict
+		:type a_dict: dict[str, DockerContainer | DockerImage]
 		:type res_id: basestring
 		:rtype: None
 		"""
@@ -1600,6 +1679,12 @@ class DockerClient(object):
 	# TODO : REDESIGN
 	# clem 16/03/2016
 	def _process_event(self, event, container=None):
+		"""
+		
+		:type event: DockerEvent
+		:type container: DockerContainer
+		:rtype: bool
+		"""
 		assert isinstance(event, DockerEvent)
 		self._event_list.append(event)
 
@@ -1610,19 +1695,17 @@ class DockerClient(object):
 				pass
 		if event.description == DockerEventCategories.DELETE:
 			if event.Type == 'image':
-				self._del_res(self.__image_dict_by_id, event.res_id )
+				self._del_res(self.__image_dict_by_id, event.res_id)
 			elif event.Type == 'container':
-				self._dispatch_event(event, container) # manual dispach for antecedance
+				self._dispatch_event(event, container) # manual dispatch for antecedence
 				self._del_res(self._container_dict_by_id, event.res_id)
 				return False
 		if event.description == DockerEventCategories.DIE:
 			pass
-			# self._log('%s died' % container)
-			# event.container.
 			# check destroy
 		if event.description == DockerEventCategories.DESTROY:
 			if event.Type == 'container':
-				self._dispatch_event(event, container) # manual dispach for antecedance
+				self._dispatch_event(event, container) # manual dispatch for antecedence
 				self._del_res(self._container_dict_by_id, event.res_id)
 				return False
 		return True
@@ -1631,8 +1714,12 @@ class DockerClient(object):
 	# TODO : REDESIGN
 	# @new_thread
 	def _dispatch_event(self, event, cont=None):
+		"""
+		
+		:type event: DockerEvent
+		:type cont: DockerContainer
+		"""
 		assert isinstance(event, DockerEvent)
-		# cont = event.container(True)
 		# TODO add any resources
 		if cont and isinstance(cont, DockerContainer):
 			if not cont.has_event_listener:
@@ -1640,7 +1727,6 @@ class DockerClient(object):
 				self._event_log(event, ' <UE>')
 			cont.new_event(event)
 		else: # if no dispatch target exists, then we log it here
-			# print cont, 'of type', type(cont)
 			self._log('<%s> (no related containers, i.e. external event)' % event)
 
 	# clem 16/03/2016
@@ -1657,8 +1743,8 @@ class DockerClient(object):
 
 	# clem 14/03/2016
 	def _event_watcher(self):
-		"""
-		Blocking procedure to receive events
+		""" Blocking procedure to receive events
+		
 		MUST RUN IN A SEPARATE THREAD
 
 		:rtype: None
@@ -1689,17 +1775,20 @@ class DockerClient(object):
 	# clem 10/03/2016
 	@property
 	def containers_by_id(self, show_all=False):
-		"""
-		a dictionary of DockerContainer objects indexed by Id
+		""" a dictionary of DockerContainer objects indexed by Id
+		
 		internally containers lists is stored in a dict indexed with containers' Ids.
+		
 		Each time this property is used the dict is refreshed by calling 'docker containers'
+		
 		DockerContainer objects from the cache dict are altered only if container entry changed.
+		
 		DockerContainer objects stores an internal md5 of its dictionary so that a modified container (invariant Id)
 			will be updated
 		similar to images_by_id()
 
 		:type show_all: bool
-		:rtype: dict(DockerContainer.Id: DockerContainer)
+		:rtype: dict[str, DockerContainer]
 		"""
 		try:
 			containers = self.cli.containers(all=show_all)
@@ -1718,12 +1807,13 @@ class DockerClient(object):
 		""" extracts all DockerContainer objects from containers_by_id to return a list of them
 
 		:type container_ids: dict
-		:rtype: list(DockerContainer.Id: DockerContainer, )
+		:rtype: list[DockerContainer]
 		"""
 		assert isinstance(container_ids, dict)
-		self._container_list = list()
-		for container in container_ids.itervalues():
-			self._container_list.append(container)
+		# self._container_list = list()
+		self._container_list = container_ids.values()
+		# for container in container_ids.values():
+		# 	self._container_list.append(container)
 		return self._container_list
 
 	# clem 10/03/2016
@@ -1731,35 +1821,37 @@ class DockerClient(object):
 	def containers_list(self):
 		""" extracts all DockerContainer objects from containers_by_id to return a list of them
 
-		:rtype: list(DockerContainer.Id: DockerContainer, )
+		:rtype: list[DockerContainer]
 		"""
 		return self._get_containers_list(self.containers_by_id)
 
 	# clem 17/03/2016
 	def _get_containers_by_name(self, container_ids):
-		"""
-		a dictionary of DockerContainer objects indexed by Name[0]
+		""" a dictionary of DockerContainer objects indexed by Name[0]
+		
 		similar to ps_by_id, except here the DockerContainer objects are referenced by their first Names
+		
 		DockerContainer object are referenced from the other dict and thus not modified nor copied.
 
-		:type container_ids: dict
-		:rtype: dict(DockerContainer.Name: DockerContainer)
+		:type container_ids: dict[str, DockerContainer]
+		:rtype: dict[str, DockerContainer]
 		"""
 		assert isinstance(container_ids, dict)
 		self._container_dict_by_name = dict()
-		for container in container_ids.itervalues():
+		for container in container_ids.values():
 			self._container_dict_by_name[container.name] = container
 		return self._container_dict_by_name
 
 	# clem 10/03/2016
 	@property
 	def containers_by_name(self):
-		"""
-		a dictionary of DockerContainer objects indexed by Name[0]
+		""" a dictionary of DockerContainer objects indexed by Name[0]
+		
 		similar to ps_by_id, except here the DockerContainer objects are referenced by their first Names
+		
 		DockerContainer object are referenced from the other dict and thus not modified nor copied.
 
-		:rtype: dict(DockerContainer.Name: DockerContainer)
+		:rtype: dict[str, DockerContainer]
 		"""
 		return self._get_containers_by_name(self.containers_by_id)
 
@@ -1770,16 +1862,19 @@ class DockerClient(object):
 	# clem 09/03/2016
 	@property
 	def images_by_id(self):
-		"""
-		a dictionary of DockerImage objects indexed by Id
+		""" a dictionary of DockerImage objects indexed by Id
+		
 		internally images lists is stored in a dict indexed with images' Ids.
+		
 		Each time this property is used the dict is refreshed by calling 'docker images'
+		
 		DockerImage objects from the cache dict are altered only if image entry changed.
+		
 		DockerImage objects stores an internal md5 of its dictionary so that a modified image (invariant Id) will be
 			updated
 		similar to ps_by_id()
 
-		:rtype: dict(DockerImage.Id: DockerImage)
+		:rtype: dict[str, DockerImage]
 		"""
 		try:
 			images = self.cli.images()
@@ -1796,13 +1891,14 @@ class DockerClient(object):
 	def _get_image_list(self, image_ids):
 		""" extracts all DockerImage objects from images_by_id to return a list of them
 
-		:type image_ids: dict
-		:rtype: list(DockerImage.Id: DockerImage, )
+		:type image_ids: dict[str, DockerImage]
+		:rtype: list[DockerImage]
 		"""
 		assert isinstance(image_ids, dict)
-		self._images_list = list()
-		for image in image_ids.itervalues():
-			self._images_list.append(image)
+		# self._images_list = list()
+		# for image in image_ids.values():
+		# 	self._images_list.append(image)
+		self._images_list = image_ids.values()
 		return self._images_list
 
 	# clem 09/03/2016
@@ -1810,45 +1906,52 @@ class DockerClient(object):
 	def images_list(self):
 		""" extracts all DockerImage objects from images_by_id to return a list of them
 
-		:rtype: list(DockerImage.Id: DockerImage, )
+		:rtype: list[DockerImage]
 		"""
 		return self._get_image_list(self.images_by_id)
 
 	# clem 17/03/2016
 	def _get_images_by_repo_tag(self, image_ids):
-		"""
-		a dictionary of DockerImage objects indexed by RepoTag[0]
-		similar to images_by_id, except here the DockerImage objects are referenced by their first RepoTag
+		""" a dictionary of DockerImage objects indexed by RepoTag
+		
+		similar to images_by_id, except here the DockerImage objects are referenced by each of their RepoTag
+		
 		DockerImage object are referenced from the other dict and thus not modified nor copied.
 
-		:type image_ids: dict
-		:rtype: dict(DockerImage.tag: DockerImage)
+		:type image_ids: dict[str, DockerImage]
+		:rtype: dict[str, DockerImage]
 		"""
 		assert isinstance(image_ids, dict)
 		self.__image_dict_by_tag = dict()
-		for image in image_ids.itervalues():
-			self.__image_dict_by_tag[image.full_name] = image
-		print(self.__image_dict_by_tag)
+		for image in image_ids.values():
+			for each in image.full_names:
+				self.__image_dict_by_tag[each] = image
 		return self.__image_dict_by_tag
 
 	# clem 09/03/2016
 	@property
 	def images_by_repo_tag(self):
-		"""
-		a dictionary of DockerImage objects indexed by RepoTag[0]
+		""" a dictionary of DockerImage objects indexed by RepoTag[0]
+		
 		similar to images_by_id, except here the DockerImage objects are referenced by their first RepoTag
+		
 		DockerImage object are referenced from the other dict and thus not modified nor copied.
 
-		:rtype: dict(DockerImage.tag: DockerImage)
+		:rtype: dict[str, DockerImage]
 		"""
 		return self._get_images_by_repo_tag(self.images_by_id)
 
 	# clem 09/03/2016
 	@property
 	def images_tree(self):
+		""" TODO
+		
+		:return: a tree containing image sorted by repository_name, image_name, image_tag
+		:rtype: dict[str, dict[str, dict[str, DockerImage]]]
+		"""
 		images = self.images_by_repo_tag
 		self.__image_tree = dict()
-		for name, img in images.iteritems():
+		for name, img in images.items():
 			assert isinstance(img, DockerImage)
 			if img.repo_name not in self.__image_tree:
 				self.__image_tree[img.repo_name] = dict()
