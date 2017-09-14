@@ -11,7 +11,7 @@ import time
 import re
 import string
 
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
@@ -1234,7 +1234,7 @@ class DockerClient(object):
 		""" Get all the refreshed raw information about the container
 
 		:type container_desc: basestring
-		:rtype: str
+		:rtype: dict
 		"""
 		try:
 			return self.cli.inspect_container(container_desc)
@@ -1264,11 +1264,11 @@ class DockerClient(object):
 		assert isinstance(container, DockerContainer)
 		container.__dict__.update(self._inspect_container(str(container)))
 		return container
-
+	
 	# clem 17/03/2016
 	def _get_container(self, container_desc):
-		"""
-		Check if container in cache, if so return its object update with self._inspect_container,
+		""" Check if container in cache, if so return its object update with self._inspect_container,
+		
 		if not it is created self.make_container and store it in the dict
 
 		:type container_desc: basestring
@@ -1288,6 +1288,52 @@ class DockerClient(object):
 
 			self._container_dict_by_id[container.Id] = container
 		return container
+		
+	# clem 14/09/2017
+	def _inspect_image(self, image_desc):
+		""" Get all the refreshed raw information about the image
+
+		:type image_desc: basestring
+		:rtype: dict
+		"""
+		try:
+			return self.cli.inspect_image(image_desc)
+		except (NotFound, APIError) as e:
+			if this_function_caller_name() != self._inspect_image.im_func.__name__:
+				self._exception_handler(e)
+		except Exception as e:
+			self._exception_handler(e)
+		return dict()
+	
+	# clem 14/09/2017
+	def _make_image(self, image_desc): # FIXME check if useful
+		""" Return a new DockerContainer object, from a image_id
+
+		:type image_desc: basestring
+		:rtype: DockerImage
+		"""
+		return DockerImage(self._inspect_image(image_desc))
+	
+	# clem 14/09/2017
+	def _update_image_data(self, image):
+		""" Ask the API for updated info about the image
+
+		:type image: DockerImage
+		:rtype: DockerImage
+		"""
+		assert isinstance(image, DockerImage)
+		image.__dict__.update(self._inspect_image(str(image)))
+		return image
+	
+	# clem 14/09/2017
+	def _update_image_data_in_place(self, image_id):
+		""" Ask the API for updated info about the image, and update it
+
+		:type image_id: DockerImage | str
+		"""
+		self.get_image(str(image_id)).__dict__.update(self._inspect_image(str(image_id)))
+		# image.__dict__.update(self._inspect_image(str(image)))
+		# self.__image_dict_by_id[image.Id] = image
 
 	#
 	# CLASS INTERFACE
@@ -1688,11 +1734,21 @@ class DockerClient(object):
 		assert isinstance(event, DockerEvent)
 		self._event_list.append(event)
 
-		if event.description != DockerEventCategories.DELETE:
+		if event.description != DockerEventCategories.UNTAG:
 			if event.Type == 'image':
-				pass
-			elif event.Type == 'container':
-				pass
+				self._del_res(self.__image_dict_by_id, event.res_id)
+		if event.description != DockerEventCategories.TAG:
+			if event.Type == 'image':
+				# image = self.get_image(event.res_id)  # self.__image_dict_by_id[event.res_id]
+				# update the image object
+				# self.__image_dict_by_id[event.res_id] = self._update_image_data(image)
+				self._update_image_data_in_place(event.res_id)
+		if event.description != DockerEventCategories.PULL:
+			if event.Type == 'image':
+				# image = self.get_image(event.res_id)
+				# update the image object
+				# self.__image_dict_by_id[event.res_id] = self._update_image_data(image)
+				self._update_image_data_in_place(event.res_id)
 		if event.description == DockerEventCategories.DELETE:
 			if event.Type == 'image':
 				self._del_res(self.__image_dict_by_id, event.res_id)
@@ -1860,7 +1916,7 @@ class DockerClient(object):
 	#
 
 	# clem 09/03/2016
-	@property
+	@property # FIXME design issue, changes to tags are not reflected due to DockerImage object not being updated
 	def images_by_id(self):
 		""" a dictionary of DockerImage objects indexed by Id
 		
@@ -1924,6 +1980,7 @@ class DockerClient(object):
 		assert isinstance(image_ids, dict)
 		self.__image_dict_by_tag = dict()
 		for image in image_ids.values():
+			image = self._update_image_data(image)
 			for each in image.full_names:
 				self.__image_dict_by_tag[each] = image
 		return self.__image_dict_by_tag
