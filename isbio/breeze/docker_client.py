@@ -1324,6 +1324,8 @@ class DockerClient(object):
 				return images_ids.get(image_descriptor)
 			elif image_descriptor in images_tags.keys():
 				return images_tags.get(image_descriptor)
+			else:
+				self._log('cannot find %s' % image_descriptor)
 		return None
 
 	# clem 18/03/2016
