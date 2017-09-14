@@ -1828,7 +1828,7 @@ class DockerClient(object):
 		self.__image_dict_by_tag = dict()
 		for image in image_ids.itervalues():
 			self.__image_dict_by_tag[image.full_name] = image
-
+		print(self.__image_dict_by_tag)
 		return self.__image_dict_by_tag
 
 	# clem 09/03/2016
