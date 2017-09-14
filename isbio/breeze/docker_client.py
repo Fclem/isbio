@@ -11,7 +11,7 @@ import time
 import re
 import string
 
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
@@ -1108,8 +1108,8 @@ class DockerClient(object):
 		if not isinstance(run.image, DockerImage) and image_name not in self.images_by_repo_tag:
 			# image not found, let's try to pull it
 			img = run.link_image(self)
-			self._log('Unable to find image \'%s\' locally, let\'s try pulling it...' % image_name)
-			return self.pull(img.repo_and_name, img.tag)
+			# self._log('Unable to find image \'%s\' locally, let\'s try pulling it...' % image_name)
+			# return self.pull(img.repo_and_name, img.tag)
 		return True
 
 	# clem 17/03/2016
@@ -1327,6 +1327,7 @@ class DockerClient(object):
 			else: # image might not be present, trying to pull it
 				self._log('cannot find %s locally, trying to pull it' % image_descriptor)
 				self.pull(image_descriptor)
+				return self.get_image(image_descriptor)
 		return None
 
 	# clem 18/03/2016
@@ -1487,7 +1488,7 @@ class DockerClient(object):
 								status = TermStreamer.ProgressObj(txt, float(progress['current']), float(progress['total']))
 							elif 'id' in obj:
 								status = '%s: %s' % (obj['id'], obj['status'])
-							a_dict.update({ obj.get('id', count): status })
+							a_dict.update({obj.get('id', count): status})
 						elif 'error' in obj:
 							stream.close()
 							self._log(str(obj['error']))
@@ -1504,8 +1505,8 @@ class DockerClient(object):
 				image_name, tag = image_name.split(':')
 		try:
 			self.login()
-			# do_stream = self.DEBUG or force_print
-			do_stream = False
+			do_stream = self.DEBUG
+			# do_stream = False
 			gen = self.cli.pull(image_name, tag, stream=do_stream)
 			if do_stream:
 				return printer(gen)
