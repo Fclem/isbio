@@ -667,7 +667,10 @@ class ComputeTarget(ConfigObject, CustomModel):
 	# clem 16/05/2016
 	@property
 	def engine_section(self):
-		return self.config.items(self.target_engine_name)
+		if self.config.has_section(self.target_engine_name):
+			return self.config.items(self.target_engine_name)
+		else:
+			return list()
 
 	# clem 13/05/2016
 	@property

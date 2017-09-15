@@ -1,6 +1,6 @@
 from utilz import *
 from breeze.models import JobStat, Runnable, ComputeTarget
-from storage import StorageModulePrototype
+from storage import StorageModulePrototype, StorageServicePrototype
 import abc
 
 __version__ = '0.1.6'
@@ -273,6 +273,58 @@ class ComputeInterface(ComputeInterfaceBase):
 		except Exception as e:
 			self.log.exception('Error extracting %s : %s' % (input_filename, str(e)))
 		return False
+	
+	#######################
+	#  STORAGE INTERFACE  #
+	#######################
+	
+	# clem 20/04/2016
+	@property
+	def _job_storage(self):
+		""" The storage backend to use to store the jobs-to-run archives
+
+		:return: an implementation of
+		:rtype: StorageServicePrototype
+		"""
+		if not self._jobs_storage:
+			self._jobs_storage = self._get_storage(self.storage_backend.jobs_container())
+		return self._jobs_storage
+	
+	# clem 21/04/2016
+	@property
+	def _result_storage(self):
+		""" The storage backend to use to store the results archives
+
+		:return: an implementation of
+		:rtype: StorageServicePrototype
+		"""
+		if not self._data_storage:
+			self._data_storage = self._get_storage(self.storage_backend.data_container())
+		return self._data_storage
+	
+	# clem 21/04/2016
+	@property
+	def _docker_storage(self):
+		""" The storage backend to use to store the storage backend files
+
+		:return: an implementation of
+		:rtype: StorageServicePrototype
+		"""
+		if not self.__docker_storage:
+			self.__docker_storage = self._get_storage(self.storage_backend.management_container())
+		return self.__docker_storage
+	
+	@property
+	def remote_env_conf(self):
+		""" Make a dict with the remote environement vars to be configured on the target
+		
+		:rtype: dict[str, str]
+		"""
+		env = self._job_storage.load_environement
+		env.update(self.execut_obj.remote_env_config)
+		env.update(self.engine_obj.remote_env_config)
+		env.update(self.target_obj.remote_env_config)
+		return env
 	
 	# clem 16/05/2016
 	def __repr__(self):

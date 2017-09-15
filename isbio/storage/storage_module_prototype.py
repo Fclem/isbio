@@ -183,7 +183,7 @@ class StorageServicePrototype(object):
 		relation with storage, like storage account credentials.
 
 		:return: ENV vars to be set on target
-		:rtype: dict
+		:rtype: dict[str, str]
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
 

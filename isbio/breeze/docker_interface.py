@@ -496,41 +496,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	#  STORAGE INTERFACE  #
 	#######################
 
-	# clem 20/04/2016
-	@property
-	def _job_storage(self):
-		""" The storage backend to use to store the jobs-to-run archives
-
-		:return: an implementation of
-		:rtype: StorageServicePrototype
-		"""
-		if not self._jobs_storage:
-			self._jobs_storage = self._get_storage(self.storage_backend.jobs_container())
-		return self._jobs_storage
-
-	# clem 21/04/2016
-	@property
-	def _result_storage(self):
-		""" The storage backend to use to store the results archives
-
-		:return: an implementation of
-		:rtype: StorageServicePrototype
-		"""
-		if not self._data_storage:
-			self._data_storage = self._get_storage(self.storage_backend.data_container())
-		return self._data_storage
-
-	# clem 21/04/2016
-	@property
-	def _docker_storage(self):
-		""" The storage backend to use to store the storage backend files
-
-		:return: an implementation of
-		:rtype: StorageServicePrototype
-		"""
-		if not self.__docker_storage:
-			self.__docker_storage = self._get_storage(self.storage_backend.management_container())
-		return self.__docker_storage
+	# 15/09/2017 moved to super class (compute_interface_module)
+	# _job_storage
+	# _result_storage
+	# _docker_storage
 
 	#######################
 	#  ASSEMBLY SPECIFIC  #
@@ -798,10 +767,11 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		
 		if self.apply_config() and self._upload_assembly():
 			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
-			env = self._job_storage.load_environement
-			env.update(self.execut_obj.remote_env_config)
-			env.update(self.engine_obj.remote_env_config)
-			env.update(self.target_obj.remote_env_config)
+			# env = self._job_storage.load_environement
+			# env.update(self.execut_obj.remote_env_config)
+			# env.update(self.engine_obj.remote_env_config)
+			# env.update(self.target_obj.remote_env_config)
+			env = self.remote_env_conf
 			# TODO add host_sup passing
 			self.my_run = DockerRun(self.config_image,
 				self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
