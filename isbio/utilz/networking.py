@@ -1,6 +1,6 @@
 import socket
 
-from . import get_logger, sp
+from . import get_logger, sp, unicode
 
 __version__ = '0.1.1'
 __author__ = 'clem'
@@ -63,6 +63,7 @@ def get_free_port():
 
 
 # clem 12/10/2016
+# FIXME not PY3 compliant
 def get_http_response(target_url, timeout=5):
 	""" Return the urllib2 response object from target url
 	Warning : No exception management. Do it yourself
@@ -76,6 +77,7 @@ def get_http_response(target_url, timeout=5):
 	:rtype: urllib2.OpenerDirector
 	:raises: (urllib2.URLError, urllib2.HTTPError)
 	"""
+	# noinspection PyCompatibility
 	import urllib2
 	
 	opener = urllib2.build_opener()
@@ -96,6 +98,7 @@ def get_http_code(target_url, timeout=5):
 	:return: the response HTTP code
 	:rtype: int
 	"""
+	# noinspection PyCompatibility
 	from urllib2 import URLError, HTTPError
 	code = 520
 	
@@ -150,10 +153,10 @@ def network_info(network_addr):
 		broad[3 - i / 8] += (1 << (i % 8))
 	
 	# Print information, mapping integer lists to strings for easy printing
-	print "Address:   ", ip_addr
-	print "Netmask:   ", ".".join(map(str, mask))
-	print "Network:   ", ".".join(map(str, net))
-	print "Broadcast: ", ".".join(map(str, broad))
+	print("Address:   %s" % ip_addr)
+	print("Netmask:   %s" % ".".join(map(str, mask)))
+	print("Network:   %s" % ".".join(map(str, net)))
+	print("Broadcast: %s" % ".".join(map(str, broad)))
 
 
 # clem 18/10/2016
@@ -162,6 +165,7 @@ def is_ip_in_network(ip_addr, network):
 		ip_addr = unicode(ip_addr)
 	if isinstance(network, str):
 		network = unicode(network)
+	# noinspection PyCompatibility
 	from ipaddress import ip_network, ip_address
 	return ip_address(ip_addr) in ip_network(network)
 	
@@ -172,7 +176,9 @@ def resolve_dns(hostname):
 
 
 # clem 07/07/2017
+# noinspection PyPep8Naming
 def get_HTTP_body(url, timeout=5):
+	# noinspection PyCompatibility
 	import urllib2
 	return str(urllib2.urlopen(url, timeout=timeout).read())
 

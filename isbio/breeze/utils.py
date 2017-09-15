@@ -56,16 +56,20 @@ and also notable custom functions as :
 
 	_ gen_file_from_template() (generates or return a content from a template file and a dict)
 """
-from django.conf import settings
 from datetime import datetime
+# noinspection PyUnresolvedReferences
+from decorators import *
+# noinspection PyUnresolvedReferences
+from django.conf import settings
 from django.utils import timezone
-# from django.http import HttpRequest as DjangoHttpRequest
 from django.core.handlers.wsgi import WSGIRequest
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, load_backend # , get_user
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.base import SessionBase
+# noinspection PyUnresolvedReferences
 from breeze.b_exceptions import * # DO NOT DELETE : used in sub-modules
+from importlib import import_module
 from utilz import * # import all the non Breeze / non Django related utilities
-from decorators import *
 
 # 01/04/2016 : Moved all non-Django related code to utilities package
 # THIS MODULE SHOULD ONLY BE USED FOR DJANGO / BREEZE RELATED CODE, THAT EITHER USE THE DB, OR IMPORTS
@@ -77,7 +81,7 @@ from utilz import is_ip_in_network
 
 
 def console_print(text, date_f=None):
-	print console_print_sub(text, date_f=date_f)
+	print(console_print_sub(text, date_f=date_f))
 
 
 def console_print_sub(text, date_f=None):
@@ -187,6 +191,7 @@ def fix_file_acl_interface(fid):
 	return False
 
 
+# noinspection SpellCheckingInspection
 def norm_proj_p(path, repl=''):
 	"""
 	:type path: str
@@ -223,15 +228,16 @@ class ContentType(object):
 	FORCE_DL = 'application/force-download'
 	OCTET_STREAM = 'application/octet-stream'
 
+
 c_t = ContentType
 
 
 # clem 22/12/2012 add a verbose level
 def verbose_base(self):
-	def embd(msg, *args, **kwargs):
+	def sub(msg, *args, **kwargs):
 		if settings.VERBOSE:
 			self.debug(msg, *args, **kwargs)
-	return embd
+	return sub
 
 
 # clem 22/12/2012 override get_logger to add a verbose level
@@ -248,14 +254,8 @@ class MyLogger(Logger):
 		super(MyLogger, self).__init__(name, level + 1)
 		self.verbose = verbose_base(self)
 
-import logging
+
 logging.setLoggerClass(MyLogger)
-
-# get_logger = get_logger_bis
-
-from importlib import import_module
-from django.conf import settings
-from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, load_backend # , get_user
 
 
 def check_session(session_id):
@@ -300,8 +300,6 @@ class PyPackageLister(object):
 class PyPackage(object):
 	BASE_URL = 'https://pypi.python.org/pypi/%s'
 	JSON_URL = 'https://pypi.python.org/pypi/%s/json'
-	import sys
-	import importlib
 	
 	name = ''
 	
@@ -323,8 +321,10 @@ class PyPackage(object):
 	
 	@property
 	def version(self):
+		import sys
+		import importlib
 		try:
-			a_module = self.sys.modules.get(self.name, None) or self.importlib.import_module(self.name)
+			a_module = sys.modules.get(self.name, None) or importlib.import_module(self.name)
 			if hasattr(a_module, '__version__'):
 				return a_module.__version__
 		except ImportError:
@@ -352,9 +352,9 @@ def autogen_context_dict(request, flat=False):
 	def filter_functions():
 		a_list = list_context_functions()
 		b_list = list()
-		for each in a_list:
-			if not each.__name__.startswith('__') and each.__module__ == 'breeze.context':
-				b_list.append(each)
+		for each2 in a_list:
+			if not each2.__name__.startswith('__') and each2.__module__ == 'breeze.context':
+				b_list.append(each2)
 		return b_list
 	
 	a_dict = dict()
@@ -377,7 +377,7 @@ def is_http_client_in_fimm_network(request):
 
 
 # clem 07/09/2017
-def get_FQDN(request=None):
+def get_fqdn(request=None):
 	""" Return the FQDN from Site.domain with validation against public ip, or public IP
 	
 	:rtype: str

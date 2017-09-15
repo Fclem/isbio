@@ -1,3 +1,4 @@
+from __future__ import print_function
 from common import *
 from webhooks import hooker
 
@@ -59,7 +60,7 @@ def do_self_git_pull():
 		import subprocess
 		command = 'sleep 1 && ' + settings.API_PULL_COMMAND
 		subprocess.Popen(command, shell=True)
-		print (TermColoring.ok_green('$ ') + TermColoring.ok_blue(command))
+		print(TermColoring.command(command, TermColoring.ok_blue))
 		return True
 	except Exception as e:
 		logger.exception(str(e))
@@ -77,10 +78,8 @@ def do_r_source_git_pull():
 	:rtype: bool
 	"""
 	try:
-		# logger.warning('NOT_IMPLEMENTED')
-		# print (TermColoring.warning('NOT_IMPLEMENTED : R PULL'))
 		command = 'FOLDER=`pwd` && cd /projects/breeze/code/ && %s && cd $FOLDER' % settings.GIT_COMMAND
-		print(TermColoring.ok_green('$ ') + TermColoring.ok_blue(command))
+		print(TermColoring.command(command, TermColoring.ok_blue))
 		return not os.system(command) # FIXME
 		# return True
 	except Exception as e:
