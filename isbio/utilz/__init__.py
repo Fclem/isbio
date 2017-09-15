@@ -1,5 +1,5 @@
-import sys
 # imports from sub-modules (the order is CRITICAL)
+from py2plus3 import *
 from system import *
 from pythonic import *
 from my_logging import *
@@ -13,26 +13,6 @@ from time import sleep
 # DO NOT HAVE ANY BREEZE NOR DJANGO RELATED CODE IN THIS MODULE
 # this module is intended to have utilities function used in breeze, but must remain self-contained
 # i.e. NO Breeze related code, no Django-specific code, no imports from Breeze nor Django
-
-IS_PY2 = sys.version_info.major == 2
-IS_PY3 = sys.version_info.major == 3
-if IS_PY3:
-	# noinspection PyShadowingBuiltins
-	str = bytes
-	# noinspection PyShadowingBuiltins
-	basestring = str
-	# noinspection PyShadowingBuiltins
-	unicode = str
-else:
-	try:
-		# noinspection PyShadowingBuiltins,PyUnboundLocalVariable
-		unicode = unicode
-	finally:
-		pass
-	# noinspection PyShadowingBuiltins,PyCompatibility
-	basestring = basestring
-	# noinspection PyShadowingBuiltins
-	str = str
 
 
 # TODO rewrite, as a class maybe ?

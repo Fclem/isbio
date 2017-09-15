@@ -1,7 +1,5 @@
 # noinspection PyUnresolvedReferences
 from threading import Thread, Lock
-# noinspection PyUnresolvedReferences
-from typing import Callable
 import json
 import os
 # noinspection PyUnresolvedReferences
@@ -148,7 +146,6 @@ class TermColoring(enumerate):
 		""" return value or return print_func(value)
 		
 		:type value: basestring
-		:type print_func: Callable[[basestring], Any]
 		:rtype: basestring | (print_func)
 		"""
 		
