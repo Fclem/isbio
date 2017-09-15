@@ -1315,23 +1315,14 @@ class DockerClient(object):
 		return DockerImage(self._inspect_image(image_desc))
 	
 	# clem 14/09/2017
-	def _update_image_data(self, image): # FIXME design
-		""" Ask the API for updated info about the image
-
-		:type image: DockerImage
-		:rtype: DockerImage
-		"""
-		assert isinstance(image, DockerImage)
-		image.__dict__.update(self._inspect_image(str(image)))
-		return image
-	
-	# clem 14/09/2017
-	def _update_image_data_in_place(self, image_id):
+	def _update_image_data_in_place(self, image):
 		""" Ask the API for updated info about the image, and update it in situ
 
-		:type image_id: DockerImage | str
+		:type image: DockerImage | str
 		"""
-		self.get_image(str(image_id)).__dict__.update(self._inspect_image(str(image_id)))
+		if not isinstance(image, DockerImage):
+			image = self.get_image(str(image))
+		image.__dict__.update(self._inspect_image(str(image)))
 
 	#
 	# CLASS INTERFACE
@@ -1732,20 +1723,14 @@ class DockerClient(object):
 		assert isinstance(event, DockerEvent)
 		self._event_list.append(event)
 
-		if event.description != DockerEventCategories.UNTAG:
+		if event.description == DockerEventCategories.UNTAG:
 			if event.Type == 'image':
 				self._del_res(self.__image_dict_by_id, event.res_id)
-		if event.description != DockerEventCategories.TAG:
+		if event.description == DockerEventCategories.TAG:
 			if event.Type == 'image':
-				# image = self.get_image(event.res_id)  # self.__image_dict_by_id[event.res_id]
-				# update the image object
-				# self.__image_dict_by_id[event.res_id] = self._update_image_data(image)
 				self._update_image_data_in_place(event.res_id)
-		if event.description != DockerEventCategories.PULL:
+		if event.description == DockerEventCategories.PULL:
 			if event.Type == 'image':
-				# image = self.get_image(event.res_id)
-				# update the image object
-				# self.__image_dict_by_id[event.res_id] = self._update_image_data(image)
 				self._update_image_data_in_place(event.res_id)
 		if event.description == DockerEventCategories.DELETE:
 			if event.Type == 'image':
@@ -1788,9 +1773,10 @@ class DockerClient(object):
 	# @new_thread
 	def _new_event(self, event_literal):
 		event = DockerEvent(event_literal, self)
-		cont = event.get_container(True) # get rel. container, with no refresh (the container might not exist anymore)
+		# get rel. container, with no refresh (the container might not exist anymore)
+		cont = event.get_container(True) if event.Type == 'container' else None
 		# process the event (for example removing object from image or container dict)
-		if self._process_event(event, cont):
+		if self._process_event(event, cont) and event.Type == 'container':
 			cont = event.get_container() # the container has not been deleted / destroy we update it's data
 			# dispatch the event to the related container
 			self._dispatch_event(event, cont)
@@ -1978,7 +1964,8 @@ class DockerClient(object):
 		assert isinstance(image_ids, dict)
 		self.__image_dict_by_tag = dict()
 		for image in image_ids.values():
-			image = self._update_image_data(image)
+			# image = self._update_image_data(image)
+			self._update_image_data_in_place(image)
 			for each in image.full_names:
 				self.__image_dict_by_tag[each] = image
 		return self.__image_dict_by_tag
