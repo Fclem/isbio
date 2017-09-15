@@ -1,6 +1,9 @@
+# noinspection PyUnresolvedReferences
 from logging import getLogger, getLoggerClass, LoggerAdapter, Logger
 from time import time
 from . import this_function_caller_name
+# noinspection PyUnresolvedReferences
+import logging
 
 __version__ = '0.1.1'
 __author__ = 'clem'
@@ -56,7 +59,7 @@ class Timer(object):
 class LoggerTimer(Timer):
 	@staticmethod
 	def default_logger(msg):
-		print msg
+		print(msg)
 
 	def __init__(self, prefix=None, func=None):
 		super(LoggerTimer, self).__init__() # not sure about that, TODO check
@@ -82,6 +85,6 @@ class LoggerTimer(Timer):
 
 
 # clem 29/09/2015 writing shortcut
-def logger_timer(function):
+def logger_timer(func):
 	a = LoggerTimer(func=get_logger('timing').debug)
-	return a(function)
+	return a(func)

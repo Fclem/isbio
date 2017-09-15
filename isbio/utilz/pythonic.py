@@ -3,7 +3,7 @@ import gc
 import inspect
 from collections import OrderedDict
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -42,16 +42,16 @@ def get_named_tuple(class_name, a_dict):
 
 
 # moved from settings on 19/05/2016
-def recur_rec(nb, function, args):
+def recur_rec(nb, func, args):
 	if nb > 0:
-		return recur_rec(nb - 1, function, function(args))
+		return recur_rec(nb - 1, func, func(args))
 	return args
 
 
 # moved from settings on 19/05/2016
-def recur(nb, function, args):
+def recur(nb, func, args):
 	while nb > 0:
-		args = function(args)
+		args = func(args)
 		nb -= 1
 	return args
 
@@ -70,6 +70,7 @@ def not_imp(self): # writing shortcut for abstract classes
 # clem 27/05/2016
 class ClassProperty(property):
 	def __get__(self, cls, owner=None):
+		# noinspection PyCallingNonCallable
 		return classmethod(self.fget).__get__(None, owner)()
 	
 
@@ -84,6 +85,7 @@ class MagicConst(StaticPropertyBase):
 	@StaticPropertyBase
 	def over(self):
 		return self.__name__
+
 
 magic_const = MagicConst
 classproperty = ClassProperty
@@ -129,10 +131,11 @@ class Struct(object):
 
 
 # clem 15/12/2016
+# noinspection PyTypeChecker
 def magic_const_object_from_list(a_list):
 	magic_dict = dict()
 	for each in a_list:
-		magic_dict.update({ each: magic_const(property()) })
+		magic_dict.update({each: magic_const(property())})
 	return Struct(**magic_dict)
 
 
@@ -147,9 +150,9 @@ def package_contents(package_name):
 	if a_file:
 		raise ImportError('Not a package: %r', package_name)
 	# Use a set because some may be both source and compiled.
-	return set([os.path.splitext(module)[0]
-		for module in os.listdir(pathname)
-		if module.endswith(MODULE_EXTENSIONS)])
+	return set([os.path.splitext(a_module)[0]
+		for a_module in os.listdir(pathname)
+		if a_module.endswith(MODULE_EXTENSIONS)])
 
 
 # clem 10/10/2016 from http://stackoverflow.com/a/4506081/5094389
@@ -173,7 +176,7 @@ def this_function_own_object_old():
 	return funcs[0] if funcs else None
 
 
-lambda_cache = { }
+lambda_cache = dict()
 
 
 # clem 14/10/2016 from http://metapython.blogspot.fi/2010/11/recursive-lambda-functions.html
@@ -183,6 +186,7 @@ def this_function_own_object():
 	caller_frame = inspect.currentframe(1)
 	code = caller_frame.f_code
 	if code not in lambda_cache:
+		# noinspection PyArgumentList
 		lambda_cache[code] = FunctionType(code, caller_frame.f_globals)
 	return lambda_cache[code]
 
@@ -212,11 +216,11 @@ def this_function_caller_name(delta=0):
 
 
 # clem 06/06/2017
-def list_functions_from_module(module):
+def list_functions_from_module(a_module):
 	import types
 	
-	return [module.__dict__.get(a) for a in dir(module)
-		if isinstance(module.__dict__.get(a), types.FunctionType)]
+	return [a_module.__dict__.get(a) for a in dir(a_module)
+		if isinstance(a_module.__dict__.get(a), types.FunctionType)]
 
 
 ####################
@@ -267,7 +271,7 @@ class EnsDict(dict):
 		c = a - b
 		new_dict = dict()
 		for each in c:
-			new_dict.update({ each: sd.get(each, None) })
+			new_dict.update({each: sd.get(each, None)})
 		return new_dict
 	
 	def __and__(self, other): # A inter B (everything that is both in A and B)
@@ -277,7 +281,7 @@ class EnsDict(dict):
 		c = a & b
 		new_dict = dict()
 		for each in c:
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		return new_dict
 	
 	def __or__(self, other): # A union B (A union B, everything from A, and everything from B) i.e. (A / B) + A inter
@@ -288,7 +292,7 @@ class EnsDict(dict):
 		c = a | b
 		new_dict = dict()
 		for each in c:
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		return new_dict
 	
 	def __xor__(self, other): # (A + B) / (A inter B) (everything in A and not in B, and everything in B and not in A)
@@ -304,9 +308,9 @@ class EnsDict(dict):
 		d = b - a
 		new_dict = dict()
 		for each in c:
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		for each in d:
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		return new_dict
 	
 	def __add__(self, other): # ???
@@ -314,9 +318,9 @@ class EnsDict(dict):
 		sd, od = self.sd, self.__data(other)
 		new_dict = dict()
 		for each in sd.keys():
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		for each in od.keys():
-			new_dict.update({ each: (sd.get(each, None), od.get(each, None)) })
+			new_dict.update({each: (sd.get(each, None), od.get(each, None))})
 		return new_dict
 	
 	def __repr__(self):
@@ -371,7 +375,7 @@ class AutoOrderedDict(OrderedDict):
 				if each in a_dict:
 					self[each] = a_dict[each]
 		elif a_dict and not order_list: # values in same "order" as the original dict
-			for k, v in a_dict.iteritems():
+			for k, v in a_dict.items():
 				self[k] = v
 		elif order_list and not a_dict: # order without values, save the order, init all value to None
 			for each in order_list:

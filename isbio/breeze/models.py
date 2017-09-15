@@ -1347,7 +1347,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		from django.core.urlresolvers import reverse
 		from breeze.views import job_url_hook
 		md5 = get_file_md5(self._rexec.path)
-		return 'http://%s%s' % (get_FQDN(), reverse(job_url_hook, args=(self.instance_type[0], self.id, md5)))
+		return 'http://%s%s' % (get_fqdn(), reverse(job_url_hook, args=(self.instance_type[0], self.id, md5)))
 
 	# SPECIFICS
 

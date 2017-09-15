@@ -7,7 +7,7 @@ from django.conf import settings
 login_required_original = login_required
 
 
-def decorator_tester(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None, condition=None):
+def decorator_tester(func=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None, condition=None):
 	assert callable(condition)
 	
 	login_url = login_url or settings.DEFAULT_LOGIN_URL
@@ -19,8 +19,8 @@ def decorator_tester(function=None, redirect_field_name=REDIRECT_FIELD_NAME, log
 		login_url=login_url,
 		redirect_field_name=redirect_field_name
 	)
-	if function:
-		return actual_decorator(function)
+	if func:
+		return actual_decorator(func)
 	return actual_decorator
 
 
@@ -34,13 +34,13 @@ def __users_authenticated_not_guest(user):
 	return user.is_authenticated()
 
 
-def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
+def login_required(func=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
 	"""
 	Decorator for views that checks that the user is logged in, redirecting
 	to the log-in page if necessary.
 	"""
 	predicate = __users_authenticated_not_guest if settings.RESTRICT_GUEST_TO_SPECIFIC_VIEWS else __users_all_authenticated
-	return decorator_tester(function, redirect_field_name, login_url, predicate)
+	return decorator_tester(func, redirect_field_name, login_url, predicate)
 
 
 from django.contrib.auth import decorators as base_decorators
@@ -49,12 +49,12 @@ base_decorators.login_required = login_required
 
 
 # clem 31/03/2017
-def allow_guest(function=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
+def allow_guest(func=None, redirect_field_name=REDIRECT_FIELD_NAME, login_url=None):
 	"""
 	Decorator for views that checks that the user is logged in, redirecting
 	to the log-in page if necessary.
 	"""
-	return decorator_tester(function, redirect_field_name, login_url,
+	return decorator_tester(func, redirect_field_name, login_url,
 		__users_all_authenticated)
 
 

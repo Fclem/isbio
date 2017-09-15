@@ -1,7 +1,12 @@
+# noinspection PyUnresolvedReferences
 from threading import Thread, Lock
+# noinspection PyUnresolvedReferences
+from typing import Callable
 import json
 import os
+# noinspection PyUnresolvedReferences
 import copy
+# noinspection PyUnresolvedReferences
 import abc
 import base64
 import subprocess as sp
@@ -143,9 +148,10 @@ class TermColoring(enumerate):
 		""" return value or return print_func(value)
 		
 		:type value: basestring
-		:type print_func: function
+		:type print_func: Callable[[basestring], Any]
 		:rtype: basestring | (print_func)
 		"""
+		
 		if print_func:
 			return print_func(value)
 		else:
@@ -202,7 +208,7 @@ def get_term_cmd_stdout(cmd_list_with_args, check_if_command_is_available=True):
 				return s
 		return ret
 	except OSError as e:
-		print 'EXCEPTION (UNLOGGED) while running cmd %s : %s' % (str(cmd_list_with_args), str(e))
+		print('EXCEPTION (UN-LOGGED) while running cmd %s : %s' % (str(cmd_list_with_args), str(e)))
 		return ''
 
 

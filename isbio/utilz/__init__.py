@@ -1,3 +1,4 @@
+import sys
 # imports from sub-modules (the order is CRITICAL)
 from system import *
 from pythonic import *
@@ -6,12 +7,32 @@ from file_system import *
 from networking import *
 import git
 from object_cache import ObjectCache
-import time
+# noinspection PyUnresolvedReferences
 from time import sleep
 
 # DO NOT HAVE ANY BREEZE NOR DJANGO RELATED CODE IN THIS MODULE
 # this module is intended to have utilities function used in breeze, but must remain self-contained
 # i.e. NO Breeze related code, no Django-specific code, no imports from Breeze nor Django
+
+IS_PY2 = sys.version_info.major == 2
+IS_PY3 = sys.version_info.major == 3
+if IS_PY3:
+	# noinspection PyShadowingBuiltins
+	str = bytes
+	# noinspection PyShadowingBuiltins
+	basestring = str
+	# noinspection PyShadowingBuiltins
+	unicode = str
+else:
+	try:
+		# noinspection PyShadowingBuiltins,PyUnboundLocalVariable
+		unicode = unicode
+	finally:
+		pass
+	# noinspection PyShadowingBuiltins,PyCompatibility
+	basestring = basestring
+	# noinspection PyShadowingBuiltins
+	str = str
 
 
 # TODO rewrite, as a class maybe ?
@@ -65,10 +86,10 @@ def advanced_pretty_print(d, indent=0, open_obj=False, get_output=False):
 		if get_output:
 			return content
 		else:
-			print content
+			print(content)
 			return ''
 
-	def multi_line_ident(txt):
+	def multi_line_indent(txt):
 		return txt.replace('\n', '\n' + '\t' * (indent + 1))
 
 	iterable = get_iter(d)
@@ -80,14 +101,14 @@ def advanced_pretty_print(d, indent=0, open_obj=False, get_output=False):
 			buff += str(advanced_pretty_print(el, indent + 1, open_obj, get_output))
 			i += 1
 	elif type(d) is dict or type(iterable) is dict:
-		for key, value in iterable.iteritems():
+		for key, value in iterable.items():
 			buff += out('\t' * indent + str(key) + extra_info(value))
 			if isinstance(value, (dict, list)):
 				buff += str(advanced_pretty_print(value, indent + 1, open_obj, get_output))
 			else:
-				buff += out('\t' * (indent + 1) + multi_line_ident(str(repr(value))))
+				buff += out('\t' * (indent + 1) + multi_line_indent(str(repr(value))))
 	else:
-		buff += out(u'\t' * (indent + 1) + multi_line_ident(unicode(iterable)))
+		buff += out(u'\t' * (indent + 1) + multi_line_indent(unicode(iterable)))
 
 	# if get_output:
 	return buff
@@ -121,12 +142,12 @@ def gen_file_from_template(template_path, sub_dict, output_path=None, safe=True)
 	:rtype: bool or basestring
 	"""
 	from os.path import exists, expanduser
-	assert isinstance(template_path, (str, unicode))
+	assert isinstance(template_path, basestring)
 	try:
 		assert exists(template_path)
 	except AssertionError:
 		logger.error('Not found: %s' % template_path)
-	assert output_path is None or isinstance(output_path, (str, unicode))
+	assert output_path is None or isinstance(output_path, basestring)
 	assert isinstance(sub_dict, dict)
 
 	from string import Template
@@ -171,29 +192,29 @@ def get_key(name='', caching=True):
 		logger.exception(str(e))
 		pass
 	msg = 'could not read key %s from %s' % (name, config_root)
-	print 'WARNING: %s' % msg
+	print('WARNING: %s' % msg)
 	logger.warning(msg)
 	return ''
 
 
+# FIXME misplace as it's Django specific
 from django.contrib.auth.decorators import login_required as login_rq, user_passes_test as user_p_test
 from django.core.exceptions import PermissionDenied
 
 
 # clem 01/06/2016 # FIXME not working
 @login_rq(login_url='/')
-def admin_only(function):
+def admin_only(func):
 	""" Wrapper to check that user has admin rights
 
-	:type function:
-	:rtype:
+	:type func: Callable
 	"""
 
 	actual_decorator = user_p_test(
 		lambda u: u.is_superuser or u.is_staff,
 		login_url='/'
 	)
-	return actual_decorator if not function else actual_decorator(function)
+	return actual_decorator if not func else actual_decorator(func)
 
 
 # clem 01/06/2016
