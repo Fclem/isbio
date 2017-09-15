@@ -18,12 +18,24 @@ __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
-AZURE_ACCOUNT = 'breezedata'
-AZURE_PWD_FILE = 'azure_pwd_%s' % AZURE_ACCOUNT
+# AZURE_ACCOUNT = os.getenv('AZURE_ACCOUNT') # 'breezedata'
+
+
+# clem 15/09/2017
+def azure_account():
+	return os.getenv('AZURE_ACCOUNT')
+
+
+# clem 15/09/2017
+def azure_pwd_file():
+	return 'azure_pwd_%s' % azure_account()
+
+
+# AZURE_PWD_FILE = 'azure_pwd_%s' % AZURE_ACCOUNT
 
 
 def azure_key():
-	return get_key_bis(AZURE_PWD_FILE) or os.getenv('AZURE_KEY')
+	return get_key_bis(azure_pwd_file()) or os.getenv('AZURE_KEY') or os.getenv(azure_pwd_file())
 
 
 # clem 14/04/2016
@@ -101,7 +113,8 @@ class AzureStorage(BlobStorageService):
 	# clem 06/09/2017
 	@property
 	def load_environement(self):
-		return {'AZURE_KEY': azure_key()}
+		# return {'AZURE_KEY': azure_key()}
+		return {azure_pwd_file(): azure_key()}
 
 	# clem 15/04/2016
 	def upload(self, blob_name, file_path, container=None, verbose=True):
@@ -212,7 +225,7 @@ class AzureStorage(BlobStorageService):
 
 # clem 29/04/2016
 def back_end_initiator(container):
-	return AzureStorage(AZURE_ACCOUNT, azure_key(), container)
+	return AzureStorage(azure_account(), azure_key(), container)
 
 
 if __name__ == '__main__':
