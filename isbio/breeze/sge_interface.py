@@ -147,23 +147,7 @@ class SGEInterfaceConnector(ComputeInterfaceBase):
 		}
 		return gen_file_from_template(self.SGE_RQ_TEMPLATE, a_dict, '~/%s' % self.SGE_REQUEST_FN)
 	
-	# clem 09/05/2016
-	def apply_config(self):
-		""" Applies the proper Django settings, and environement variables for SGE config
-
-		:return: if succeeded
-		:rtype: bool
-		"""
-		if self.target_obj:
-			self.engine_obj.set_local_env()
-			self.execut_obj.set_local_env()
-			# self.target_obj.set_local_env()
-			self.target_obj.set_local_env(self.target_obj.engine_section)
-			self.engine_obj.set_local_env()
-			
-			# return self.write_config()
-			return True
-		return False
+	# del apply_config on 15/09/2017 moved to super class
 	
 	# clem 20/10/2016
 	@property

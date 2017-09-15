@@ -105,6 +105,23 @@ class ComputeInterfaceBase(object):
 		bridge = log_obj.process
 		log_obj.process = lambda msg, kwargs: bridge('<%s> %s' % (self._compute_target, str(msg)), kwargs)
 		return log_obj
+		
+	# clem 09/05/2016 from sge_interface
+	def apply_config(self):
+		""" Applies the proper Django settings, and environement variables for SGE config
+
+		:return: if succeeded
+		:rtype: bool
+		"""
+		if self.target_obj:
+			self.engine_obj.set_local_env()
+			self.execut_obj.set_local_env()
+			self.target_obj.set_local_env(self.target_obj.engine_section)
+			self.engine_obj.set_local_env()
+			
+			# return self.write_config()
+			return True
+		return False
 	
 	# clem 14/05/2016
 	@property

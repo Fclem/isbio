@@ -336,7 +336,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	# SSH_LOOKUP_BASE = 'ps aux|grep "%s"|grep -v grep'
 	# CONTAINER SPECIFIC
 	NORMAL_ENDING = ['Running R script... done !', 'Success !', 'done']
-	AZURE_KEY_VAR = 'AZURE_KEY'
+	AZURE_KEY_VAR = 'AZURE_KEY' # FIXME obsolete
 
 	LINE3 = '\x1b[34mCreating archive /root/out.tar.xz'
 	LINE2 = '\x1b[1m''create_blob_from_path\x1b[0m(' # FIXME NOT ABSTRACT
@@ -795,7 +795,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 	def send_job(self):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
-		if self._upload_assembly():
+		
+		if self.apply_config() and self._upload_assembly():
 			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
 			env = self._job_storage.load_environement
 			env.update(self.execut_obj.remote_env_config)
