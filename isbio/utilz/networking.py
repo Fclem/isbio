@@ -1,6 +1,6 @@
 import socket
 
-from . import get_logger, sp, unicode
+from . import get_logger, sp, IS_PY2
 
 __version__ = '0.1.1'
 __author__ = 'clem'
@@ -160,12 +160,12 @@ def network_info(network_addr):
 
 
 # clem 18/10/2016
+# noinspection PyCompatibility
 def is_ip_in_network(ip_addr, network):
-	if isinstance(ip_addr, str):
+	if isinstance(ip_addr, str) and IS_PY2:
 		ip_addr = unicode(ip_addr)
-	if isinstance(network, str):
+	if isinstance(network, str) and IS_PY2:
 		network = unicode(network)
-	# noinspection PyCompatibility
 	from ipaddress import ip_network, ip_address
 	return ip_address(ip_addr) in ip_network(network)
 	
