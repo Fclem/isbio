@@ -109,8 +109,9 @@ class AzureStorage(BlobStorageService):
 	@property
 	def load_environement(self):
 		return {
-			azure_pwd_file():  azure_key(),
-			AZURE_ACCOUNT_VAR: azure_account()
+			# azure_pwd_file():  azure_key(),
+			AZURE_KEY_VAR: azure_key(),
+			# AZURE_ACCOUNT_VAR: azure_account()
 		}
 
 	# clem 15/04/2016
