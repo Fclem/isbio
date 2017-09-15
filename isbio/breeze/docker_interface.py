@@ -314,9 +314,6 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	# ssh_tunnel = None
 	auto_remove = False # True
-	__docker_storage = None
-	_data_storage = None
-	_jobs_storage = None
 	_run_server = None
 	run_id = '' # stores the md5 of the sent archive ie. the job id
 	proc = None

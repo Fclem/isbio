@@ -12,10 +12,31 @@ __date__ = '04/05/2016'
 # TODO 	provider with the runnable
 
 
-# clem 21/10/2016
-class ComputeInterfaceBase(object):
+# clem 15/09/2017
+class ComputeInterfaceBasePrototype(object):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
+	
+	# clem 20/10/2016
+	@abc.abstractmethod
+	def online(self):
+		""" Tells if the target is online
+
+		:return:
+		:rtype: bool
+		:raise: IOError, Exception
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
+	
+	# clem 21/10/2016
+	@abc.abstractmethod
+	def can_connect(self):
+		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
+
+
+# clem 21/10/2016
+class ComputeInterfaceBase(ComputeInterfaceBasePrototype):
+	__metaclass__ = abc.ABCMeta
 	_storage_backend = None
 	_missing_exception = None
 	_compute_target = None
@@ -65,22 +86,6 @@ class ComputeInterfaceBase(object):
 		:rtype: bool
 		"""
 		return self._compute_target.is_enabled
-	
-	# clem 20/10/2016
-	@abc.abstractmethod
-	def online(self):
-		""" Tells if the target is online
-
-		:return:
-		:rtype: bool
-		:raise: IOError, Exception
-		"""
-		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-	
-	# clem 21/10/2016
-	@abc.abstractmethod
-	def can_connect(self):
-		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
 	
 	# clem 20/10/2016
 	@property
@@ -149,22 +154,15 @@ class ComputeInterfaceBase(object):
 		return None
 
 
-# clem 04/05/2016
-class ComputeInterface(ComputeInterfaceBase):
-	# __metaclass__ = abc.ABCMeta
-	
-	# clem 21/10/2016
-	def __init__(self, compute_target, storage_backend=None):
-		super(ComputeInterface, self).__init__(compute_target, storage_backend)
-		assert isinstance(self._runnable, Runnable)
-
+# clem 15/09/2017
+class ComputeInterfacePrototype(ComputeInterfaceBasePrototype):
 	# clem 06/10/2016
 	@abc.abstractmethod
 	def name(self):
 		""" This method should return the name of the engine/version executing the workload
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	# clem 23/05/2016
 	@abc.abstractmethod
 	def assemble_job(self):
@@ -174,7 +172,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	@abc.abstractmethod
 	def send_job(self):
 		""" This function should implement the submission and triggering of the job's run
@@ -182,7 +180,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	@abc.abstractmethod
 	def get_results(self):
 		""" This function should implement the transfer and extraction of the results files from the storage backend
@@ -191,7 +189,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	# clem 06/05/2016
 	@abc.abstractmethod
 	def abort(self):
@@ -200,7 +198,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	# clem 06/05/2016
 	@abc.abstractmethod
 	def status(self):
@@ -209,7 +207,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		:rtype: str
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	# clem 06/05/2016
 	@abc.abstractmethod
 	def busy_waiting(self, *args):
@@ -223,7 +221,7 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
-
+	
 	# clem 06/05/2016
 	@abc.abstractmethod
 	def job_is_done(self):
@@ -236,7 +234,20 @@ class ComputeInterface(ComputeInterfaceBase):
 		It is advised to return a bool indicating success or failure
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
+
+
+# clem 04/05/2016
+class ComputeInterface(ComputeInterfaceBase, ComputeInterfacePrototype):
+	__metaclass__ = abc.ABCMeta
+	__docker_storage = None
+	_data_storage = None
+	_jobs_storage = None
 	
+	# clem 21/10/2016
+	def __init__(self, compute_target, storage_backend=None):
+		super(ComputeInterface, self).__init__(compute_target, storage_backend)
+		assert isinstance(self._runnable, Runnable)
+
 	def _get_storage(self, container=None):
 		return self.storage_backend.back_end_initiator(container)
 
