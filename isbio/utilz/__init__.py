@@ -8,7 +8,7 @@ from networking import *
 import git
 from object_cache import ObjectCache
 # noinspection PyUnresolvedReferences
-from time import sleep
+import time
 
 # DO NOT HAVE ANY BREEZE NOR DJANGO RELATED CODE IN THIS MODULE
 # this module is intended to have utilities function used in breeze, but must remain self-contained
