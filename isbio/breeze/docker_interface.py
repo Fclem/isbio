@@ -763,11 +763,6 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
 		
 		if self.apply_config() and self._upload_assembly():
-			# env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
-			# env = self._job_storage.load_environement
-			# env.update(self.execut_obj.remote_env_config)
-			# env.update(self.engine_obj.remote_env_config)
-			# env.update(self.target_obj.remote_env_config)
 			env = self.remote_env_conf
 			# TODO add host_sup passing
 			self.my_run = DockerRun(self.config_image,

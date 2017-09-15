@@ -1,8 +1,5 @@
 #!/usr/bin/python
 from __future__ import print_function
-
-from __builtin__ import file
-
 from blob_storage_module import * # import interface, already has os, sys and abc
 from azure.common import AzureMissingResourceHttpError as MissingResException
 from azure.storage.blob import BlockBlobService
@@ -18,12 +15,13 @@ __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
-# AZURE_ACCOUNT = os.getenv('AZURE_ACCOUNT') # 'breezedata'
+AZURE_ACCOUNT_VAR = 'AZURE_ACCOUNT'
+AZURE_KEY_VAR = 'AZURE_KEY'
 
 
 # clem 15/09/2017
 def azure_account():
-	return os.getenv('AZURE_ACCOUNT')
+	return os.getenv(AZURE_ACCOUNT_VAR)
 
 
 # clem 15/09/2017
@@ -31,11 +29,8 @@ def azure_pwd_file():
 	return 'azure_pwd_%s' % azure_account()
 
 
-# AZURE_PWD_FILE = 'azure_pwd_%s' % AZURE_ACCOUNT
-
-
 def azure_key():
-	return get_key_bis(azure_pwd_file()) or os.getenv('AZURE_KEY') or os.getenv(azure_pwd_file())
+	return get_key_bis(azure_pwd_file()) or os.getenv(AZURE_KEY_VAR) or os.getenv(azure_pwd_file())
 
 
 # clem 14/04/2016
@@ -113,8 +108,10 @@ class AzureStorage(BlobStorageService):
 	# clem 06/09/2017
 	@property
 	def load_environement(self):
-		# return {'AZURE_KEY': azure_key()}
-		return {azure_pwd_file(): azure_key()}
+		return {
+			azure_pwd_file():  azure_key(),
+			AZURE_ACCOUNT_VAR: azure_account()
+		}
 
 	# clem 15/04/2016
 	def upload(self, blob_name, file_path, container=None, verbose=True):
