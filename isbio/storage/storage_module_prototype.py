@@ -331,7 +331,7 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 		print(Bcolors.fail('FAILURE :'))
 		code = 1
 		if hasattr(e, 'msg') and e.msg:
-			print(e.msg, e.)
+			print(e.msg)
 		elif hasattr(e, 'message') and e.message:
 			print(e.message)
 		else:
