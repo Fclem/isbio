@@ -326,10 +326,12 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 				print(Bcolors.fail('Upgrade failure'))
 				exit(1)
 	except Exception as e:
+		import traceback
+		tb = traceback.format_exc()
 		print(Bcolors.fail('FAILURE :'))
 		code = 1
 		if hasattr(e, 'msg') and e.msg:
-			print(e.msg)
+			print(e.msg, e.)
 		elif hasattr(e, 'message') and e.message:
 			print(e.message)
 		else:
@@ -338,6 +340,7 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 			code = e.status_code
 		elif hasattr(e, 'code'):
 			code = e.code
+		print(tb)
 		exit(code)
 	
 

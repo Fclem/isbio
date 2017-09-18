@@ -21,6 +21,7 @@ AZURE_KEY_VAR = 'AZURE_KEY'
 
 # clem 15/09/2017
 def azure_account():
+	print('getenv(%s) = %s' % (AZURE_ACCOUNT_VAR, os.getenv(AZURE_ACCOUNT_VAR)))
 	return os.getenv(AZURE_ACCOUNT_VAR)
 
 
