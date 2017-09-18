@@ -31,7 +31,9 @@ def azure_pwd_file():
 
 
 def azure_key():
-	return get_key_bis(azure_pwd_file()) or os.getenv(AZURE_KEY_VAR) or os.getenv(azure_pwd_file())
+	key = get_key_bis(azure_pwd_file()) or os.getenv(AZURE_KEY_VAR) or os.getenv(azure_pwd_file())
+	print('key is %s' % key)
+	return key
 
 
 # clem 14/04/2016
