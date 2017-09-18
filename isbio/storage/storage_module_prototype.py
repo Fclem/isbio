@@ -512,7 +512,7 @@ def get_key_bis(name=''):
 		full_path = '%s/.%s_secret' % (__dir_path__, name)
 		print('accessing key at %s from %s' % (full_path, this_function_caller_name()))
 		with open(full_path) as f:
-			return str(f.read())[:-1]
+			return str(f.read()).replace('\n', '').replace('\r', '')
 	except IOError:
 		log.warning('could not read key %s' % name)
 	return ''
@@ -668,11 +668,11 @@ def get_key(name=''):
 	def read_key():
 		with open(full_path) as f:
 			log.debug('Read key %s from %s' % (full_path, this_function_caller_name(1)))
-			return str(f.read())[:-1]
+			return str(f.read()).replace('\n', '').replace('\r', '')
 	
 	try:
 		return read_key()
 	except Exception as e:
-		log.warning('could not read key %s from %s' % (name, secrets_root))
+		log.warning('could not read key %s from %s (%s)' % (name, secrets_root, str(e)))
 		# log.exception(str(e))
 	return ''
