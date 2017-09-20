@@ -161,18 +161,18 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		return self.__online_accessor(True)
 	
 	# clem 21/10/2016
+	# noinspection PyBroadException
 	@property
 	def can_connect(self):
 		try:
 			if self._connect():
-				# noinspection PyBroadException
 				try:
 					self.client.close()
 					self._client = None
 				except Exception:
 					pass
 				return True
-		finally:
+		except Exception:
 			return False
 	
 	# clem 12/10/2016
