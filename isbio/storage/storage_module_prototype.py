@@ -5,7 +5,7 @@ import os
 import sys
 import abc
 
-__version__ = '0.5.1'
+__version__ = '0.6'
 __author__ = 'clem'
 __date__ = '29/08/2017'
 
@@ -18,14 +18,14 @@ __file_name__ = os.path.basename(__file__)
 PRINT_LOG = True
 LOG_LEVEL = logging.DEBUG
 
-log = logging.getLogger("hubic_client")
+log = logging.getLogger("storage_IF")
 log.setLevel(LOG_LEVEL)
 if PRINT_LOG:
 	ch = logging.StreamHandler()
 	ch.setLevel(LOG_LEVEL)
 	log.addHandler(ch)
 
-# general config
+# general config # FIXME : get from config and propagate
 ENV_OUT_FILE = ('OUT_FILE', 'out.tar.xz')
 ENV_IN_FILE = ('IN_FILE', 'in.tar.xz')
 ENV_DOCK_HOME = ('DOCK_HOME', '/breeze')
@@ -53,10 +53,12 @@ ACT_CONT_MAPPING = {
 PYTHON_VERSION = sys.version_info.major
 IS_PYTHON2 = PYTHON_VERSION == 2
 IS_PYTHON3 = PYTHON_VERSION == 3
+# noinspection PyPep8
 FROM_COMMAND_LINE = lambda: __name__ == '__main__' # restrict access
 RWX__ = 0o700
 
 if IS_PYTHON2:
+	# noinspection PyCompatibility
 	basestring_t = basestring
 	
 	# clem 05/09/2017
@@ -73,6 +75,7 @@ if IS_PYTHON2:
 elif IS_PYTHON3:
 	basestring_t = str
 
+# noinspection PyUnboundLocalVariable
 MissingResException = FileNotFoundError
 
 
@@ -83,7 +86,8 @@ class StorageServicePrototype(object):
 	missing_res_exception = None
 	
 	# clem 20/04/2016
-	def _print_call(self, fun_name, args):
+	@staticmethod
+	def _print_call(fun_name, args):
 		arg_list = ''
 		if isinstance(args, basestring_t):
 			args = [args]
@@ -105,6 +109,7 @@ class StorageServicePrototype(object):
 		"""
 		assert callable(fun_object)
 		if verbose:
+			# noinspection PyUnresolvedReferences
 			self._print_call(str(fun_object.func_name), args)
 		return fun_object(*args)
 	
@@ -117,7 +122,6 @@ class StorageServicePrototype(object):
 		file_name = file_name.replace('.pyc', '.py')
 		if os.path.exists(file_name):
 			os.chmod(file_name, RWX__) # make the target file writeable for overwrite
-		# self._print_call(this_function_caller_name(), (blob_name, file_name, container))
 		# TODO check against md5 and download only if different
 		return self.download(blob_name, file_name, container)
 	
@@ -292,9 +296,9 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 	:return: exit code
 	:rtype: int
 	"""
+	global __DEV__
 	assert isinstance(storage_implementation_instance, StorageServicePrototype)
-	__DEV__ = False
-	print(os.environ)
+	__DEV__ = False # not unused, overrides child's module one
 	try:
 		storage = storage_implementation_instance
 		if action == ACTION_LIST[0]: # download the job archive from * storage
@@ -428,7 +432,7 @@ class BlockingTransfer(object): # TODO move elsewhere
 # module prototype to be used as a type abstract for the dynamic import of storage modules
 # the imported module is type annotated as this class, while it is really in fact a module that have at least
 # clem 06/09/2017
-class StorageModulePrototype(object):
+class StorageModulePrototype(module):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	
@@ -521,7 +525,15 @@ def get_key_bis(name=''):
 
 # clem 08/04/2016 (from utilities)
 def function_name(delta=0):
-	return sys._getframe(1 + delta).f_code.co_name
+	""" Return the name of the calling function (at delta=0) (provided sys implements _getframe)
+
+	:param delta: change the depth of the call stack inspection
+	:type delta: int
+
+	:rtype: str
+	"""
+	# noinspection PyProtectedMember
+	return sys._getframe(1 + delta).f_code.co_name if hasattr(sys, "_getframe") else ''
 
 
 # clem on 21/08/2015 (from utilities)
@@ -564,41 +576,41 @@ def get_file_md5(file_path):
 # from utilities
 class Bcolors(object):
 	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
+	OK_BLUE = '\033[94m'
+	OK_GREEN = '\033[92m'
 	WARNING = '\033[33m'
 	FAIL = '\033[91m'
-	ENDC = '\033[0m'
+	END_C = '\033[0m'
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
 	
 	@staticmethod
 	def ok_blue(text):
-		return Bcolors.OKBLUE + text + Bcolors.ENDC
+		return Bcolors.OK_BLUE + text + Bcolors.END_C
 	
 	@staticmethod
 	def ok_green(text):
-		return Bcolors.OKGREEN + text + Bcolors.ENDC
+		return Bcolors.OK_GREEN + text + Bcolors.END_C
 	
 	@staticmethod
 	def fail(text):
-		return Bcolors.FAIL + text + Bcolors.ENDC + ' (%s)' % __name__
+		return Bcolors.FAIL + text + Bcolors.END_C + ' (%s)' % __name__
 	
 	@staticmethod
 	def warning(text):
-		return Bcolors.WARNING + text + Bcolors.ENDC
+		return Bcolors.WARNING + text + Bcolors.END_C
 	
 	@staticmethod
 	def header(text):
-		return Bcolors.HEADER + text + Bcolors.ENDC
+		return Bcolors.HEADER + text + Bcolors.END_C
 	
 	@staticmethod
 	def bold(text):
-		return Bcolors.BOLD + text + Bcolors.ENDC
+		return Bcolors.BOLD + text + Bcolors.END_C
 	
 	@staticmethod
 	def underlined(text):
-		return Bcolors.UNDERLINE + text + Bcolors.ENDC
+		return Bcolors.UNDERLINE + text + Bcolors.END_C
 
 
 # clem 30/08/2017
@@ -646,15 +658,14 @@ def compute_speed(file_path, transfer_time):
 
 # clem 30/08/2017 form line 203 @ https://goo.gl/Wquh6Z clem 08/04/2016 + 10/10/2016
 def this_function_caller_name(delta=0):
-	""" Return the name of the calling function's caller
+	""" Return the name of the calling function's caller (for delta=0)
 
 	:param delta: change the depth of the call stack inspection
 	:type delta: int
 
 	:rtype: str
 	"""
-	import sys
-	return sys._getframe(2 + delta).f_code.co_name if hasattr(sys, "_getframe") else ''
+	return function_name(3 + delta)
 
 
 # clem 30/08/2017 from line 154 @ https://goo.gl/PeiZDk 19/05/2016
@@ -675,5 +686,4 @@ def get_key(name=''):
 		return read_key()
 	except Exception as e:
 		log.warning('could not read key %s from %s (%s)' % (name, secrets_root, str(e)))
-		# log.exception(str(e))
 	return ''

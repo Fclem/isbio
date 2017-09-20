@@ -2,14 +2,13 @@ from compute_interface_module import * # has os, abc, self.js, Runnable, Compute
 from docker_client import *
 from django.conf import settings
 from utils import safe_rm
-# from blob_storage_module import BlobStorageService
-from storage import StorageServicePrototype, StorageModulePrototype
+from storage import StorageModulePrototype # StorageServicePrototype
 from breeze.non_db_objects import RunServer
 import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.5'
+__version__ = '0.10'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -17,7 +16,6 @@ KEEP_TEMP_FILE = False # i.e. debug
 
 # clem 21/10/2016
 class DockerInterfaceConnector(ComputeInterfaceBase):
-	# __metaclass__ = abc.ABCMeta
 	ssh_tunnel = None
 	_client = None
 	__connect_port = None
@@ -82,13 +80,11 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	# clem 17/06/2016
 	@property
 	def config_image(self):
-		# return self.engine_obj.get(self.CONFIG_CONTAINER)
 		return self.get_exec_specific(self.CONFIG_SUP_IMAGE)
 	
 	# clem 17/06/2016
 	@property
 	def config_cmd(self):
-		# return self.engine_obj.get(self.CONFIG_CMD)
 		return self.get_exec_specific(self.CONFIG_SUP_CONT_CMD)
 	
 	# clem 17/06/2016
@@ -128,7 +124,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	
 	# clem 17/05/2016
 	@property
-	def docker_repo(self): # TODO check
+	def docker_repo(self):
 		return DockerRepo(self.config_hub_login, self.docker_hub_pwd, email=self.config_hub_email)
 	
 	#########################
@@ -169,13 +165,14 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	def can_connect(self):
 		try:
 			if self._connect():
+				# noinspection PyBroadException
 				try:
 					self.client.close()
 					self._client = None
-				except:
+				except Exception:
 					pass
 				return True
-		except:
+		finally:
 			return False
 	
 	# clem 12/10/2016
@@ -189,12 +186,13 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		"""
 		if not self.__connect_port: # 24/08/2017 trying to fix ssh tunneling
 			# if self.target_obj.target_use_tunnel: # FIXME
-			#	self.__connect_port = self._get_a_port()
-			#else:
+			# 	self.__connect_port = self._get_a_port()
+			# else:
 			self.__connect_port = self.config_daemon_port
 		return self.__connect_port
 	
 	# clem 10/05/2016
+	# noinspection PyBroadException
 	def _get_a_port(self):
 		""" Give the port number of an existing ssh tunnel, or return a free port if no (or more than 1) tunnel exists
 
@@ -220,7 +218,8 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		return int(get_free_port())
 	
 	# clem 08/09/2016 # This might succeed even if there is not endpoint if using an external tunneling
-	def _test_connection(self, target, handle_exceptions=False):
+	@staticmethod
+	def _test_connection(target, handle_exceptions=False):
 		time_out = 2
 		import socket
 		
@@ -235,7 +234,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 				return do_test_tcp()
 			except socket.timeout:
 				logger.warning('connect %s: Time-out' % str(target))
-			except socket.error as e:
+			except socket.error as e: # FIXME look it up
 				logger.warning('connect %s: %s' % (str(target), e[1]))
 			except Exception as e:
 				logger.exception('connect %s' % str((type(e), e)))
@@ -252,7 +251,6 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 					return False
 			if not (self.enabled and self._online and self._do_connect()):
 				logger.error('FAILURE connecting to docker daemon, cannot proceed')
-				# self._set_status(self.js.FAILED)
 				raise DaemonNotConnected
 		return True
 	
@@ -266,7 +264,6 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	# clem 07/04/2016
 	def _do_connect(self):
 		if not self._client:
-			# auto_watcher = bool(self.target_obj.runnable)
 			auto_watcher = True
 			self._client = get_docker_client(self.config_daemon_url_base, self.docker_repo, False, auto_watcher)
 		self.connected = bool(self._client.cli)
@@ -312,12 +309,10 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 
 # clem 15/03/2016
 class DockerInterface(DockerInterfaceConnector, ComputeInterface):
-	# ssh_tunnel = None
-	auto_remove = False # True
+	auto_remove = True
 	_run_server = None
 	run_id = '' # stores the md5 of the sent archive ie. the job id
 	proc = None
-	# _client = None
 	_container_lock = None
 	_label = ''
 	my_volume = DockerVolume('/home/breeze/data/', '/breeze') # FIXME (shouldn't be static)
@@ -325,15 +320,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	_container = None
 	_container_logs = ''
 	cat = DockerEventCategories
-	# _connect_port = None
-	# connected = False
 
 	# SSH_CMD_BASE = ['ssh', '-CfNnL']
 	# SSH_KILL_ALL = 'killall ssh && killall ssh'
 	# SSH_LOOKUP_BASE = 'ps aux|grep "%s"|grep -v grep'
 	# CONTAINER SPECIFIC
 	NORMAL_ENDING = ['Running R script... done !', 'Success !', 'done']
-	AZURE_KEY_VAR = 'AZURE_KEY' # FIXME obsolete
 
 	LINE3 = '\x1b[34mCreating archive /root/out.tar.xz'
 	LINE2 = '\x1b[1m''create_blob_from_path\x1b[0m(' # FIXME NOT ABSTRACT
@@ -343,13 +335,18 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 	START_TIMEOUT = 30 # Start timeout in seconds #FIXME HACK
 
-	job_file_archive_name = 'temp.tar.bz2'
-	container_log_file_name = 'container.log'
+	job_file_archive_name = 'temp.tar.bz2' # FIXME : Move to config ?
+	container_log_file_name = 'container.log'  # FIXME : Move to config
 
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
-		"""
-
-		:type storage_backend: module
+		""" TODO
+		
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: a storage module implementing StorageModulePrototype
+		:type storage_backend: StorageModulePrototype
+		:param auto_connect: Should a connection be established upon instantiation
+		:type auto_connect: bool
 		"""
 		super(DockerInterface, self).__init__(compute_target, storage_backend, auto_connect)
 		# TODO fully integrate !optional! tunneling
@@ -358,8 +355,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			self._status = self._runnable.breeze_stat
 		self._container_lock = Lock()
 
-	# ALL CONFIG SPECIFICs MOVED TO CONNECTOR
-	# ALL CONNECTION SPECIFICs MOVED TO CONNECTOR
+	# ALL CONFIG SPECIFIC MOVED TO CONNECTOR
+	# ALL CONNECTION SPECIFIC MOVED TO CONNECTOR
 	
 	# clem 11/05/2016
 	@property
@@ -369,11 +366,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	# clem 11/05/2016
 	@property
 	def log(self):
+		# noinspection PyBroadException
 		try:
 			log_obj = LoggerAdapter(self._compute_target.runnable.log_custom(1), dict())
 			bridge = log_obj.process
 			log_obj.process = lambda msg, kwargs: bridge(self.label + ' ' + str(msg), kwargs)
-		except Exception as e:
+		except Exception:
 			log_obj = None
 		return log_obj or logger
 	
@@ -572,7 +570,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		"""
 		return self.runnable_path + settings.DOCKER_SH_NAME + '.log'
 
-	def _remove_sup(self, path):
+	@staticmethod
+	def _remove_sup(path):
 		""" removes the PROJECT_FOLDER_PREFIX from the path
 
 		:param path: the path to handle
@@ -723,7 +722,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		cont = self.container
 		log = str(cont.logs)
 		the_end = log.split('\n')[-6:-1] # copy the last 5 lines
-		for (k, v) in self.LINES.iteritems():
+		for (k, v) in self.LINES.items():
 			if the_end[k].startswith(v):
 				del the_end[k]
 		if the_end != self.NORMAL_ENDING:
@@ -883,6 +882,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			return True
 		except Exception as e:
 			self.log.warning('Cannot delete %s: %s' % (self.container.name, str(e)))
+		return False
 
 
 use_caching = True and 'ObjectCache' in dir()

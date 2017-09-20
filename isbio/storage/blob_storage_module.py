@@ -1,8 +1,7 @@
-# from docker.api import container
 from __future__ import print_function
 from storage_module_prototype import *
 
-__version__ = '0.5'
+__version__ = '0.5.1'
 __author__ = 'clem'
 __date__ = '28/04/2016'
 
@@ -31,9 +30,9 @@ class BlobStorageService(StorageServicePrototype):
 	# OR you can override the 'blob_service' property
 
 	def __init__(self, login, key, container):
-		assert isinstance(login, basestring)
-		assert isinstance(key, basestring)
-		assert isinstance(container, basestring)
+		assert isinstance(login, basestring_t)
+		assert isinstance(key, basestring_t)
+		assert isinstance(container, basestring_t)
 		self.ACCOUNT_LOGIN = login
 		self.ACCOUNT_KEY = key
 		self.container = container
@@ -232,6 +231,7 @@ class BaseBlobServicePrototype(object):
 	MAX_SINGLE_GET_SIZE = 64 * 1024 * 1024
 	MAX_CHUNK_GET_SIZE = 4 * 1024 * 1024
 	
+	# noinspection PyUnusedLocal
 	@abc.abstractmethod
 	def __init__(self, account_name=None, account_key=None, sas_token=None,
 		is_emulated=False, protocol=DEFAULT_PROTOCOL, endpoint_suffix=SERVICE_HOST_BASE,
@@ -298,7 +298,7 @@ class BaseBlobServicePrototype(object):
 		:param int num_results:
 			Specifies the maximum number of containers to return. A single list
 			request may return up to 1000 contianers and potentially a continuation
-			token which should be followed to get additional resutls.
+			token which should be followed to get additional results.
 		:param bool include_metadata:
 			Specifies that container metadata be returned in the response.
 		:param str marker:
@@ -507,7 +507,7 @@ class BaseBlobServicePrototype(object):
 			range, as long as the range is less than or equal to 4 MB in size.
 		:param progress_callback:
 			Callback for progress with signature function(current, total)
-			where current is the number of bytes transfered so far, and total is
+			where current is the number of bytes transferred so far, and total is
 			the size of the blob if known.
 		:type progress_callback: callback function in format of func(current, total)
 		:param int max_connections:
@@ -643,7 +643,7 @@ class BaseBlobServicePrototype(object):
 		:type metadata: a dict mapping str to str
 		:param progress_callback:
 			Callback for progress with signature function(current, total) where
-			current is the number of bytes transfered so far, and total is the
+			current is the number of bytes transferred so far, and total is the
 			size of the blob, or None if the total size is unknown.
 		:type progress_callback: callback function in format of func(current, total)
 		:param int max_connections:

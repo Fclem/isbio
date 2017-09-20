@@ -3,7 +3,7 @@ from breeze.models import JobStat, Runnable, ComputeTarget
 from storage import StorageModulePrototype, StorageServicePrototype
 import abc
 
-__version__ = '0.1.6'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '04/05/2016'
 
@@ -53,7 +53,6 @@ class ComputeInterfaceBase(ComputeInterfaceBasePrototype):
 		assert isinstance(compute_target, ComputeTarget)
 		self._compute_target = compute_target
 		self._runnable = self._compute_target.runnable
-		# assert isinstance(self._runnable, Runnable)
 		
 		self._storage_backend = storage_backend
 		self.__storage_backend_getter()
@@ -123,8 +122,6 @@ class ComputeInterfaceBase(ComputeInterfaceBasePrototype):
 			self.execut_obj.set_local_env()
 			self.target_obj.set_local_env(self.target_obj.engine_section)
 			self.engine_obj.set_local_env()
-			
-			# return self.write_config()
 			return True
 		return False
 	
@@ -251,6 +248,13 @@ class ComputeInterface(ComputeInterfaceBase, ComputeInterfacePrototype):
 	
 	# clem 21/10/2016
 	def __init__(self, compute_target, storage_backend=None):
+		"""
+
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: the storage backend python module as defined in the target
+		:type storage_backend: StorageModulePrototype
+		"""
 		super(ComputeInterface, self).__init__(compute_target, storage_backend)
 		assert isinstance(self._runnable, Runnable)
 

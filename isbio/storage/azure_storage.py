@@ -4,7 +4,7 @@ from blob_storage_module import * # import interface, already has os, sys and ab
 from azure.common import AzureMissingResourceHttpError as MissingResException
 from azure.storage.blob import BlockBlobService
 
-__version__ = '0.5'
+__version__ = '0.5.1'
 __author__ = 'clem'
 
 
@@ -21,7 +21,6 @@ AZURE_KEY_VAR = 'AZURE_KEY'
 
 # clem 15/09/2017
 def azure_account():
-	# print('getenv(%s) = %s' % (AZURE_ACCOUNT_VAR, os.getenv(AZURE_ACCOUNT_VAR)))
 	return os.getenv(AZURE_ACCOUNT_VAR)
 
 
@@ -32,7 +31,6 @@ def azure_pwd_file():
 
 def azure_key():
 	key = get_key_bis(azure_pwd_file()) or os.getenv(AZURE_KEY_VAR) or os.getenv(azure_pwd_file())
-	# print('key is %s' % key)
 	return key
 
 
@@ -112,9 +110,7 @@ class AzureStorage(BlobStorageService):
 	@property
 	def load_environement(self):
 		return {
-			# azure_pwd_file():  azure_key(),
-			AZURE_KEY_VAR: azure_key(),
-			# AZURE_ACCOUNT_VAR: azure_account()
+			AZURE_KEY_VAR: self.ACCOUNT_KEY,
 		}
 
 	# clem 15/04/2016
@@ -137,7 +133,6 @@ class AzureStorage(BlobStorageService):
 		"""
 		if not container:
 			container = self.container
-		# err = getattr(__builtins__, 'FileNotFoundError', IOError)
 		
 		def do_upload(progress_func):
 			assert callable(progress_func)
@@ -154,7 +149,6 @@ class AzureStorage(BlobStorageService):
 			trans = BlockingTransfer(do_upload, verbose=False).do_blocking_transfer()
 			if not trans:
 				raise FileNotFoundError("Blocking Upload failed")
-			# self.blob_service.create_blob_from_path(container, blob_name, file_path)
 		else:
 			raise FileNotFoundError("File '%s' not found in '%s' !" % (os.path.basename(file_path),
 				os.path.dirname(file_path)))
@@ -192,7 +186,6 @@ class AzureStorage(BlobStorageService):
 			trans = BlockingTransfer(do_download).do_blocking_transfer()
 			if not trans:
 				raise IOError("Blocking Download failed")
-			# self.blob_service.get_blob_to_path(container, blob_name, file_path)
 			return True
 		raise MissingResException('Not found %s / %s' % (container, blob_name), 404)
 
