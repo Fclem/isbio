@@ -878,7 +878,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	def delete(self):
 		""" implements necessary cleanup feature for deletion of parent object """
 		try:
-			self.container.remove_container()
+			if self.container:
+				self.container.remove_container()
 			return True
 		except Exception as e:
 			self.log.warning('Cannot delete %s: %s' % (self.container.name, str(e)))
