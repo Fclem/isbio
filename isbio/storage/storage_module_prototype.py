@@ -1,5 +1,5 @@
 from __future__ import print_function
-from __builtin__ import module
+from types import ModuleType
 import time
 import logging
 import os
@@ -433,7 +433,7 @@ class BlockingTransfer(object): # TODO move elsewhere
 # module prototype to be used as a type abstract for the dynamic import of storage modules
 # the imported module is type annotated as this class, while it is really in fact a module that have at least
 # clem 06/09/2017
-class StorageModulePrototype(module):
+class StorageModulePrototype(ModuleType):
 	__metaclass__ = abc.ABCMeta
 	_not = "Class %s doesn't implement %s()"
 	
