@@ -294,6 +294,7 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 	"""
 	assert isinstance(storage_implementation_instance, StorageServicePrototype)
 	__DEV__ = False
+	print(os.environ)
 	try:
 		storage = storage_implementation_instance
 		if action == ACTION_LIST[0]: # download the job archive from * storage
