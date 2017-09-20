@@ -873,6 +873,15 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(0, 999)
 		return False
+		
+	# clem 20/09/2016
+	def delete(self):
+		""" implements necessary cleanup feature for deletion of parent object """
+		try:
+			self.container.remove_container()
+			return True
+		except Exception as e:
+			self.log.warning('Cannot delete %s: %s' % (self.container.name, str(e)))
 
 
 use_caching = True and 'ObjectCache' in dir()

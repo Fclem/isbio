@@ -2652,6 +2652,8 @@ class Report(Runnable, AutoJSON):
 		if self.type.shiny_report_id > 0:
 			self.type.shiny_report.unlink_report(self)
 		
+		self.target_obj.compute_interface.delete()
+		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	
 	_serialize_keys = ['id', 'name', 'author', 'type', 'created', 'project', 'target']

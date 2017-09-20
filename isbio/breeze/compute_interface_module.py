@@ -235,6 +235,12 @@ class ComputeInterfacePrototype(ComputeInterfaceBasePrototype):
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
 
+	# clem 20/09/2016
+	@abc.abstractmethod
+	def delete(self):
+		""" Should implements necessary cleanup feature for deletion of parent object """
+		raise NotImplementedError(self._not % (self.__class__.__name__, this_function_name()))
+
 
 # clem 04/05/2016
 class ComputeInterface(ComputeInterfaceBase, ComputeInterfacePrototype):
