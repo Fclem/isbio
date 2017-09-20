@@ -269,7 +269,7 @@ def input_pre_handling():
 	:return: (action, object_id, file_name)
 	:rtype: tuple[basestring, basestring, basestring]
 	"""
-	assert len(sys.argv) >= 2
+	assert len(sys.argv) >= 2, print(len(sys.argv), str(sys.argv))
 
 	aa = str(sys.argv[1])
 	bb = '' if len(sys.argv) <= 2 else str(sys.argv[2])
