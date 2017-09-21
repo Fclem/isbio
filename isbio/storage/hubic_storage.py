@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 from __future__ import print_function
 import lhubic
 from storage_module_prototype import *
@@ -274,7 +274,7 @@ class HubicClient(StorageServicePrototype):
 		:rtype: dict
 		"""
 		return dict()
-		# FIXME useless ass all was moved to config files
+		# FIXME useless as all was moved to config files OR should it be kept for non-duplication of secrets?
 		# TODO send fewer info when refresh token is available
 		return {
 			'HUBIC_CLIENT_ID':      self.client_id,
