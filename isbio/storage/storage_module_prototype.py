@@ -306,7 +306,7 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 			if not obj_id:
 				obj_id = os.environ.get(*ENV_JOB_ID)
 			path = HOME + '/' + IN_FILE
-			if not storage.download(obj_id, path):
+			if not storage.download(obj_id, path, container=ACT_CONT_MAPPING[action]):
 				exit(1)
 			else: # if the download was successful we delete the job file
 				storage.erase(obj_id)
@@ -314,12 +314,12 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 			path = HOME + '/' + OUT_FILE
 			if not obj_id: # the job id must be in env(ENV_JOB_ID[0]) if not we use either the hostname or the md5
 				obj_id = os.environ.get(ENV_JOB_ID[0], os.environ.get(ENV_HOSTNAME[0], get_file_md5(path)))
-			storage.upload(obj_id, path)
+			storage.upload(obj_id, path, container=ACT_CONT_MAPPING[action])
 		elif action == ACTION_LIST[2]: # uploads an arbitrary file to * storage
 			assert file_n and len(file_n) > 3
 			assert obj_id and len(obj_id) > 4
 			path = HOME + '/' + file_n
-			storage.upload(obj_id, path)
+			storage.upload(obj_id, path, container=ACT_CONT_MAPPING[action])
 		elif action == ACTION_LIST[3]: # self update
 			old_md5 = get_file_md5(__file__)
 			if storage.update_self():
