@@ -2,8 +2,9 @@
 from __future__ import print_function
 import lhubic
 from storage_module_prototype import *
+# noinspection PyCompatibility
 from concurrent.futures import ThreadPoolExecutor
-from os.path import isfile, getsize, basename
+from os.path import isfile, getsize
 # clem 31/08/2017
 
 __path__ = os.path.realpath(__file__)
@@ -11,8 +12,8 @@ __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
 HUBIC_TOKEN_FILE = '.hubic_token'
-HUBIC_CLIENT_ID = get_key_bis('hubic_api_id')
-HUBIC_CLIENT_SECRET = get_key_bis('hubic_api_secret')
+HUBIC_CLIENT_ID = get_key_bis('hubic_client_id')
+HUBIC_CLIENT_SECRET = get_key_bis('hubic_client_secret')
 HUBIC_USERNAME = get_key_bis('hubic_username')
 HUBIC_PASSWORD = get_key_bis('hubic_password')
 SHOW_SPEED_AND_PROGRESS = True
@@ -264,6 +265,7 @@ class HubicClient(StorageServicePrototype):
 		return self._upload_self_do(__file_name__, __file__, container)
 		
 	# clem 06/09/2017
+	# noinspection PyUnreachableCode
 	@property
 	def load_environement(self):
 		""" define here ENV vars you want to be set on the target execution environement in
@@ -278,7 +280,7 @@ class HubicClient(StorageServicePrototype):
 		# TODO send fewer info when refresh token is available
 		return {
 			'HUBIC_CLIENT_ID':      self.client_id,
-			'HUBIC_CLIENT_SECRET':  self.client_secret,
+			'HUBIC_CLIENT':         self.client_secret,
 			'HUBIC_USERNAME':       self.username,
 			'HUBIC_PASSWORD':       self.password,
 			'HUBIC_REFRESH_TOKEN':  self.refresh_token,
