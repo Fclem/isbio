@@ -2147,7 +2147,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		else:
 			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
 			from django.core.mail import EmailMessage
-			subject = '%s\'s report %s has failed' % (self.name, author.full_name)
+			subject = '%s\'s report %s has failed' % (self.name, author.get_full_name())
 			EmailMessage(subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
 		if not author.is_guest:
 			author.email_user(subject, message, settings.EMAIL_SENDER)
