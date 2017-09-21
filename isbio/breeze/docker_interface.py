@@ -385,10 +385,14 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	#####################
 
 	def _attach_event_manager(self):
-		if self.my_run and isinstance(self.my_run, DockerRun):
-			self.my_run.event_listener = self._event_manager_wrapper()
-			self.log.debug('Attached event listener to run')
-		return True
+		try:
+			if self.my_run and isinstance(self.my_run, DockerRun):
+				self.my_run.event_listener = self._event_manager_wrapper()
+				self.log.debug('Attached event listener to run')
+			return True
+		except Exception as e:
+			self.log.error(str(e))
+		return False
 
 	# clem 25/05/2016
 	@property
@@ -452,13 +456,17 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		return True
 
 	def _run(self):
-		container = self.client.run(self.my_run)
-		with self._container_lock:
-			self._container = container
-		self.log.debug('Got %s' % repr(self._container))
-		self._runnable.sgeid = self._container.short_id
-		self._set_global_status(self.js.SUBMITTED)
-		return True
+		try:
+			container = self.client.run(self.my_run)
+			with self._container_lock:
+				self._container = container
+			self.log.debug('Got %s' % repr(self._container))
+			self._runnable.sgeid = self._container.short_id
+			self._set_global_status(self.js.SUBMITTED)
+			return True
+		except Exception as e:
+			self.log.error(str(e))
+		return False
 
 	def _event_manager_wrapper(self):
 		def my_event_manager(event):
@@ -671,13 +679,16 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
-		settings.NO_SGEID_EXPIRY = 60 # FIXME
-		self._docker_storage.upload_self() # update the cloud version of azure_storage.py
-		self.run_id = get_file_md5(self.assembly_archive_path) # use the archive hash as an id for storage
-		if self._job_storage.upload(self.run_id, self.assembly_archive_path):
-			if not KEEP_TEMP_FILE:
-				remove_file_safe(self.assembly_archive_path)
-			return True
+		try:
+			settings.NO_SGEID_EXPIRY = 60 # FIXME
+			self._docker_storage.upload_self() # update the cloud version of azure_storage.py
+			self.run_id = get_file_md5(self.assembly_archive_path) # use the archive hash as an id for storage
+			if self._job_storage.upload(self.run_id, self.assembly_archive_path):
+				if not KEEP_TEMP_FILE:
+					remove_file_safe(self.assembly_archive_path)
+				return True
+		except Exception as e:
+			self.log.error(str(e))
 		return False
 
 	# clem 10/05/2016
@@ -761,19 +772,22 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	def send_job(self):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
 		
-		if self.apply_config() and self._upload_assembly():
-			env = self.remote_env_conf
-			# TODO add host_sup passing
-			self.my_run = DockerRun(self.config_image,
-				self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
-				self.my_volume, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
-			self._attach_event_manager()
-			if self._run():
-				return True
+		try:
+			if self.apply_config() and self._upload_assembly():
+				env = self.remote_env_conf
+				# TODO add host_sup passing
+				self.my_run = DockerRun(self.config_image,
+					self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
+					self.my_volume, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
+				self._attach_event_manager()
+				if self._run():
+					return True
+				else:
+					error = [87, 'container kickoff failed']
 			else:
-				error = [87, 'container kickoff failed']
-		else:
-			error = [88, 'assembly upload failed']
+				error = [88, 'assembly upload failed']
+		except Exception as e:
+			error = [90, str(e)]
 		self.log.exception(error[1])
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, error[0])

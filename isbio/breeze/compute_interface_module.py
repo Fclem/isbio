@@ -117,12 +117,15 @@ class ComputeInterfaceBase(ComputeInterfaceBasePrototype):
 		:return: if succeeded
 		:rtype: bool
 		"""
-		if self.target_obj:
-			self.engine_obj.set_local_env()
-			self.execut_obj.set_local_env()
-			self.target_obj.set_local_env(self.target_obj.engine_section)
-			self.engine_obj.set_local_env()
-			return True
+		try:
+			if self.target_obj:
+				self.engine_obj.set_local_env()
+				self.execut_obj.set_local_env()
+				self.target_obj.set_local_env(self.target_obj.engine_section)
+				self.engine_obj.set_local_env()
+				return True
+		except Exception as e:
+			self.log.error(str(e))
 		return False
 	
 	# clem 14/05/2016
