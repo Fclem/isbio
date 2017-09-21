@@ -217,8 +217,7 @@ class HubicClient(StorageServicePrototype):
 			return False
 	
 	# clem 07/09/2017
-	@staticmethod
-	def _handle_container(target_path, container=None):
+	def _handle_container(self, target_path, container=None):
 		""" This is a fix for lack of storage container in Hubic, it adds the purported container name (if provided)
 		
 		to the beginning of the target_path. If no container is provided target_path is returned unchanged.
