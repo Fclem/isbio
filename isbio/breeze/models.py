@@ -2128,7 +2128,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 	
 	# clem 10/07/2017
 	def send_completion_mail(self, success, message=''):
-		from django.core.urlresolvers import reverse
+		# from django.core.urlresolvers import reverse
 		
 		def make_full_url(path):
 			return 'https://%s%s' % (settings.DOMAIN[0], path)
@@ -2145,9 +2145,9 @@ class Runnable(FolderObj, ObjectsWithACL):
 			message += '\n\nYou can see this report here %s\nDownload the report archive : %s' \
 				'\n\nBest,\nThe Breeze team.' % (view_link, dl_link)
 		else:
-			subject = 'Report %s has failed' % self.name
 			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
 			from django.core.mail import EmailMessage
+			subject = '%s\'s report %s has failed' % (self.name, author.full_name)
 			EmailMessage(subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
 		if not author.is_guest:
 			author.email_user(subject, message, settings.EMAIL_SENDER)
