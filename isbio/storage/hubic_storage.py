@@ -216,7 +216,8 @@ class HubicClient(StorageServicePrototype):
 			return False
 	
 	# clem 07/09/2017
-	def _handle_container(self, target_path, container=None):
+	@staticmethod
+	def _handle_container(target_path, container=None):
 		""" This is a fix for lack of storage container in Hubic, it adds the purported container name (if provided)
 		
 		to the beginning of the target_path. If no container is provided target_path is returned unchanged.
@@ -274,11 +275,13 @@ class HubicClient(StorageServicePrototype):
 		"""
 		# TODO send fewer info when refresh token is available
 		return {
-			'HUBIC_CLIENT_ID':     self.client_id,
-			'HUBIC_CLIENT_SECRET': self.client_secret,
-			'HUBIC_USERNAME':      self.username,
-			'HUBIC_PASSWORD':      self.password,
-			'HUBIC_REFRESH_TOKEN': self.refresh_token,
+			'HUBIC_CLIENT_ID':      self.client_id,
+			'HUBIC_CLIENT_SECRET':  self.client_secret,
+			'HUBIC_USERNAME':       self.username,
+			'HUBIC_PASSWORD':       self.password,
+			'HUBIC_REFRESH_TOKEN':  self.refresh_token,
+			'SAVE_LIST':            'GIT_HUB_TOKEN HUBIC_CLIENT_ID HUBIC_CLIENT_SECRET HUBIC_USERNAME HUBIC_PASSWORD ' +
+			'HUBIC_REFRESH_TOKEN'
 		}
 	
 	# clem 05/09/2017
