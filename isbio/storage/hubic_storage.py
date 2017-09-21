@@ -273,6 +273,8 @@ class HubicClient(StorageServicePrototype):
 		:return: ENV vars to be set on target
 		:rtype: dict
 		"""
+		return dict()
+		# FIXME useless ass all was moved to config files
 		# TODO send fewer info when refresh token is available
 		return {
 			'HUBIC_CLIENT_ID':      self.client_id,
