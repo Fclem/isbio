@@ -229,6 +229,8 @@ class HubicClient(StorageServicePrototype):
 		:type container: basestring | None
 		"""
 		if HUBIC_SOLE_CONTAINER:
+			if not container:
+				container = self.container
 			if container:
 				target_path = '%s/%s' % (container, target_path)
 			container = HUBIC_SOLE_CONTAINER
