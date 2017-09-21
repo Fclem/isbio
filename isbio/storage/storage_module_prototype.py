@@ -533,8 +533,12 @@ def function_name(delta=0):
 
 	:rtype: str
 	"""
-	# noinspection PyProtectedMember
-	return sys._getframe(1 + delta).f_code.co_name if hasattr(sys, "_getframe") else ''
+	try:
+		# noinspection PyProtectedMember
+		return sys._getframe(1 + delta).f_code.co_name if hasattr(sys, "_getframe") else ''
+	except Exception as e:
+		log.error(str(e))
+	return ''
 
 
 # clem on 21/08/2015 (from utilities)
