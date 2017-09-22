@@ -214,7 +214,7 @@ class HubicClient(StorageServicePrototype):
 			return True
 		except Exception as e:
 			log.error('ERROR: %s' % e)
-			return False
+		return False
 	
 	# clem 07/09/2017
 	def _handle_container(self, target_path, container=None):
@@ -358,3 +358,9 @@ class HubicClient(StorageServicePrototype):
 
 def back_end_initiator(container):
 	return HubicClient(HUBIC_USERNAME, HUBIC_PASSWORD,  HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, container)
+
+
+if __name__ == '__main__':
+	a, b, c = input_pre_handling()
+	storage_inst = back_end_initiator(ACT_CONT_MAPPING[a])
+	command_line_interface(storage_inst, a, b, c)
