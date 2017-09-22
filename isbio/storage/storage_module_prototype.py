@@ -6,7 +6,7 @@ import os
 import sys
 import abc
 
-__version__ = '0.6'
+__version__ = '0.6.1'
 __author__ = 'clem'
 __date__ = '29/08/2017'
 
@@ -26,6 +26,7 @@ if PRINT_LOG:
 	ch.setLevel(LOG_LEVEL)
 	log.addHandler(ch)
 
+# FIXME : make this module totally generic
 # general config # FIXME : get from config and propagate
 ENV_OUT_FILE = ('OUT_FILE', 'out.tar.xz')
 ENV_IN_FILE = ('IN_FILE', 'in.tar.xz')
@@ -396,20 +397,20 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 	try: # TODO make functions
 		storage = storage_implementation_instance
 		if action == ACTION_LIST[0]: # download the job archive from * storage
-			exit(int(download_job_cli(storage, obj_id)))
+			exit(int(not download_job_cli(storage, obj_id)))
 		elif action == ACTION_LIST[1]: # uploads the job resulting data's archive to * storage
-			exit(int(upload_job_cli(storage, obj_id)))
+			exit(int(not upload_job_cli(storage, obj_id)))
 		elif action == ACTION_LIST[2]: # uploads an arbitrary file to * storage
 			assert file_n and len(file_n) > 3
 			assert obj_id and len(obj_id) > 4
-			exit(int(upload_cli(storage, obj_id, HOME + '/' + file_n)))
+			exit(int(not upload_cli(storage, obj_id, HOME + '/' + file_n)))
 		elif action == ACTION_LIST[3]: # self update
-			exit(int(self_update_cli(storage)))
+			exit(int(not self_update_cli(storage)))
 	except Exception as e:
 		import traceback
 		tb = traceback.format_exc()
 		log.error(Bcolors.fail('FAILURE :'))
-		code = 1
+		code = 2425
 		if hasattr(e, 'msg') and e.msg:
 			log.error(e.msg)
 		elif hasattr(e, 'message') and e.message:
@@ -557,7 +558,7 @@ class StorageModulePrototype(ModuleType):
 	
 	@abc.abstractmethod
 	def data_container(self):
-		""" give the name of the data container (the one used to stock results)
+		""" give the name of the data container (the one used to store results)
 
 		:return: The name of the management container
 		:rtype: basestring
