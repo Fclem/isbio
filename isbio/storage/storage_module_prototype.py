@@ -284,6 +284,100 @@ def input_pre_handling():
 	return aa, bb, cc
 
 
+# clem 22/09/2017
+def download_cli(storage, remote_path, local_path, erase):
+	""" downloads an arbitrary remote_path file to an arbitrary local_path location
+	
+	:param storage: the storage instance class
+	:type storage: StorageServicePrototype
+	:param remote_path: the name/path of the file to download from storage
+	:type remote_path: basestring_t
+	:param local_path: the local file path to store the downloaded file to
+	:type local_path: basestring_t
+	:param erase: erase the file from storage after successful download
+	:type erase: bool
+	:return: is success
+	:rtype: bool
+	"""
+	if storage.download(remote_path, local_path):
+		if erase:  # if the download was successful we delete the job file
+			storage.erase(remote_path)
+		return True
+	return False
+
+
+# clem 22/09/2017
+def download_job_cli(storage, obj_id='', erase=True):
+	""" downloads the job obj_id from storage and stores it at location HOME + '/' + IN_FILE
+	
+	:param storage: the storage instance class
+	:type storage: StorageServicePrototype
+	:param obj_id: the name/path of the file to download from storage
+	:type obj_id: basestring_t
+	:param erase: erase the file from storage after successful download
+	:type erase: bool
+	:return: is success
+	:rtype: bool
+	"""
+	return download_cli(storage, obj_id if obj_id else os.environ.get(*ENV_JOB_ID), HOME + '/' + IN_FILE, erase)
+
+
+# clem 22/09/2017
+def upload_cli(storage, remote_path, local_path):
+	""" uploads an arbitrary obj_id file to an arbitrary file_n location
+	
+	:param storage: the storage instance class
+	:type storage: StorageServicePrototype
+	:param remote_path: the name/path of the file to upload local file to
+	:type remote_path: basestring_t
+	:param local_path: the local file path of the file to upload
+	:type local_path: basestring_t
+	:return: is success
+	:rtype: bool
+	"""
+	return storage.upload(remote_path, local_path)
+
+
+# clem 22/09/2017
+def upload_job_cli(storage, remote_path=''):
+	""" uploads the job from HOME + '/' + OUT_FILE to storage and stores it at location remote_path
+	
+	:param storage: the storage instance class
+	:type storage: StorageServicePrototype
+	:param remote_path: the name/path of the file to upload job to
+	:type remote_path: basestring_t
+	:return: is success
+	:rtype: bool
+	"""
+	local_path = HOME + '/' + OUT_FILE
+	if not remote_path:  # the job id must be in env(ENV_JOB_ID[0]) if not we use either the hostname or the md5
+		remote_path = os.environ.get(ENV_JOB_ID[0], os.environ.get(ENV_HOSTNAME[0], get_file_md5(local_path)))
+	return upload_cli(storage, remote_path, local_path)
+
+
+def self_update_cli(storage):
+	""" update itself from storage and its parent/child modules
+	
+	:param storage: the storage instance class
+	:type storage: StorageServicePrototype
+	:return: is success
+	:rtype: bool
+	"""
+	old_md5 = get_file_md5(__file__)
+	if storage.update_self():
+		new_md5 = get_file_md5(__file__)
+		if new_md5 != old_md5:
+			log.info(Bcolors.ok_green('successfully'), 'updated from %s to %s' % (Bcolors.bold(old_md5),
+			Bcolors.bold(new_md5)))
+		else:
+			log.info('%s, %s' % (Bcolors.ok_green('not updated'), Bcolors.ok_blue('this is already the latest '
+					'version.')))
+		return True
+	else:
+		log.error(Bcolors.fail('Upgrade failure'))
+	return False
+
+
 # clem on 28/04/2016
 def command_line_interface(storage_implementation_instance, action, obj_id='', file_n=''):
 	"""	Command line interface of the module, it's the interface the docker container will use.
@@ -294,60 +388,38 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 	:type action: basestring_t
 	:type obj_id: basestring_t
 	:type file_n: basestring_t
-	:return: exit code
-	:rtype: int
 	"""
 	global __DEV__
 	assert isinstance(storage_implementation_instance, StorageServicePrototype)
 	__DEV__ = False # not unused, overrides child's module one
-	try:
+	try: # TODO make functions
 		storage = storage_implementation_instance
 		if action == ACTION_LIST[0]: # download the job archive from * storage
-			if not obj_id:
-				obj_id = os.environ.get(*ENV_JOB_ID)
-			path = HOME + '/' + IN_FILE
-			if not storage.download(obj_id, path, container=ACT_CONT_MAPPING[action]):
-				exit(1)
-			else: # if the download was successful we delete the job file
-				storage.erase(obj_id)
+			exit(int(download_job_cli(storage, obj_id)))
 		elif action == ACTION_LIST[1]: # uploads the job resulting data's archive to * storage
-			path = HOME + '/' + OUT_FILE
-			if not obj_id: # the job id must be in env(ENV_JOB_ID[0]) if not we use either the hostname or the md5
-				obj_id = os.environ.get(ENV_JOB_ID[0], os.environ.get(ENV_HOSTNAME[0], get_file_md5(path)))
-			storage.upload(obj_id, path, container=ACT_CONT_MAPPING[action])
+			exit(int(upload_job_cli(storage, obj_id)))
 		elif action == ACTION_LIST[2]: # uploads an arbitrary file to * storage
 			assert file_n and len(file_n) > 3
 			assert obj_id and len(obj_id) > 4
-			path = HOME + '/' + file_n
-			storage.upload(obj_id, path, container=ACT_CONT_MAPPING[action])
+			exit(int(upload_cli(storage, obj_id, HOME + '/' + file_n)))
 		elif action == ACTION_LIST[3]: # self update
-			old_md5 = get_file_md5(__file__)
-			if storage.update_self():
-				new_md5 = get_file_md5(__file__)
-				if new_md5 != old_md5:
-					print(Bcolors.ok_green('successfully'), 'updated from %s to %s' % (Bcolors.bold(old_md5),
-					Bcolors.bold(new_md5)))
-				else:
-					print(Bcolors.ok_green('not updated') + ',', Bcolors.ok_blue('this is already the latest version.'))
-			else:
-				print(Bcolors.fail('Upgrade failure'))
-				exit(1)
+			exit(int(self_update_cli(storage)))
 	except Exception as e:
 		import traceback
 		tb = traceback.format_exc()
-		print(Bcolors.fail('FAILURE :'))
+		log.error(Bcolors.fail('FAILURE :'))
 		code = 1
 		if hasattr(e, 'msg') and e.msg:
-			print(e.msg)
+			log.error(e.msg)
 		elif hasattr(e, 'message') and e.message:
-			print(e.message)
+			log.error(e.message)
 		else:
 			raise
 		if hasattr(e, 'status_code'):
 			code = e.status_code
 		elif hasattr(e, 'code'):
 			code = e.code
-		print(tb)
+		log.exception(tb)
 		exit(code)
 	
 
@@ -358,9 +430,10 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 # TODO : in your concrete class, simply add those four line at the end
 if __name__ == '__main__':
 	a, b, c = input_pre_handling()
-	# TODO : replace BlobStorageService with your implemented class
-	# storage_inst = StorageServicePrototype('account', 'key', ACT_CONT_MAPPING[a])
-	storage_inst = StorageServicePrototype()
+	# storage_inst = StorageServicePrototype()
+	# usually :
+	# noinspection PyUnresolvedReferences
+	storage_inst = back_end_initiator(ACT_CONT_MAPPING[a])
 	command_line_interface(storage_inst, a, b, c)
 
 
