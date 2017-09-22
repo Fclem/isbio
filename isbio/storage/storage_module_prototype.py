@@ -90,6 +90,15 @@ class StorageServicePrototype(object):
 	# clem 20/04/2016
 	@staticmethod
 	def _print_call(fun_name, args):
+		""" Nicely print a function call
+		
+		:param fun_name: the name of the function
+		:type fun_name: basestring_t
+		:param args: an arg, or a list of arg supplied to the function
+		:type args: list | tuple | basestring_t
+		:return:
+		:rtype:
+		"""
 		arg_list = ''
 		if isinstance(args, basestring_t):
 			args = [args]
@@ -117,6 +126,12 @@ class StorageServicePrototype(object):
 	
 	# clem 29/04/2016
 	def _update_self_do(self, blob_name, file_name, container=None):
+		""" TBD
+		
+		:type blob_name: basestring_t
+		:type file_name: basestring_t
+		:type container: basestring_t | None
+		"""
 		if not container:
 			container = MNGT_CONTAINER
 		# try:
@@ -143,7 +158,7 @@ class StorageServicePrototype(object):
 					return self._update_self_do(__file_name__, __file__, container)
 
 		:param container: target container (default to MNGT_CONTAINER)
-		:type container: str|None
+		:type container: basestring_t | None
 		:return: success ?
 		:rtype: bool
 		:raise: AssertionError
@@ -153,6 +168,12 @@ class StorageServicePrototype(object):
 
 	# clem 29/04/2016
 	def _upload_self_do(self, blob_name, file_name, container=None):
+		""" TBD
+		
+		:type blob_name: basestring_t
+		:type file_name: basestring_t
+		:type container: basestring_t | None
+		"""
 		if not container:
 			container = MNGT_CONTAINER
 		blob_name = blob_name.replace('.pyc', '.py')
@@ -177,7 +198,7 @@ class StorageServicePrototype(object):
 				return self._upload_self_do(__file_name__, __file__, container)
 		
 		:param container: target container (default to MNGT_CONTAINER)
-		:type container: str|None
+		:type container: basestring_t | None
 		:return: Info on the created blob as a Blob object
 		:rtype: Blob
 		"""
@@ -202,15 +223,15 @@ class StorageServicePrototype(object):
 		if the container does not exists, it will be created using *
 
 		:param target_path: Name/path of the object as to be stored in * storage
-		:type target_path: str
+		:type target_path: basestring_t
 		:param file_path: Path of the local file to upload
-		:type file_path: str
+		:type file_path: basestring_t
 		:param container: Name of the container to use to store the blob (default to self.container)
-		:type container: str or None
+		:type container: basestring_t | None
 		:param verbose: Print actions (default to True)
-		:type verbose: bool or None
+		:type verbose: bool | None
 		:return: object corresponding to the created blob
-		:rtype: Blob
+		:rtype: Blob # FIXME
 		:raise: IOError or FileNotFoundError
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
@@ -223,13 +244,13 @@ class StorageServicePrototype(object):
 		if the container does not exists, the operation will fail
 
 		:param target_path: Name/path of the object to retrieve from * storage
-		:type target_path: str
+		:type target_path: basestring_t
 		:param file_path: Path of the local file to save the downloaded blob
-		:type file_path: str
+		:type file_path: basestring_t
 		:param container: Name of the container to use to store the blob (default to self.container)
-		:type container: str or None
+		:type container: basestring_t | None
 		:param verbose: Print actions (default to True)
-		:type verbose: bool or None
+		:type verbose: bool | None
 		:return: success?
 		:rtype: bool
 		:raise: self.missing_res_error
@@ -242,13 +263,13 @@ class StorageServicePrototype(object):
 		""" Delete the specified blob in self.container or in the specified container if said blob exists
 
 		:param target_path: Name/path of the object to delete from * storage
-		:type target_path: str
+		:type target_path: basestring_t
 		:param container: Name of the container where the blob is stored (default to self.container)
-		:type container: str or None
+		:type container: basestring_t or None
 		:param verbose: Print actions (default to True)
-		:type verbose: bool or None
+		:type verbose: bool | None
 		:param no_fail: suppress error messages (default to False)
-		:type no_fail: bool or None
+		:type no_fail: bool | None
 		:return: success?
 		:rtype: bool
 		:raise: self.missing_res_error
@@ -311,12 +332,13 @@ def download_cli(storage, remote_path, local_path, erase):
 def download_job_cli(storage, obj_id='', erase=True):
 	""" downloads the job obj_id from storage and stores it at location HOME + '/' + IN_FILE
 	
+	
 	:param storage: the storage instance class
 	:type storage: StorageServicePrototype
 	:param obj_id: the name/path of the file to download from storage
-	:type obj_id: basestring_t
+	:type obj_id: basestring_t | None
 	:param erase: erase the file from storage after successful download
-	:type erase: bool
+	:type erase: bool | None
 	:return: is success
 	:rtype: bool
 	"""
@@ -346,7 +368,7 @@ def upload_job_cli(storage, remote_path=''):
 	:param storage: the storage instance class
 	:type storage: StorageServicePrototype
 	:param remote_path: the name/path of the file to upload job to
-	:type remote_path: basestring_t
+	:type remote_path: basestring_t | None
 	:return: is success
 	:rtype: bool
 	"""
@@ -389,8 +411,8 @@ def command_line_interface(storage_implementation_instance, action, obj_id='', f
 
 	:type storage_implementation_instance: BlobStorageService
 	:type action: basestring_t
-	:type obj_id: basestring_t
-	:type file_n: basestring_t
+	:type obj_id: basestring_t | None
+	:type file_n: basestring_t | None
 	"""
 	global __DEV__
 	assert isinstance(storage_implementation_instance, StorageServicePrototype)
@@ -457,6 +479,8 @@ class BlockingTransfer(object): # TODO move elsewhere
 		:param transfer_func: The actual transfer function, that takes as first and only parameter the
 			progress_func(current, total)
 		:type transfer_func: callable
+		:param verbose: if to print progress
+		:type verbose: bool | None
 		"""
 		assert callable(transfer_func)
 		self._verbose = verbose
@@ -521,8 +545,8 @@ class StorageModulePrototype(ModuleType):
 
 		:type storage_implementation_instance: BlobStorageService
 		:type action: basestring_t
-		:type obj_id: basestring_t
-		:type file_n: basestring_t
+		:type obj_id: basestring_t | None
+		:type file_n: basestring_t | None
 		:return: exit code
 		:rtype: int
 		"""
@@ -601,9 +625,9 @@ class StorageModulePrototype(ModuleType):
 		:param storage: the storage instance class
 		:type storage: StorageServicePrototype
 		:param obj_id: the name/path of the file to download from storage
-		:type obj_id: basestring_t
+		:type obj_id: basestring_t | None
 		:param erase: erase the file from storage after successful download
-		:type erase: bool
+		:type erase: bool | None
 		:return: is success
 		:rtype: bool
 		"""
@@ -633,7 +657,7 @@ class StorageModulePrototype(ModuleType):
 		:param storage: the storage instance class
 		:type storage: StorageServicePrototype
 		:param remote_path: the name/path of the file to upload job to
-		:type remote_path: basestring_t
+		:type remote_path: basestring_t | None
 		:return: is success
 		:rtype: bool
 		"""
