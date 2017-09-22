@@ -11,7 +11,8 @@ __path__ = os.path.realpath(__file__)
 __dir_path__ = os.path.dirname(__path__)
 __file_name__ = os.path.basename(__file__)
 
-HUBIC_TOKEN_FILE = '.hubic_token'
+# HUBIC_TOKEN_FILE = '.hubic_token'
+HUBIC_TOKEN_FILE = '.hubic_refresh_token_secret'
 HUBIC_CLIENT_ID = get_key_bis('hubic_client_id')
 HUBIC_CLIENT_SECRET = get_key_bis('hubic_client')
 HUBIC_USERNAME = get_key_bis('hubic_username')
