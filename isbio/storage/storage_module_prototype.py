@@ -355,6 +355,7 @@ def upload_job_cli(storage, remote_path=''):
 	return upload_cli(storage, remote_path, local_path)
 
 
+# clem 22/09/2017
 def self_update_cli(storage):
 	""" update itself from storage and its parent/child modules
 	
@@ -569,6 +570,82 @@ class StorageModulePrototype(ModuleType):
 
 		:return: The name of the job container
 		:rtype: basestring
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# clem 22/09/2017
+	@abc.abstractmethod
+	def download_cli(self, storage, remote_path, local_path, erase):
+		""" downloads an arbitrary remote_path file to an arbitrary local_path location
+
+		:param storage: the storage instance class
+		:type storage: StorageServicePrototype
+		:param remote_path: the name/path of the file to download from storage
+		:type remote_path: basestring_t
+		:param local_path: the local file path to store the downloaded file to
+		:type local_path: basestring_t
+		:param erase: erase the file from storage after successful download
+		:type erase: bool
+		:return: is success
+		:rtype: bool
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# clem 22/09/2017
+	@abc.abstractmethod
+	def download_job_cli(self, storage, obj_id='', erase=True):
+		""" downloads the job obj_id from storage and stores it at location HOME + '/' + IN_FILE
+
+		:param storage: the storage instance class
+		:type storage: StorageServicePrototype
+		:param obj_id: the name/path of the file to download from storage
+		:type obj_id: basestring_t
+		:param erase: erase the file from storage after successful download
+		:type erase: bool
+		:return: is success
+		:rtype: bool
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# clem 22/09/2017
+	@abc.abstractmethod
+	def upload_cli(self, storage, remote_path, local_path):
+		""" uploads an arbitrary obj_id file to an arbitrary file_n location
+
+		:param storage: the storage instance class
+		:type storage: StorageServicePrototype
+		:param remote_path: the name/path of the file to upload local file to
+		:type remote_path: basestring_t
+		:param local_path: the local file path of the file to upload
+		:type local_path: basestring_t
+		:return: is success
+		:rtype: bool
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# clem 22/09/2017
+	@abc.abstractmethod
+	def upload_job_cli(self, storage, remote_path=''):
+		""" uploads the job from HOME + '/' + OUT_FILE to storage and stores it at location remote_path
+
+		:param storage: the storage instance class
+		:type storage: StorageServicePrototype
+		:param remote_path: the name/path of the file to upload job to
+		:type remote_path: basestring_t
+		:return: is success
+		:rtype: bool
+		"""
+		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
+	
+	# clem 22/09/2017
+	@abc.abstractmethod
+	def self_update_cli(self, storage):
+		""" update itself from storage and its parent/child modules
+
+		:param storage: the storage instance class
+		:type storage: StorageServicePrototype
+		:return: is success
+		:rtype: bool
 		"""
 		raise NotImplementedError(self._not % (self.__class__.__name__, function_name()))
 	
