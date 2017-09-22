@@ -13,6 +13,7 @@ __file_name__ = os.path.basename(__file__)
 
 # HUBIC_TOKEN_FILE = '.hubic_token'
 HUBIC_TOKEN_FILE = '.hubic_refresh_token_secret'
+HUBIC_TOKEN = get_key_bis('.hubic_refresh_token')
 HUBIC_CLIENT_ID = get_key_bis('hubic_client_id')
 HUBIC_CLIENT_SECRET = get_key_bis('hubic_client')
 HUBIC_USERNAME = get_key_bis('hubic_username')
@@ -40,7 +41,8 @@ class HubicClient(StorageServicePrototype):
 		self.client_secret = client_secret
 		self.username = username
 		self.password = password
-		self.refresh_token = refresh_token
+		# self.refresh_token = refresh_token
+		self.__auth_token = refresh_token
 		self.container = container
 		if self._auth():
 			self._save_token()
@@ -358,7 +360,7 @@ class HubicClient(StorageServicePrototype):
 		
 
 def back_end_initiator(container):
-	return HubicClient(HUBIC_USERNAME, HUBIC_PASSWORD,  HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, container)
+	return HubicClient(HUBIC_USERNAME, HUBIC_PASSWORD,  HUBIC_CLIENT_ID, HUBIC_CLIENT_SECRET, HUBIC_TOKEN, container=container)
 
 
 if __name__ == '__main__':
