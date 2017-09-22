@@ -369,11 +369,12 @@ def self_update_cli(storage):
 	if storage.update_self():
 		new_md5 = get_file_md5(__file__)
 		if new_md5 != old_md5:
-			log.info(Bcolors.ok_green('successfully'), 'updated from %s to %s' % (Bcolors.bold(old_md5),
-			Bcolors.bold(new_md5)))
+			log.info('%s, %s' %
+				(Bcolors.ok_green('successfully'), 'updated from %s to %s' %
+					(Bcolors.bold(old_md5), Bcolors.bold(new_md5))))
 		else:
-			log.info('%s, %s' % (Bcolors.ok_green('not updated'), Bcolors.ok_blue('this is already the latest '
-					'version.')))
+			log.info('%s, %s' %
+				(Bcolors.ok_green('not updated'), Bcolors.ok_blue('this is already the latest version.')))
 		return True
 	else:
 		log.error(Bcolors.fail('Upgrade failure'))
