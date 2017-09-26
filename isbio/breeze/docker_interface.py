@@ -235,7 +235,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 			except socket.timeout:
 				logger.warning('connect %s: Time-out' % str(target))
 			except socket.error as e: # FIXME look it up
-				logger.warning('connect %s: %s' % (str(target), e[1]))
+				logger.warning('connect %s: %s' % (str(target), e))
 			except Exception as e:
 				logger.exception('connect %s' % str((type(e), e)))
 			return False
@@ -643,7 +643,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			'run_job_sh'	: settings.GENERAL_SH_NAME,
 		}
 
-		res = gen_file_from_template(settings.DOCKER_BOOTSTRAP_SH_TEMPLATE, conf_dict, self._sh_file_path)
+		res = gen_file_from_template(settings.DOCKER_STAGE2_SH_TEMPLATE, conf_dict, self._sh_file_path)
 		chmod(self._sh_file_path, ACL.RX_RX_)
 
 		return res
