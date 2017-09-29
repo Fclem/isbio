@@ -11,6 +11,7 @@ try:
 	from __generated import config_list
 except (SyntaxError, ImportError, Exception) as e:
 	logger.error('importing __generated: %s' % e)
+	print('importing __generated: %s' % e)
 	import importlib
 	
 	generated = importlib.import_module(GENERATED_MODULE_NAME, package='isbio.config.mode')
