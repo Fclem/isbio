@@ -68,6 +68,7 @@ def assert_filled(*args):
 				raise EmptyMandatorySetting('setting %s is empty' % each)
 	return True
 
+
 # Static object describing available Auth Backends
 ConfigAuthMethods = env.auth.config_list # ConfigAuthMethodsList()
 
@@ -109,8 +110,9 @@ SET_SHOW_ALL_USERS = True
 # checks
 assert_filled('TEMPLATE_FOLDER', 'SOURCE_ROOT')
 
-# run mode first
 
+# run mode first
+# FIXME automatize
 if RUN_MODE_CLASS is ConfigRunModes.prod:
 	from mode.prod import *
 	MODE_PROD = True
@@ -132,12 +134,16 @@ assert_filled('PROJECT_FOLDER_NAME')
 PROJECT_FOLDER = '%s/%s/' % (PROJECT_FOLDER_PREFIX, PROJECT_FOLDER_NAME)
 # then environement
 
+# FIXME automatize
 # if RUN_ENV == 'AzureCloud':
 if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
 	from env.azure_cloud import *
 	# RUN_ENV_CLASS = ConfigEnvironments.AzureCloud
 elif RUN_ENV_CLASS is ConfigEnvironments.FIMM: # RUN_ENV == 'FIMM':
 	from env.FIMM import *
+	# RUN_ENV_CLASS = ConfigEnvironments.FIMM
+elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud : # RUN_ENV == 'FIMM':
+	from env.FIMM_cloud import *
 	# RUN_ENV_CLASS = ConfigEnvironments.FIMM
 else: # FIXME debug
 	raise ProgramingError('Impossible')

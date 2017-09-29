@@ -550,6 +550,7 @@ def make_run_file():
 	f.write(str(datetime.now().strftime(USUAL_DATE_FORMAT)))
 	f.close()
 
+
 # FIXME obsolete
 if os.path.isfile('running'):
 	# First time
