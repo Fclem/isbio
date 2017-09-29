@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 generated = None
-GENERATED_MODULE_NAME = '__generated'
+GENERATED_MODULE_NAME = 'generated'
 GENERATED_FN = '%s.py' % GENERATED_MODULE_NAME
 
 
@@ -96,7 +96,7 @@ class ConfigEnumGenerator(object):
 		:rtype: bool
 		"""
 		val = not file_name.startswith(IGNORE_START_WITH) and (
-			'.' not in file_name or file_name.split('.')[-1] in ONLY_EXT)
+			'.' not in file_name or file_name.split('.')[-1] in ONLY_EXT) and file_name not in EXCLUDE_FILES
 		print('ignored %s' % file_name) if self.verbose and not val else nop()
 		return val
 	
