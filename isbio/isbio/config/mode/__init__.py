@@ -1,22 +1,15 @@
-from utilz import magic_const, MagicAutoConstEnum
+from .. import GENERATED_MODULE_NAME, conf_gen
+import os
 
-# __all__ = ['config_list']
-# modules = 'dev pharma prod'
+__path__ = os.path.realpath(__file__)
+__dir_path__ = os.path.dirname(__path__)
 
+conf_gen(__dir_path__, 'ConfigRunModesList')
 
-# Static object describing available Run Modes
-class ConfigRunModesList(MagicAutoConstEnum):
-	@magic_const
-	def dev(): pass
+try:
+	from __generated import config_list
+except (SyntaxError, ImportError, Exception):
+	import importlib
 	
-	@magic_const
-	def prod(): pass
-	
-	@magic_const
-	def pharma(): pass
-
-	@magic_const
-	def pharma_dev(): pass
-
-
-config_list = ConfigRunModesList()
+	generated = importlib.import_module(GENERATED_MODULE_NAME, package='.')
+	config_list = generated.config_list

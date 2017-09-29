@@ -17,9 +17,12 @@
 		_ while env/* will import the desired auth/* and exec/* configuration modules
 	
 """
-from isbio.settings import SOURCE_ROOT, TEMPLATE_FOLDER
-from utilz import file_content # , magic_const, MagicAutoConstEnum, magic_const_object_from_list
+# noinspection PyUnresolvedReferences
+from isbio.settings import SOURCE_ROOT, TEMPLATE_FOLDER # TODO check if TEMPLATE_FOLDER actually used
+# noinspection PyUnresolvedReferences
+from utilz import file_content
 from django.core.exceptions import ImproperlyConfigured
+from conf_enum_generator import ConfigEnumGenerator, GENERATED_FN, GENERATED_MODULE_NAME, conf_gen
 import mode
 import execution
 import env
@@ -67,6 +70,7 @@ def assert_filled(*args):
 			if not globals().get(each, None):
 				raise EmptyMandatorySetting('setting %s is empty' % each)
 	return True
+
 
 # Static object describing available Auth Backends
 ConfigAuthMethods = env.auth.config_list # ConfigAuthMethodsList()
@@ -139,6 +143,9 @@ if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
 elif RUN_ENV_CLASS is ConfigEnvironments.FIMM: # RUN_ENV == 'FIMM':
 	from env.FIMM import *
 	# RUN_ENV_CLASS = ConfigEnvironments.FIMM
+elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud: # RUN_ENV == 'FIMM_cloud':
+	from env.FIMM_cloud import *
+	# RUN_ENV_CLASS = ConfigEnvironments.FIMM_cloud
 else: # FIXME debug
 	raise ProgramingError('Impossible')
 
