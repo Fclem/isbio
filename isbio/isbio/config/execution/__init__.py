@@ -11,5 +11,5 @@ try:
 except (SyntaxError, ImportError, Exception):
 	import importlib
 	
-	generated = importlib.import_module(GENERATED_MODULE_NAME, package='.')
+	generated = importlib.import_module(GENERATED_MODULE_NAME, package='isbio.config.execution')
 	config_list = generated.config_list
