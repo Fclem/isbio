@@ -8,7 +8,7 @@ __dir_path__ = os.path.dirname(__path__)
 conf_gen(__dir_path__, 'ConfigRunModesList')
 
 try:
-	from .__generated import config_list
+	from isbio.config.mode.__generated import config_list
 except (SyntaxError, ImportError, Exception) as e:
 	logger.error('importing __generated: %s' % e)
 	print('importing __generated: %s' % e)
