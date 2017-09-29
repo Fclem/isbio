@@ -1,4 +1,4 @@
-from .. import GENERATED_MODULE_NAME, conf_gen
+from .. import GENERATED_MODULE_NAME, conf_gen, logging
 import os
 
 __path__ = os.path.realpath(__file__)
@@ -8,7 +8,8 @@ conf_gen(__dir_path__, 'ConfigRunModesList')
 
 try:
 	from __generated import config_list
-except (SyntaxError, ImportError, Exception):
+except (SyntaxError, ImportError, Exception) as e:
+	logging.error('importing __generated: %s' % e)
 	import importlib
 	
 	generated = importlib.import_module(GENERATED_MODULE_NAME, package='isbio.config.mode')
