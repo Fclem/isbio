@@ -2,8 +2,8 @@
 # noinspection PyUnresolvedReferences
 from isbio.config.execution.docker import * # !important, do not delete
 # noinspection PyUnresolvedReferences
-from isbio.settings import DomainList, SOURCE_ROOT
-from isbio.config import DEV_MODE, BREEZE_PROD_FOLDER, DOMAIN
+from isbio.settings import DomainList, SOURCE_ROOT, DOMAIN
+from isbio.config import DEV_MODE, BREEZE_PROD_FOLDER
 # DOMAIN = DomainList.CLOUD_DEV if DEV_MODE else DomainList.CLOUD_PROD # config specific
 from auth.auth0 import *
 
