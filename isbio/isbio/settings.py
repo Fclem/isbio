@@ -296,13 +296,16 @@ class DomainList(object):
 	
 	@classmethod
 	def get_current_domain(cls):
-		from isbio.config import RUN_ENV_CLASS, ConfigEnvironments, MODE_PROD, DEV_MODE, PHARMA_MODE
-		if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
-			domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
-		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
-			domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
-		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud:
-			domain = cls.FIMM_CLOUD
+		if cls.selected_domain:
+			domain = cls.selected_domain
+		else:
+			from isbio.config import RUN_ENV_CLASS, ConfigEnvironments, MODE_PROD, DEV_MODE, PHARMA_MODE
+			if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
+				domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
+			elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
+				domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
+			elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud:
+				domain = cls.FIMM_CLOUD
 		return domain[0]
 
 
