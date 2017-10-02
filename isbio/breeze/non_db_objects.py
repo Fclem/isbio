@@ -1307,15 +1307,15 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 			if self.__getattribute__(field_name) in reserved:
 				raise PermissionDenied
 	
-	def save(self, force_insert=False, force_update=False, using=None):
+	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		if not self.read_only:
 			# self.__check_for_reserved_words()
-			return super(CustomModelAbstract, self).save(force_insert, force_update, using)
+			return super(CustomModelAbstract, self).save(force_insert, force_update, using, update_fields)
 		return False
 	
-	def delete(self, using=None):
+	def delete(self, using=None, keep_parents=False):
 		if not self.read_only:
-			return super(CustomModelAbstract, self).delete(using)
+			return super(CustomModelAbstract, self).delete(using, keep_parents)
 		return False
 	
 	class Meta(object):
@@ -1480,6 +1480,7 @@ class AutoJSON(object):
 		elif type(keys_list) is list:
 			cls._serialize_keys += keys_list
 		
+
 import breeze.models
 
 
@@ -1586,9 +1587,14 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 			UserProfile.make_guest(user)
 			
 			# *** allow access to DSRT pipeline ONLY
-			report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
-			report_type.access.add(user)
-			report_type.save()
+			# from django.db.models import FieldDoesNotExist
+			try:
+				report_type = ReportType.objects.get(type__contains="DSRT") # FIXME with a proper design
+				report_type.access.add(user)
+				report_type.save()
+			except ObjectDoesNotExist as e:
+				logger.error('creating guest, getting DSRT repport: %s' % e)
+				pass
 			
 			# *** add user to Guest group
 			# FIXME with a proper design
