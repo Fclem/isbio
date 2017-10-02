@@ -300,7 +300,7 @@ class CachedFile(object):
 	# clem 27/01/2017
 	@property
 	def _descriptor(self):
-		return file(self.full_path) if self.exists else self._get_temp_file()
+		return open(self.full_path) if self.exists else self._get_temp_file()
 	
 	def stream(self, chunk_size=8192):
 		from wsgiref.util import FileWrapper
@@ -435,7 +435,7 @@ class FolderObj(object):
 		if not os.path.exists(a_dir):
 			os.makedirs(a_dir)
 
-		f.name = self.file_n_slug(f.name)
+		f.name = self.file_n_slug(f.name) # FIXME ?
 		with open(os.path.join(a_dir, f.name), 'wb+') as destination:
 			for chunk in f.chunks():
 				destination.write(chunk)
@@ -1323,6 +1323,7 @@ class CustomModelAbstract(models.Model): # TODO move to a common base app
 
 
 # clem 24/03/2017
+# noinspection PyProtectedMember
 class AutoJSON(object):
 	""" Provides an automated JSON serializer for listed attributes only.
 	
@@ -1593,12 +1594,12 @@ class BreezeUser(User, AutoJSON, MagicGetter):
 				report_type.access.add(user)
 				report_type.save()
 			except ObjectDoesNotExist as e:
-				logger.error('creating guest, getting DSRT repport: %s' % e)
+				logger.error('creating guest, getting DSRT report: %s' % e)
 				pass
 			
 			# *** add user to Guest group
 			# FIXME with a proper design
-			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME)
+			guest_group, created = Group.objects.get_or_create(name=settings.GUEST_GROUP_NAME, author_id=1)
 			if created:
 				guest_group.save()
 			guest_group.team.add(user)
