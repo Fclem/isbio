@@ -290,7 +290,7 @@ class DomainList(object):
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
 	FIMM_PROD = ['breeze-fimm.fimm.fi', 'breeze-new.fimm.fi', ]
-	FIMM_CLOUD = ['breeze-web.fimm.fi', ]
+	FIMM_CLOUD = ['breeze-cloud.fimm.fi', ]
 	
 	@classmethod
 	def get_current_domain(cls):
@@ -299,6 +299,8 @@ class DomainList(object):
 			domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
 		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
 			domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
+		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud:
+			domain = cls.FIMM_CLOUD
 		return domain[0]
 
 
