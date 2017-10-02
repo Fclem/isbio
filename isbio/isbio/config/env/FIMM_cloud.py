@@ -1,6 +1,6 @@
 from isbio.settings import DomainList
 from isbio.config import DEV_MODE
-DOMAIN = DomainList.FIMM_CLOUD
+DomainList.selected_domain = DomainList.FIMM_CLOUD
 # noinspection PyUnresolvedReferences
 from base_cloud import *
 
