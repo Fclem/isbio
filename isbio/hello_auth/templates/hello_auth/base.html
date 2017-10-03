@@ -104,7 +104,13 @@
 		<h6>Breeze (empty) home page</h6>
 		<h1>This is "Cloud Breeze" !</h1>
 		Login as <a href="#" onclick="showLock();">Breeze user</a> or
-		<a href="/guest_login">Login as guest</a>
+		<a href="/guest_login">
+			{% if not last_user %}
+			Login as guest
+			{% else %}
+			Resume session as {% last_user.username %}
+			{% endif %}
+		</a>
 	</div>
 	{% if messages %}
 		<div class="messages">
