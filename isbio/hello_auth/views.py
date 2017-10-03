@@ -51,10 +51,11 @@ def __login_stage_two(request, user_bis):
 def guest_login(request):
 	if not request.user.is_authenticated():
 		if 'last_user' in request.session:
-			new_guest = UserModel.new_guest()
-		else:
-			new_guest = request.session['last_user']
+			new_guest_name = request.session['last_user']
+			new_guest = UserModel.objects.get(username=new_guest_name)
 			request.session['last_user'] = None
+		else:
+			new_guest = UserModel.new_guest()
 		new_guest.backend = settings.AUTH0_CUSTOM_BACKEND_PY_PATH
 		if new_guest:
 			return __login_stage_two(request, new_guest)
