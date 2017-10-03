@@ -105,7 +105,7 @@
 		<h1>This is "Cloud Breeze" !</h1>
 		Login as <a href="#" onclick="showLock();">Breeze user</a> or
 		<a href="/guest_login">
-			{% if not last_user %}
+			{% if not last_user_name %}
 			Login as guest
 			{% else %}
 			Resume session as {{ last_user_name }}

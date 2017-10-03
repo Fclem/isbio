@@ -20,9 +20,7 @@ def show_login_page(request):
 	request.session['next'] = request.GET.get('next', None)
 	last_user_name = ''
 	if 'last_user' in request.session:
-		last_user = request.session.get('last_user')
-		if last_user and last_user.is_guest:
-			last_user_name = last_user.username
+		last_user_name = request.session.get('last_user', '')
 	context = {'from_fimm': False, 'last_user_name': last_user_name}
 	return render(request, 'hello_auth/base.html', context=context)
 
@@ -142,7 +140,7 @@ def trigger_logout(request, destroy=False):
 		if destroy:
 			user.guest_auto_remove()
 		elif last_user.is_guest:
-			request.session['last_user'] = last_user
+			request.session['last_user'] = last_user.username
 		return redirect(settings.AUTH0_LOGOUT_URL % url)
 	return login_page_redirect()
 	
