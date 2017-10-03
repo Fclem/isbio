@@ -35,7 +35,9 @@ def __login_stage_two(request, user_bis):
 	user_details = (user_bis.username, user_bis.email)
 	# user is authenticated
 	if user_bis:
+		last_user, next_p = request.session.get('last_user', ''), request.session.get('next', '')
 		auth.login(request, user_bis) # persists user
+		request.session['last_user'], request.session['next'] = last_user, next_p
 		logger.info('AUTH success for %s (%s)' % user_details)
 		# return index(request)
 		next_page = None
