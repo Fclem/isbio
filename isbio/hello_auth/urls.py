@@ -9,5 +9,6 @@ urlpatterns = [
     url(r'^guest_login/?$', guest_login, name='guest_login'),
     url(r'^login/?$', process_login, name='process_login'),
     url(r'^logout/?$', trigger_logout, name='trigger_logout'),
+    url(r'^logout/destroy/?$', trigger_logout, name='trigger_logout', kwargs={'destroy': True}),
     url(r'^logout/login/?$', logout_login, name='logout_login'),
 ]

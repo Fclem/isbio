@@ -119,7 +119,7 @@ def logout_login(request):
 
 
 # clem 10/04/2017
-def trigger_logout(request):
+def trigger_logout(request, destroy=False):
 	if request.user.is_authenticated():
 		user, url = UserModel.get(request), ''
 		auth.logout(request)
@@ -130,8 +130,9 @@ def trigger_logout(request):
 			url = settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
 		except Exception as e:
 			logger.exception(str(e))
-		
-		user.guest_auto_remove()
+		print(request.user, request.user.is_authenticated())
+		if destroy:
+			user.guest_auto_remove()
 		return redirect(settings.AUTH0_LOGOUT_URL % url)
 	return login_page_redirect()
 	

@@ -24,10 +24,9 @@
 						<ul class="dropdown-menu">
 							{% if user.is_guest %}
 							<li><a href="#" onclick="logout_login();"> Log in <i class="icon-share"></i></a></li>
-							<li><a href="/logout/"> Destroy session <i class="icon-share"></i></a></li>
-							{% else %}
-							<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
+							<li><a href="/logout/destroy"> Destroy session <i class="icon-share"></i></a></li>
 							{% endif %}
+							<li><a href="/logout/"> Log Out <i class="icon-share"></i></a></li>
 						</ul>
 					</div>
 				</li>
