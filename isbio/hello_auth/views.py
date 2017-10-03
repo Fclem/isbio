@@ -18,12 +18,12 @@ UserModel = BreezeUser
 def show_login_page(request):
 	# context = {'from_fimm': is_http_client_in_fimm_network(request)}
 	request.session['next'] = request.GET.get('next', None)
-	last_user = None
+	last_user_name = ''
 	if 'last_user' in request.session:
 		last_user = request.session.get('last_user')
-		if not last_user.is_guest:
-			last_user = None
-	context = {'from_fimm': False, 'last_user': last_user}
+		if last_user and last_user.is_guest:
+			last_user_name = last_user.username
+	context = {'from_fimm': False, 'last_user_name': last_user_name}
 	return render(request, 'hello_auth/base.html', context=context)
 
 
