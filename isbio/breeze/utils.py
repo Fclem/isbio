@@ -396,4 +396,5 @@ def get_fqdn(request=None):
 		domain = current_site.domain
 	except Exception as e:
 		logger.warning(e)
-	return domain if domain and validate_fqdn(domain) else get_public_ip()
+	resolved = resolve_dns(domain)
+	return domain if domain and validate_fqdn(domain) else resolved if resolved else get_public_ip()
