@@ -130,9 +130,8 @@ def make_message(a_bool=True, http_code=None):
 
 # clem 18/10/2016
 def default_suspicious(request):
-	import traceback
-	exc_type, exc_value, exc_traceback = sys.exc_info()
-	stack = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+	from traceback import extract_stack, format_list
+	stack = ''.join(format_list(extract_stack()))
 	raise SuspiciousOperation('Invalid request or handling error at %s (payload : %s)\n%s' % (request.path,
 	len(request.body), stack)) # FIXME len doesnt work !
 
