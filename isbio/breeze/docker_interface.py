@@ -378,8 +378,15 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	
 	# clem 06/10/2016
 	def name(self):
-		img = self.client.get_image(self.config_container)
-		return "docker image %s (%s)" % (self.config_container, img.Id)
+		img_id = ''
+		try:
+			img_id = self.client.get_image(self.config_container).Id
+		except AttributeError:
+			# FIXME very nasty HACK
+			img_id = 'sha256:15d72773148517814d1539647d5aea971ccdef566eafb9f796f975b8325e9731'
+			# img = self.client.get_image('sha256:15d72773148517814d1539647d5aea971ccdef566eafb9f796f975b8325e9731')
+		# return "docker image %s (%s)" % (self.config_container, img.Id)
+		return "docker image %s (%s)" % (self.config_container, img_id)
 
 	#####################
 	#  DOCKER SPECIFIC  #
