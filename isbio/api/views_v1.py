@@ -18,7 +18,7 @@ def hook(_):
 def reload_sys(request):
 	payload, rq = code.get_git_hub_json(request)
 	if not (payload and rq.enforce_json_post):
-		raise default_suspicious(request, 'Request had no payload')
+		raise default_suspicious(request, 'Request had no payload, or payload signature was incorrect')
 	
 	allow_filter = {
 		'ref':                  settings.GIT_AUTO_REF,
@@ -41,7 +41,7 @@ def reload_sys(request):
 def git_hook(request):
 	payload, rq = code.get_git_hub_json(request)
 	if not (payload and rq.enforce_json_post):
-		raise default_suspicious(request)
+		raise default_suspicious(request, 'Request had no payload, or payload signature was incorrect')
 	
 	allow_filter = {
 		'ref':           "refs/heads/master",
