@@ -332,9 +332,10 @@ os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 
 CONSOLE_DATE_F = "%d/%b/%Y %H:%M:%S"
 # auto-sensing if running on dev or prod, for dynamic environment configuration
-# FIXME broken in docker container
+# FIXME broken in docker container, replace with site
 FULL_HOST_NAME = socket.gethostname()
 HOST_NAME = str.split(FULL_HOST_NAME, '.')[0]
+HTTP_SCHEME = 'https'
 
 # do not move. here because some utils function useses it
 FIMM_NETWORK = '128.214.0.0/16'
