@@ -8,7 +8,14 @@ from auth.auth0 import *
 DOMAIN = DomainList.selected_domain
 ALLOWED_HOSTS = DOMAIN + AUTH0_IP_LIST
 # FIXME : replace with Site.objects.get(pk=0)
-AUTH0_CALLBACK_URL = AUTH0_CALLBACK_URL_BASE % DOMAIN[0]
+# AUTH0_CALLBACK_URL = AUTH0_CALLBACK_URL_BASE % DOMAIN[0]
+try:
+	from breeze.utils import get_fqdn
+	AUTH0_CALLBACK_URL = AUTH0_CALLBACK_URL_BASE % get_fqdn()
+except (ImportError, Exception) as e:
+	print('Error before get_fqdn(): %s' % e)
+	AUTH0_CALLBACK_URL = AUTH0_CALLBACK_URL_BASE % DOMAIN[0]
+	
 
 # override the dev config
 BREEZE_FOLDER = '%s/' % BREEZE_PROD_FOLDER
