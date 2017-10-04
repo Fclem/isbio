@@ -129,11 +129,12 @@ def make_message(a_bool=True, http_code=None):
 
 
 # clem 18/10/2016
-def default_suspicious(request):
+def default_suspicious(request, msg='', dump_stack=False):
 	from traceback import extract_stack, format_list
-	stack = ''.join(format_list(extract_stack()))
-	raise SuspiciousOperation('Invalid request or handling error at %s (payload : %s)\n%s' % (request.path,
-	len(request.body), stack)) # FIXME len doesnt work !
+	stack = ('\n' + ''.join(format_list(extract_stack()))) if dump_stack else ''
+	msg = (' : ' + msg) if msg else ''
+	raise SuspiciousOperation('Invalid request or handling error at %s (payload : %s)%s\n%s' % (request.path,
+	len(request.body), msg, stack)) # FIXME len doesnt work !
 
 
 # clem 18/10/2016 + 19/10/2016 # TODO description

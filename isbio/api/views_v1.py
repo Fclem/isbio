@@ -17,8 +17,8 @@ def hook(_):
 @csrf_exempt
 def reload_sys(request):
 	payload, rq = code.get_git_hub_json(request)
-	if not (payload and rq.is_json_post):
-		raise default_suspicious(request)
+	if not (payload and rq.enforce_json_post):
+		raise default_suspicious(request, 'Request had no payload')
 	
 	allow_filter = {
 		'ref':                  settings.GIT_AUTO_REF,
@@ -40,7 +40,7 @@ def reload_sys(request):
 @csrf_exempt
 def git_hook(request):
 	payload, rq = code.get_git_hub_json(request)
-	if not (payload and rq.is_json_post):
+	if not (payload and rq.enforce_json_post):
 		raise default_suspicious(request)
 	
 	allow_filter = {

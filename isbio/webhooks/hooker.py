@@ -1,5 +1,7 @@
+from __future__ import print_function
 from utilz import *
 from django.core.handlers.wsgi import WSGIRequest
+from django.core.exceptions import SuspiciousOperation
 
 # from . import settings
 # from django.conf import settings
@@ -15,6 +17,51 @@ def get_key_magic(level=0):
 	return get_key('api_' + this_function_caller_name(level))
 
 
+# clem 04/10/2017
+class BadRequest(SuspiciousOperation):
+	pass
+
+
+# clem 04/10/2017
+class InvalidSignature(BadRequest):
+	pass
+
+
+# clem 04/10/2017
+class WrongHTTPMethod(BadRequest):
+	pass
+
+
+# clem 04/10/2017
+class POSTRequestWasExpected(WrongHTTPMethod):
+	pass
+
+
+# clem 04/10/2017
+class GETRequestWasExpected(WrongHTTPMethod):
+	pass
+
+
+# clem 04/10/2017
+class WrongContentType(BadRequest):
+	pass
+
+
+# clem 04/10/2017
+class JSONContentTypeWasExpected(WrongContentType):
+	pass
+
+
+# clem 04/10/2017
+class FormEncContentTypeWasExpected(WrongContentType):
+	pass
+
+
+# clem 04/10/2017
+class NotFromAuthorizedHost(BadRequest):
+	pass
+
+
 # clem 17/10/2016
 class HookWSGIReq(WSGIRequest):
 	import hashlib
@@ -24,7 +71,7 @@ class HookWSGIReq(WSGIRequest):
 	H_REQ_METHOD = 'REQUEST_METHOD'
 	H_C_T = 'CONTENT_TYPE'
 	H_HOST = 'HTTP_X_Forwarded_For' # X-Forwarded-For # HTTP_HOST
-	H_REMOTE_IP = 'HTTP_X_Real_IP' # X-Real-IP #
+	H_REMOTE_IP = 'HTTP_X_Real_IP' # X-Real-IP # might be proxy IP, do not trust
 	H_USER_AGENT = 'HTTP_USER_AGENT'
 	DEF_SOURCE_NET = '0.0.0.0/0'
 	DEF_HASH_ALGORITHM = hashlib.sha1
@@ -62,11 +109,26 @@ class HookWSGIReq(WSGIRequest):
 	# clem 18/10/2016
 	@property
 	def http_remote_ip(self):
-		return self.get_meta(self.H_REMOTE_IP)
+		remote_ip = self.get_meta(self.H_REMOTE_IP)
+		host_list = self.http_remote_host_list
+		if len(host_list) > 1: # and remote_ip in host_list:
+			# host_list.remove(remote_ip)
+			return host_list[0]
+		return remote_ip
+	
+	# clem 04/10/2017
+	@property
+	def http_remote_host_list(self):
+		# host_line = self.get_meta(self.H_HOST)
+		# return [x.strip() for x in host_line.split(',')]
+		host_line = self.get_meta(self.H_HOST).replace(' ', '').replace('\t', '')
+		return host_line.split(',')
 	
 	# clem 18/10/2016
 	@property
-	def http_remote_host(self):
+	def http_remote_host_deprecated(self):
+		""" legacy version of http_remote_host_list, that omits the fact that this value may contain multiple IPs"""
+		# return self.http_remote_host_list[0]
 		return self.get_meta(self.H_HOST)
 	
 	# clem 18/10/2016
@@ -154,6 +216,19 @@ class HookWSGIReq(WSGIRequest):
 		return self._allowed_source_net == self.DEF_SOURCE_NET or \
 			is_ip_in_network(self.http_remote_ip, self._allowed_source_net)
 	
+	# clem 04/10/2016
+	@property
+	def enforce_source_address(self):
+		""" Check if the source address of the client lies in the expected network, if specified during init, True
+		
+		otherwise
+		
+		:rtype: bool
+		"""
+		if self.check_source_address:
+			return True
+		raise NotFromAuthorizedHost('Address %s not in network %s' % (self.http_remote_ip, self._allowed_source_net))
+	
 	@property
 	def is_post_hook(self):
 		""" Wether or not the request if of POST type
@@ -162,6 +237,20 @@ class HookWSGIReq(WSGIRequest):
 		:rtype: bool
 		"""
 		return self.http_request_method == 'POST' and self.check_source_address
+	
+	# clem 04/10/2017
+	@property
+	def enforce_post_hook(self):
+		""" Check if the request if of POST type and form authorized source network
+		
+		:return: True iff request is of POST type and form authorized source network
+		:raise: if not POST, or not from authorized source network
+		:raises: NotPostRequest, NotFromAuthorizedHost
+		:rtype: bool
+		"""
+		if self.http_request_method != 'POST':
+			raise POSTRequestWasExpected('Instead method was %s' % self.http_request_method)
+		return self.enforce_source_address
 	
 	# clem 18/10/2016
 	@property
@@ -173,6 +262,18 @@ class HookWSGIReq(WSGIRequest):
 		"""
 		return self.http_request_method == 'GET' and self.check_source_address
 	
+	# clem 04/10/2017
+	@property
+	def enforce_get_hook(self):
+		""" Wether or not the request if of GET type
+
+		:return: Wether or not the request if of GET type
+		:rtype: bool
+		"""
+		if self.http_request_method != 'GET':
+			raise GETRequestWasExpected('Instead method was %s' % self.http_request_method)
+		return self.enforce_source_address
+	
 	@property
 	def is_json_post(self):
 		""" Wether the HTTP content type header is application/json and HTTP method is POST
@@ -180,6 +281,18 @@ class HookWSGIReq(WSGIRequest):
 		:rtype: bool
 		"""
 		return self.is_post_hook and self.http_content_type == CT_JSON
+	
+	# clem 04/10/2017
+	@property
+	def enforce_json_post(self):
+		""" Wether the HTTP content type header is application/json and HTTP method is POST
+		
+		:rtype: bool
+		"""
+		if self.enforce_post_hook:
+			if self.http_content_type != CT_JSON:
+				raise JSONContentTypeWasExpected('Instead content type was %s' % self.http_content_type)
+		return True
 	
 	# clem 18/10/2016
 	@property
@@ -190,6 +303,18 @@ class HookWSGIReq(WSGIRequest):
 		"""
 		return self.is_post_hook and self.http_content_type == CT_FORM
 	
+	# clem 04/10/2017
+	@property
+	def enforce_form_post(self):
+		""" Wether the HTTP content type header is application/x-www-form-urlencoded and HTTP method is POST
+		
+		:rtype: bool
+		"""
+		if self.enforce_post_hook:
+			if self.http_content_type != CT_FORM:
+				raise JSONContentTypeWasExpected('Instead content type was %s' % self.http_content_type)
+		return True
+	
 	@property
 	def client_id(self):
 		""" Return a client identification line as "http_remote_host (http_remote_ip) / http_user_agent" if
@@ -198,11 +323,12 @@ class HookWSGIReq(WSGIRequest):
 		
 		:rtype: str
 		"""
-		host = self.http_remote_host
+		host = self.http_remote_host_deprecated
 		ip = self.http_remote_ip
 		host_bloc = host if host == ip else '%s (%s)' % (host, ip)
 		return '%s / %s' % (host_bloc, self.http_user_agent)
 	
+	# noinspection PyUnboundLocalVariable
 	def check_sig(self, key=None, call_depth=0):
 		""" check if the signature of the request body is valid (return False if no signature present)
 		
@@ -216,7 +342,6 @@ class HookWSGIReq(WSGIRequest):
 		:rtype: bool
 		"""
 		if self.has_sig and self.body:
-			msg = '' # IDE HACK suppressing buggy warnings only
 			if self.VERBOSITY:
 				args = (this_function_caller_name(self._call_depth + call_depth), self.client_id, self.delivery_id)
 				msg = ' SIG_CHECK for %s FROM %s (delivery %s)' % args
@@ -224,16 +349,20 @@ class HookWSGIReq(WSGIRequest):
 				if self.VERBOSITY:
 					success_msg = 'VERIFIED' + msg
 					logger.info(success_msg)
-					print (TermColoring.ok_green(success_msg))
+					print(TermColoring.ok_green(success_msg))
 				return True
 			else:
 				if self.VERBOSITY:
 					error_msg = 'FAILED' + msg
 					logger.warning(error_msg)
-					# logger.info('computed HMAC:%s mismatch header HMAC:%s, key length was %s' % (self.hmac(key),
-					# 	self.signature, len(key)))
-					print (TermColoring.fail(error_msg))
+					print(TermColoring.fail(error_msg))
 		return False
+	
+	# clem 04/10/2017
+	def enforce_sig(self, key=None, call_depth=0):
+		if not self.check_sig(key, ++call_depth):
+			raise InvalidSignature
+		return True
 	
 	# clem 18/10/2016
 	def get_json(self, key=None, call_depth=0):
