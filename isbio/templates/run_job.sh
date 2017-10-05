@@ -36,7 +36,7 @@ echo '######################################################### END ############
 echo
 # removing possibly existing files generated from a previous run
 rm *~ ${OUT} ${FAILED_FN} ${INCOMPLETE_FN} ${SUCCESS_FN} ${DONE_FN} > /dev/null 2>&1
-wget -qO- ${POKE_URL}'starting' > /dev/null &
+wget -qO-  --no-check-certificate ${POKE_URL}'starting' > /dev/null &
 echo `date --rfc-3339=second | sed 's/ /T/'`
 echo -n 'Running '${IN}'...'
 # Running the job
@@ -57,10 +57,10 @@ then
 	touch ./${FAILED_FN}
 	# cat ${OUT}
 	echo 'Failure !'
-	wget -qO- ${POKE_URL}'failed/'${CODE} > /dev/null &
+	wget -qO- --no-check-certificate ${POKE_URL}'failed/'${CODE} > /dev/null &
 	exit ${CODE}
 else
-	wget -qO- ${POKE_URL}'success' > /dev/null &
+	wget -qO- --no-check-certificate ${POKE_URL}'success' > /dev/null &
 	echo 'Success !'
 fi
 # removes any possible temp file (we don't want them to be part of the resulting folder)
