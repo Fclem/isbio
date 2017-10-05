@@ -1,5 +1,5 @@
 from isbio.settings import DomainList
-from isbio.config import DEV_MODE
+from isbio.config import DEV_MODE, SOURCE_ROOT  
 DomainList.selected_domain = DomainList.CLOUD_DEV if DEV_MODE else DomainList.CLOUD_PROD
 # noinspection PyUnresolvedReferences
 from base_cloud import *
