@@ -28,7 +28,7 @@ if PRINT_LOG:
 
 # FIXME : make this module totally generic
 # general config # FIXME : get from config and propagate
-SECRET_REL_PATH = '../../configs' # hack
+SECRET_REL_PATH = '/'.join(__dir_path__.split('/')[:-3] + ['configs']) # hack
 ENV_OUT_FILE = ('OUT_FILE', 'out.tar.xz')
 ENV_IN_FILE = ('IN_FILE', 'in.tar.xz')
 ENV_DOCK_HOME = ('DOCK_HOME', '/breeze')
