@@ -385,9 +385,9 @@ def extract_tarfile(input_filename, destination_dir, do_raise=True):
 			tar.extractall(destination_dir)
 		return True
 	except Exception as e:
+		get_logger().log.error('Error creating %s : %s' % (input_filename, str(e)))
 		if do_raise:
 			raise
-		get_logger().log.exception('Error creating %s : %s' % (input_filename, str(e)))
 	return False
 
 

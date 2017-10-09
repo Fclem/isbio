@@ -434,7 +434,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 							if self._container.is_dead:
 								self.log.warning('container is dead !')
 					except AttributeError:
-						self.log.exception('AttributeError: %s' % str(self._container.status_obj))
+						self.log.error('AttributeError: %s' % str(self._container.status_obj))
 				else: # TODO : has to set job to failed
 					self.log.error('Container not found !')
 					self._set_global_status(self.js.FAILED)
@@ -768,7 +768,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					safe_rm(self.assembly_folder_path) # delete the temp folder used to create the archive
 				return True
 
-		self.log.exception('Job super-assembly failed')
+		self.log.error('Job super-assembly failed')
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, 89)
 		return False
@@ -792,7 +792,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				error = [88, 'assembly upload failed']
 		except Exception as e:
 			error = [90, str(e)]
-		self.log.exception(error[1])
+		self.log.error(error[1])
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, error[0])
 		return False
@@ -825,18 +825,18 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					try:
 						self.container.stop()
 					except Exception as e:
-						self.log.exception('Stopping container failed : %s' % str(e))
+						self.log.error('Stopping container failed : %s' % str(e))
 					try:
 						self.container.kill()
 					except Exception as e:
-						self.log.exception('Killing container failed : %s' % str(e))
+						self.log.error('Killing container failed : %s' % str(e))
 					try:
 						if self.auto_remove:
 							self.container.remove_container()
 					except Exception as e:
-						self.log.exception('Removing container failed : %s' % str(e))
+						self.log.error('Removing container failed : %s' % str(e))
 			except Exception as e:
-				self.log.exception(str(e))
+				self.log.error(str(e))
 			self._set_status(self.js.ABORTED)
 			self._runnable.manage_run_aborted(1, 95)
 			return True
@@ -885,7 +885,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				self._runnable.manage_run_success(0)
 				return True
 		except Exception as e:
-			self.log.exception(e)
+			self.log.error(e)
 		self.log.warning('Failure ! (breeze failed while getting back results)')
 		self._set_status(self.js.FAILED)
 		self._runnable.manage_run_failed(0, 999)

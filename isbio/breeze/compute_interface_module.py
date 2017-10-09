@@ -278,7 +278,7 @@ class ComputeInterface(ComputeInterfaceBase, ComputeInterfacePrototype):
 		try:
 			return make_tarfile(output_filename, source_dir)
 		except Exception as e:
-			self.log.exception('Error creating %s : %s' % (output_filename, str(e)))
+			self.log.error('Error creating %s : %s' % (output_filename, str(e)))
 		return False
 
 	# clem 23/05/2016
@@ -295,7 +295,7 @@ class ComputeInterface(ComputeInterfaceBase, ComputeInterfacePrototype):
 		try:
 			return extract_tarfile(input_filename, destination_dir)
 		except Exception as e:
-			self.log.exception('Error extracting %s : %s' % (input_filename, str(e)))
+			self.log.error('Error extracting %s : %s' % (input_filename, str(e)))
 		return False
 	
 	#######################

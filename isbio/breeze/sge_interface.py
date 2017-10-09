@@ -223,7 +223,7 @@ class SGEInterface(SGEInterfaceConnector, ComputeInterface):
 			# django.db.close_connection()
 			a_run.breeze_stat = JobStat.PREPARE_RUN
 		except Exception as e:
-			self.log.exception('pre-run error %s (process continues)' % e)
+			self.log.error('pre-run error %s (process continues)' % e)
 		try:
 			# with self.drmaa_mutex:
 				# with self.drmaa.Session() as session:

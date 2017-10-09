@@ -1846,7 +1846,7 @@ def run_script(request, jid):
 	except (Report.DoesNotExist, Jobs.DoesNotExist):
 		log = logger.getChild('abort_sge')
 		# assert isinstance(log, logging.getLoggerClass())
-		log.exception("user %s trying to run job %s that does not belong to him" & (request.user, jid))
+		log.error("user %s trying to run job %s that does not belong to him" & (request.user, jid))
 		return jobs(request, error_msg="You cannot do that.")
 	job.submit_to_cluster()
 
@@ -1866,7 +1866,7 @@ def abort_sge(request, id, type):
 		elif type == "job":
 			item = Jobs.objects.get(id=id)
 	except (Report.DoesNotExist, Jobs.DoesNotExist):
-		log.exception("job/report %s does not exists" % id)
+		log.error("job/report %s does not exists" % id)
 		return jobs(request, error_msg="job/report  %s  does not exists\nPlease contact Breeze support" % id)
 
 	s = None
