@@ -954,6 +954,9 @@ class DockerClient(object):
 				self._force_log('clearing watcher')
 				del self.__watcher # GC
 				self.__watcher = None
+		if self.__connection_state:
+			self._raw_cli.close()
+			self._raw_cli = None
 
 	# clem 14/03/2016
 	def __del__(self):
@@ -1427,8 +1430,8 @@ class DockerClient(object):
 
 	# clem 07/04/2016
 	def close(self):
-		self.__cleanup()
 		del self
+		# self.__cleanup()
 
 	# clem 06/05/2016
 	def stop(self, container, timeout=10):
