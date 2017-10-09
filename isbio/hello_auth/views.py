@@ -18,9 +18,7 @@ UserModel = BreezeUser
 def show_login_page(request):
 	# context = {'from_fimm': is_http_client_in_fimm_network(request)}
 	request.session['next'] = request.GET.get('next', None)
-	last_user_name = ''
-	if 'last_user' in request.session:
-		last_user_name = request.session.get('last_user', '')
+	last_user_name = request.session.get('last_user', '')
 	context = {'from_fimm': False, 'last_user_name': last_user_name}
 	return render(request, 'hello_auth/base.html', context=context)
 
@@ -72,7 +70,6 @@ def process_login(request):
 	""" Default handler to login user
 
 	:param request: HttpRequest
-	:param user: User
 	"""
 	
 	code = request.GET.get('code', None)
