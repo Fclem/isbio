@@ -4,8 +4,6 @@ from isbio.config import ConfigAuthMethods
 
 AUTHENTICATION_BACKENDS = (
 	AUTH0_CUSTOM_BACKEND_PY_PATH,
-	# AUTH0_BACKEND_PY_PATH,
-	
 )
 # TODO move to custom_auth ?
 AUTH0_IP_LIST = ['34.253.4.94', '35.156.51.163', '35.157.221.52', '52.16.193.66', '52.16.224.164',

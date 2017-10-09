@@ -172,7 +172,11 @@ def is_ip_in_network(ip_addr, network):
 
 # clem 07/07/2017
 def resolve_dns(hostname):
-	return socket.gethostbyname_ex(hostname)[2][0]
+	try:
+		return socket.gethostbyname_ex(hostname)[2][0]
+	except socket.gaierror as e:
+		get_logger().error('resolve_dns(%s): %s' % (hostname, e))
+	return ''
 
 
 # clem 07/07/2017

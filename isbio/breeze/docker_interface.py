@@ -377,8 +377,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	
 	# clem 06/10/2016
 	def name(self):
-		img = self.client.get_image(self.config_image)
-		return "docker image %s (%s)" % (self.config_image, img.Id)
+		try:
+			img_id = self.client.get_image(self.config_image).Id
+		except AttributeError:
+			# FIXME backward compatibility safeguard
+			img_id = 'sha256:15d72773148517814d1539647d5aea971ccdef566eafb9f796f975b8325e9731'
+		return "docker image %s (%s)" % (self.config_image, img_id)
 
 	#####################
 	#  DOCKER SPECIFIC  #

@@ -287,19 +287,27 @@ LOGGING = {
 
 
 class DomainList(object):
-	CLOUD_PROD = ['breeze.fimm.fi', '13.79.158.135', ]
+	selected_domain = None
+	
+	CLOUD_PROD = ['breeze-cloud.fimm.fi', '13.79.158.135', ]
 	CLOUD_DEV = ['breeze-dev.northeurope.cloudapp.azure.com', '52.164.209.61', ]
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
 	FIMM_PROD = ['breeze-fimm.fimm.fi', 'breeze-new.fimm.fi', ]
+	FIMM_CLOUD = ['breeze.fimm.fi', ]
 	
 	@classmethod
 	def get_current_domain(cls):
-		from isbio.config import RUN_ENV_CLASS, ConfigEnvironments, MODE_PROD, DEV_MODE, PHARMA_MODE
-		if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
-			domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
-		elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
-			domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
+		if cls.selected_domain:
+			domain = cls.selected_domain
+		else:
+			from isbio.config import RUN_ENV_CLASS, ConfigEnvironments, MODE_PROD, DEV_MODE, PHARMA_MODE
+			if RUN_ENV_CLASS is ConfigEnvironments.AzureCloud:
+				domain = cls.CLOUD_DEV if DEV_MODE else cls.CLOUD_PROD
+			elif RUN_ENV_CLASS is ConfigEnvironments.FIMM:
+				domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
+			elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud:
+				domain = cls.FIMM_CLOUD
 		# noinspection PyUnboundLocalVariable
 		return domain[0]
 
@@ -326,9 +334,10 @@ os.environ['MAIL'] = '/var/mail/dbychkov' # FIXME obsolete
 
 CONSOLE_DATE_F = "%d/%b/%Y %H:%M:%S"
 # auto-sensing if running on dev or prod, for dynamic environment configuration
-# FIXME broken in docker container
+# FIXME broken in docker container, replace with site
 FULL_HOST_NAME = socket.gethostname()
 HOST_NAME = str.split(FULL_HOST_NAME, '.')[0]
+HTTP_SCHEME = 'https'
 
 # do not move. here because some utils function use it
 FIMM_NETWORK = '128.214.0.0/16'

@@ -18,7 +18,8 @@ UserModel = BreezeUser
 def show_login_page(request):
 	# context = {'from_fimm': is_http_client_in_fimm_network(request)}
 	request.session['next'] = request.GET.get('next', None)
-	context = {'from_fimm': False}
+	last_user_name = request.session.get('last_user', '')
+	context = {'from_fimm': False, 'last_user_name': last_user_name}
 	return render(request, 'hello_auth/base.html', context=context)
 
 
@@ -32,7 +33,9 @@ def __login_stage_two(request, user_bis):
 	user_details = (user_bis.username, user_bis.email)
 	# user is authenticated
 	if user_bis:
+		last_user, next_p = request.session.get('last_user', ''), request.session.get('next', '')
 		auth.login(request, user_bis) # persists user
+		request.session['last_user'], request.session['next'] = last_user, next_p
 		logger.info('AUTH success for %s (%s)' % user_details)
 		# return index(request)
 		next_page = None
@@ -47,7 +50,13 @@ def __login_stage_two(request, user_bis):
 # clem 30/03/2017
 def guest_login(request):
 	if not request.user.is_authenticated():
-		new_guest = UserModel.new_guest()
+		new_guest_name = request.session.get('last_user', '')
+		if new_guest_name:
+			new_guest = UserModel.objects.get(username=new_guest_name)
+			request.session['last_user'] = None
+			del request.session['last_user']
+		else:
+			new_guest = UserModel.new_guest()
 		new_guest.backend = settings.AUTH0_CUSTOM_BACKEND_PY_PATH
 		if new_guest:
 			return __login_stage_two(request, new_guest)
@@ -61,7 +70,6 @@ def process_login(request):
 	""" Default handler to login user
 
 	:param request: HttpRequest
-	:param user: User
 	"""
 	
 	code = request.GET.get('code', None)
@@ -119,19 +127,21 @@ def logout_login(request):
 
 
 # clem 10/04/2017
-def trigger_logout(request):
+def trigger_logout(request, destroy=False):
 	if request.user.is_authenticated():
 		user, url = UserModel.get(request), ''
+		last_user = user
 		auth.logout(request)
 		logger.info('LOGOUT %s (%s)' % (user.username, user.email))
 		
 		try:
-			# url = user.user_profile.institute_info.url or settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
 			url = settings.AUTH0_DEFAULT_LOGOUT_REDIRECT
 		except Exception as e:
 			logger.exception(str(e))
-		
-		user.guest_auto_remove()
+		if destroy:
+			user.guest_auto_remove()
+		elif last_user.is_guest:
+			request.session['last_user'] = last_user.username
 		return redirect(settings.AUTH0_LOGOUT_URL % url)
 	return login_page_redirect()
 	
