@@ -570,7 +570,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: the path
 		:rtype: str
 		"""
-		return self.assembly_folder_path + settings.DOCKER_SH_NAME
+		return self.assembly_folder_path + settings.DOCKER_SH_STAGE2_NAME
 
 	# clem 24/05/2016
 	@property
@@ -580,7 +580,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: the path
 		:rtype: str
 		"""
-		return self.runnable_path + settings.DOCKER_SH_NAME + '.log'
+		return self.runnable_path + settings.DOCKER_SH_STAGE2_NAME + '.log'
 
 	@staticmethod
 	def _remove_sup(path):
