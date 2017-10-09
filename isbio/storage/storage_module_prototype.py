@@ -28,6 +28,7 @@ if PRINT_LOG:
 
 # FIXME : make this module totally generic
 # general config # FIXME : get from config and propagate
+SECRET_REL_PATH = '../../configs' # hack
 ENV_OUT_FILE = ('OUT_FILE', 'out.tar.xz')
 ENV_IN_FILE = ('IN_FILE', 'in.tar.xz')
 ENV_DOCK_HOME = ('DOCK_HOME', '/breeze')
@@ -686,6 +687,7 @@ class StorageModulePrototype(ModuleType):
 # TODO throw an error if key is invalid, otherwise azure keeps on returning "resource not found" error
 # clem 22/09/2016 duplicated from utilities/__init__
 def get_key_bis(name=''):
+	
 	if name.endswith('_secret'):
 		name = name[:-7]
 	if name.startswith('.'):
@@ -693,6 +695,8 @@ def get_key_bis(name=''):
 	try:
 		full_path = '%s/.%s_secret' % (__dir_path__, name)
 		print('accessing key at %s from %s' % (full_path, this_function_caller_name()))
+		if not os.path.isfile(full_path):
+			full_path = '%s/.%s_secret' % (SECRET_REL_PATH, name)
 		with open(full_path) as f:
 			return str(f.read()).replace('\n', '').replace('\r', '')
 	except IOError:
