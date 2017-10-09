@@ -793,7 +793,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		except Exception as e:
 			error = [90, str(e)]
 		self.log.error(error[1])
-		self._set_status(self.js.FAILED)
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, error[0])
 		return False
 
