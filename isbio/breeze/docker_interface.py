@@ -415,7 +415,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				else:
 					self.log.info('Start TO, starting not possible since status is %s ' %
 						self._container.status_text)
-					self._set_status(self.js.FAILED)
+					self._set_global_status(self.js.FAILED)
 					self._runnable.manage_run_failed(0, 888)
 
 	# clem 25/05/2016
@@ -769,7 +769,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				return True
 
 		self.log.error('Job super-assembly failed')
-		self._set_status(self.js.FAILED)
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, 89)
 		return False
 
@@ -809,10 +809,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					return True
 		except self._missing_exception:
 			self.log.error('No result found for job %s' % self.run_id)
-			self._set_status(self.js.FAILED)
+			self._set_global_status(self.js.FAILED)
 			self._runnable.manage_run_failed(1, 92)
 			raise
-		self._set_status(self.js.FAILED)
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, 91)
 		return False
 
@@ -837,7 +837,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 						self.log.error('Removing container failed : %s' % str(e))
 			except Exception as e:
 				self.log.error(str(e))
-			self._set_status(self.js.ABORTED)
+			self._set_global_status(self.js.ABORTED)
 			self._runnable.manage_run_aborted(1, 95)
 			return True
 		return False
@@ -875,7 +875,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					self.log.warning('Failure ! (container failed)')
 				else:
 					self.log.warning('Failure ! (script failed)')
-				self._set_status(self.js.FAILED)
+				self._set_global_status(self.js.FAILED)
 				self._runnable.manage_run_failed(1, ex_code)
 				return False
 			elif get_res:
@@ -887,7 +887,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		except Exception as e:
 			self.log.error(e)
 		self.log.warning('Failure ! (breeze failed while getting back results)')
-		self._set_status(self.js.FAILED)
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(0, 999)
 		return False
 		
