@@ -181,15 +181,22 @@ def resolve_dns(hostname):
 
 # clem 07/07/2017
 # noinspection PyPep8Naming
-def get_HTTP_body(url, timeout=5):
+def get_HTTP_body(url, timeout=5, do_raise=True):
 	# noinspection PyCompatibility
 	import urllib2
-	return str(urllib2.urlopen(url, timeout=timeout).read())
+	try:
+		return str(urllib2.urlopen(url, timeout=timeout).read())
+	except Exception as e:
+		get_logger().error('HTTP get ERROR on %s: %s' % (url, str(e)))
+		if do_raise:
+			raise
+	return ''
 
 
 # clem 07/07/2017
 def get_public_ip():
-	return get_HTTP_body('https://ipinfo.io/ip', 1).replace('\n', '').strip()
+	result = get_HTTP_body('https://ipinfo.io/ip', 2, False).replace('\n', '').strip()
+	return result or get_HTTP_body('http://ipinfo.io/ip', 2, False).replace('\n', '').strip()
 
 
 # clem 07/07/2017
