@@ -1192,9 +1192,12 @@ class DockerClient(object):
 		assert isinstance(run, DockerRun)
 
 		image_name = str(run.image_full_name)
+		
+		# pulls the image anyways as it might have been updated
+		self.pull(image_name)
 		# check if image exists locally, and pull it if not
 		if not self._img_exists_or_pulled(run): # if pulled failed
-			return None
+			return None # TODO
 
 		host_conf = self._host_config_dict(run)
 		

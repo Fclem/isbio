@@ -13,6 +13,7 @@ __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
 
+fail_c = Runnable.failure_codes
 
 # clem 21/10/2016
 class DockerInterfaceConnector(ComputeInterfaceBase):
@@ -416,7 +417,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					self.log.info('Start TO, starting not possible since status is %s ' %
 						self._container.status_text)
 					self._set_global_status(self.js.FAILED)
-					self._runnable.manage_run_failed(0, 888)
+					self._runnable.manage_run_failed(0, fail_c.CONTAINER_STARTUP)
 
 	# clem 25/05/2016
 	def _container_thread_safe(self):
@@ -438,6 +439,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				else: # TODO : has to set job to failed
 					self.log.error('Container not found !')
 					self._set_global_status(self.js.FAILED)
+					self._runnable.manage_run_failed(1, fail_c.CONTAINER_NOT_FOUND)
 		return self._container
 
 	# clem 12/05/2016
@@ -770,7 +772,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 		self.log.error('Job super-assembly failed')
 		self._set_global_status(self.js.FAILED)
-		self._runnable.manage_run_failed(1, 89)
+		self._runnable.manage_run_failed(1, fail_c.SUPER_ASSEMBLY)
 		return False
 
 	def send_job(self):
@@ -787,12 +789,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				if self._run():
 					return True
 				else:
-					error = [87, 'container kickoff failed']
+					error = fail_c.CONTAINER_KICKOFF
 			else:
-				error = [88, 'assembly upload failed']
+				error = fail_c.ASSEMBLY_UPLOAD
 		except Exception as e:
-			error = [90, str(e)]
-		self.log.error(error[1])
+			error = fail_c.UNKNOWN # [90, str(e)]
+		# self.log.error(error[1])
 		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, error[0])
 		return False
@@ -810,10 +812,11 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		except self._missing_exception:
 			self.log.error('No result found for job %s' % self.run_id)
 			self._set_global_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, 92)
+			self._runnable.manage_run_failed(1, fail_c.NO_RESULT)
 			raise
+		self.log.error('Archive extraction error for job %s' % self.run_id)
 		self._set_global_status(self.js.FAILED)
-		self._runnable.manage_run_failed(1, 91)
+		self._runnable.manage_run_failed(1, fail_c.EXTRACTION)
 		return False
 
 	# clem 06/05/2016
@@ -888,7 +891,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			self.log.error(e)
 		self.log.warning('Failure ! (breeze failed while getting back results)')
 		self._set_global_status(self.js.FAILED)
-		self._runnable.manage_run_failed(0, 999)
+		self._runnable.manage_run_failed(1, fail_c.GET_RESULT)
 		return False
 		
 	# clem 20/09/2016
@@ -897,6 +900,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		try:
 			if self.container:
 				self.container.remove_container()
+			self.client.close()
+			del self._client
+			self._client = None
+			del self
 			return True
 		except Exception as e:
 			self.log.warning('Cannot delete %s: %s' % (self.container.name, str(e)))

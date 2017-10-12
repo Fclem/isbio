@@ -161,6 +161,7 @@ class ObjectCache(object):
 		:return: The corresponding CacheObject or None
 		:rtype: CachedObject | None
 		"""
+		key = cls._key_getter(key)
 		with cls.data_mutex:
 			val = cls._cache.get(key, default)
 		return val
@@ -175,6 +176,7 @@ class ObjectCache(object):
 		:type default: Any
 		:return: The stored object or None
 		"""
+		key = cls._key_getter(key)
 		cached = cls.get_cached(key, default)
 		if cached:
 			text = str(cached)
@@ -200,6 +202,7 @@ class ObjectCache(object):
 		:raise: AssertionError if callback is not a callable object
 		"""
 		assert callable(callback)
+		key = cls._key_getter(key)
 		obj = cls.get(key)
 		if not obj:
 			obj = callback()
@@ -220,6 +223,7 @@ class ObjectCache(object):
 		:return: is success
 		:rtype: bool
 		"""
+		key = cls._key_getter(key)
 		try:
 			with cls.data_mutex:
 				del cls._cache[key]
@@ -228,6 +232,21 @@ class ObjectCache(object):
 			return True
 		except KeyError:
 			return False
+
+	@classmethod
+	def _key_getter(cls, the_object):
+		""" Get the key from the object if stored in cache
+
+		:param the_object: the object to get the key of
+		:type the_object: object
+		:return: is success
+		:rtype: object | basestring
+		"""
+		if not isinstance(the_object, basestring):
+			with cls.data_mutex:
+				if the_object in cls._cache.values():
+					return cls._cache.keys()[cls._cache.values().index(the_object)]
+		return the_object
 
 	@classmethod
 	def add(cls, some_object, key, invalidate_after=GENERAL_CACHE_TIME_OUT, idle_expiry=0):
@@ -262,6 +281,6 @@ class ObjectCache(object):
 	def garbage_collection(cls):
 		""" Process to the removal of any expired object (due to idle, or general expiration) (Thread Safe) """
 		with cls.data_mutex:
-			for k, v in cls._cache.iteritems():
+			for k, v in cls._cache.items():
 				if v.is_idle_time_out or v.is_expired:
 					cls.expire(k, str(v), 'ExpiredGarbageCollection')

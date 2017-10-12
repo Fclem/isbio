@@ -228,6 +228,29 @@ class JobStat(object):
 
 	def __str__(self):
 		return self.stat_text
+	
+
+# clem 11/10/2017
+class FailureCodesT(type):
+	# general
+	GET_RESULT = 999, 'An error occurred while getting results'
+	UNKNOWN = 90, 'Unknown error'
+	ASSEMBLY_UPLOAD = 88, 'Assembly upload failed'
+	NO_RESULT = 92, 'No result archive was found for this job on the associated storage'
+	EXTRACTION = 91, 'An error occurred during the extraction of the result archive'
+	
+	# docker
+	SUPER_ASSEMBLY = 89, 'Job super-assembly failed'
+	CONTAINER_KICKOFF = 87, 'Container kickoff failed'
+	CONTAINER_NOT_FOUND = 86, 'Container not found'
+	CONTAINER_STARTUP = 888, 'Container startup timeout'
+	UNSPECIFIED = 99, 'Unspecified error while running container'
+	NO_STORAGE_MODULES = 77, 'Container failed to import storage modules'
+	STORAGE_MODULES_UPDATE = 66, 'Container failed to auto-update storage modules'
+	JOB_DOWNLOAD = 55, 'Container failed to download the job archive from associated storage'
+	JOB_EXTRACTION = 44, 'Container failed to extract job archive'
+	JOB_FAILED = 33, 'The pipeline script failed (R error)'
+	JOB_UPLOAD = 22, 'Container failed to upload results to the associated storage'
 
 
 # clem 30/01/2017

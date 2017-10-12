@@ -1783,6 +1783,12 @@ class Runnable(FolderObj, ObjectsWithACL):
 		except Exception:
 			pass
 
+	failure_codes = FailureCodesT
+
+	# clem 09/10/2017
+	def manage_end_run(self, success):
+		self.send_completion_mail(success)
+		
 	# Clem 11/09/2015  # FIXME obsolete design
 	def manage_run_success(self, ret_val):
 		""" !!! DO NOT OVERRIDE !!!
@@ -1795,7 +1801,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		self.__auto_json_dump(ret_val, self._test_file)
 		self.breeze_stat = JobStat.SUCCEED
 		self.log.info('SUCCESS !')
-		self.send_completion_mail(True)
+		self.manage_end_run(True)
 		self.trigger_run_success(ret_val)
 
 	# Clem 11/09/2015  # FIXME obsolete design
@@ -1810,7 +1816,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		"""
 		self.breeze_stat = JobStat.ABORTED
 		self.log.info('exit code %s, user aborted' % exit_code)
-		self.send_completion_mail(False)
+		self.manage_end_run(False)
 		self.trigger_run_user_aborted(ret_val, exit_code)
 
 	# Clem 11/09/2015  # FIXME obsolete design
@@ -1820,7 +1826,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 		Actions on Job Failure
 
 		:type ret_val: int
-		:type exit_code: int | str
+		:type exit_code: int | str | FailureCodesT
 		:type drmaa_waiting: bool | None
 		:type failure_type: str
 		"""
@@ -1833,9 +1839,18 @@ class Runnable(FolderObj, ObjectsWithACL):
 			else:
 				self.log.info('Script has failed ! (%s)' % failure_type)
 				self.breeze_stat = JobStat.SCRIPT_FAILED
+		elif exit_code:
+			msg = failure_type
+			# FIXME
+			if isinstance(exit_code, self.failure_codes):
+				msg = '%s : %s' % (exit_code[1], msg)
+			self.log.info(msg)
+			if exit_code is self.failure_codes.JOB_FAILED:
+				self.breeze_stat = JobStat.SCRIPT_FAILED
+			else:
+				self.breeze_stat = JobStat.FAILED
 		
-		self.send_completion_mail(False)
-	
+		self.manage_end_run(False)
 		self.trigger_run_failed(ret_val, exit_code)
 
 	# Clem 11/09/2015
