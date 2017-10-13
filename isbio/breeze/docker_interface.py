@@ -708,7 +708,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					remove_file_safe(self.assembly_archive_path)
 				return True
 		except Exception as e:
-			self.log.error(str(e))
+			self.log.error('%s%s' % (str(e), get_stack()))
 		return False
 
 	# clem 10/05/2016
