@@ -110,7 +110,7 @@ class FimmStorage(StorageServicePrototype):
 		:raise: IOError or FileNotFoundError
 		"""
 		target_path = self._make_path(target_path, container)
-		return self._copy_file(target_path, source_path, container, verbose)
+		return self._copy_file(source_path, target_path, container, verbose)
 	
 	# clem 28/04/201
 	def download(self, target_path, source_path, container=None, verbose=True):
@@ -131,7 +131,7 @@ class FimmStorage(StorageServicePrototype):
 		:raise: self.missing_res_error
 		"""
 		target_path = self._make_path(target_path, container)
-		return self._copy_file(source_path , target_path, container, verbose)
+		return self._copy_file(target_path, source_path, container, verbose)
 	
 	# clem 28/04/201
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
