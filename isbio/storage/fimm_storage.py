@@ -149,8 +149,10 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
+		target_path = self._make_path(target_path, container)
 		if os.path.exists(target_path):
-			target_path = self._make_path(target_path, container)
+			if verbose:
+				self._print_call('erase', (target_path, container))
 			os.remove(target_path)
 			return True
 		if not no_fail:
