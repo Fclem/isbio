@@ -106,10 +106,10 @@ class FimmStorage(StorageServicePrototype):
 		:param verbose: Print actions (default to True)
 		:type verbose: bool | None
 		:return: is success
-		:rtype: bool
+		:rtype: str
 		:raise: IOError or FileNotFoundError
 		"""
-		return self._copy_file(target_path, file_path, container, verbose)
+		return target_path if self._copy_file(target_path, file_path, container, verbose) else ''
 	
 	# clem 28/04/201
 	def download(self, target_path, file_path, container=None, verbose=True):
