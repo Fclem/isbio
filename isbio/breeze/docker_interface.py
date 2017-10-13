@@ -38,6 +38,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	CONFIG_SUP_IMAGE = 'image'
 	CONFIG_SUP_CONT_CMD = 'cont_cmd'
 	CONFIG_VOLUMES = 'volumes'
+	DO_ASSEMBLE = 'parse_source'
 	
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
 		"""
@@ -88,6 +89,16 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	def config_volumes(self):
 		# return self.get_exec_specific(self.CONFIG_VOLUMES)
 		return self.engine_obj.get(self.CONFIG_VOLUMES)
+	
+	# clem 13/10/2017
+	@property
+	def config_do_assemble(self):
+		try:
+			result = self.engine_obj.get(self.DO_ASSEMBLE).lower() in ['true', 'on', 'yes']
+		except Exception as e:
+			self.log.warning(str(e))
+			result = True
+		return result
 	
 	# clem 17/06/2016
 	@property
@@ -678,7 +689,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
-		return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER)
+		return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER) if self.config_do_assemble else True
 
 	# clem 24/05/2016
 	@property
