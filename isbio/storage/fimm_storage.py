@@ -32,7 +32,7 @@ class FimmStorage(StorageServicePrototype):
 		:raise: AssertionError
 		"""
 		assert FROM_COMMAND_LINE
-		super(ProjectStorage, self).update_self(container)
+		super(FimmStorage, self).update_self(container)
 		return self._update_self_do(__file_name__, __file__, container)
 	
 	# clem 20/04/2016
@@ -44,7 +44,7 @@ class FimmStorage(StorageServicePrototype):
 		:return: Info on the created blob as a Blob object
 		:rtype:
 		"""
-		super(ProjectStorage, self).upload_self(container)
+		super(FimmStorage, self).upload_self(container)
 		
 		return self._upload_self_do(__file_name__, __file__, container)
 	
