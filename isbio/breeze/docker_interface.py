@@ -8,7 +8,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.10'
+__version__ = '0.11'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -37,6 +37,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	CONFIG_SUP_SECTION = 'docker'
 	CONFIG_SUP_IMAGE = 'image'
 	CONFIG_SUP_CONT_CMD = 'cont_cmd'
+	CONFIG_VOLUMES = 'volumes'
 	
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
 		"""
@@ -81,6 +82,12 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	@property
 	def config_image(self):
 		return self.get_exec_specific(self.CONFIG_SUP_IMAGE)
+	
+	# clem 13/10/2017
+	@property
+	def config_volumes(self):
+		# return self.get_exec_specific(self.CONFIG_VOLUMES)
+		return self.engine_obj.get(self.CONFIG_VOLUMES)
 	
 	# clem 17/06/2016
 	@property
@@ -315,7 +322,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	proc = None
 	_container_lock = None
 	_label = ''
-	my_volume = DockerVolume('/home/breeze/data/', '/breeze') # FIXME (shouldn't be static)
+	my_volumes = list()
 	my_run = None
 	_container = None
 	_container_logs = ''
@@ -354,6 +361,15 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		if self._runnable.breeze_stat != self.js.INIT: # TODO improve
 			self._status = self._runnable.breeze_stat
 		self._container_lock = Lock()
+		
+		# parsing volume line from config to assign DockerVolumes object to mount points
+		volumes = self.config_volumes
+		for each in volumes.split(','):
+			each = each.strip().split(' ')
+			if len(each) == 2:
+				each[2] = 'ro'
+			self.my_volumes.append(DockerVolume(each[0], each[1], each[2]))
+		self.log.debug(str(self.my_volumes))
 
 	# ALL CONFIG SPECIFIC MOVED TO CONNECTOR
 	# ALL CONNECTION SPECIFIC MOVED TO CONNECTOR
@@ -782,7 +798,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				# TODO add host_sup passing
 				self.my_run = DockerRun(self.config_image,
 					self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
-					self.my_volume, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
+					self.my_volumes, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
 				self._attach_event_manager()
 				if self._run():
 					return True
