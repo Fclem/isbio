@@ -1210,7 +1210,7 @@ class DockerClient(object):
 			kwargs.update({'name' : run.container_given_name })
 			name_str = '--name %s ' % kwargs['name']
 		
-		self._log('docker run %s %s-e %s \\\n\t%s\n%s' %
+		self._log('docker run %s %s-e %s \\\n\t%s\n\t%s' %
 				(image_name, name_str, run.env, run.cmd, str(host_conf)))
 		
 		# Create the container

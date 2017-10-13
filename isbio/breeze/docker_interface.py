@@ -825,11 +825,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					return True
 		except self._missing_exception:
 			self.log.error('No result found for job %s' % self.run_id)
-			self._set_global_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, 92)
 			raise
-		self._set_global_status(self.js.FAILED)
-		self._runnable.manage_run_failed(1, 91)
 		return False
 
 	# clem 06/05/2016
@@ -871,7 +867,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self._check_start_timeout()
 		return self._status
 
-	# clem 06/05/2016 # TODO improve (status assessment)
+	# clem 06/05/2016
 	def job_is_done(self):
 		cont = self.container
 		assert isinstance(cont, DockerContainer)
@@ -879,32 +875,37 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self.log.info('Died code %s. Total execution time : %s' % (cont.exit_code, cont.delta_display))
 		try:
 			get_res = self.get_results()
-			# ex_code = cont.status_obj.ExitCode
-			ex_code = cont.exit_code
-			self._save_container_log()
-	
-			if self.auto_remove:
-				cont.remove_container()
-	
-			if ex_code > 0:
-				if not self.job_has_failed:
-					self.log.warning('Failure ! (container failed)')
-				else:
-					self.log.warning('Failure ! (script failed)')
-				self._set_global_status(self.js.FAILED)
-				self._runnable.manage_run_failed(1, ex_code)
-				return False
-			elif get_res:
-				self.log.debug('Success, job completed !')
-				self._check_container_logs()
-				self._set_status(self.js.SUCCEED)
-				self._runnable.manage_run_success(0)
-				return True
 		except Exception as e:
 			self.log.error(e)
-		self.log.warning('Failure ! (breeze failed while getting back results)')
-		self._set_global_status(self.js.FAILED)
-		self._runnable.manage_run_failed(0, 999)
+			self.log.warning('Failure ! (breeze failed while getting back results)')
+			self._set_global_status(self.js.FAILED)
+			self._runnable.manage_run_failed(0, 92)
+			return False
+			
+		ex_code = cont.exit_code
+		try:
+			self._save_container_log()
+			if self.auto_remove:
+				cont.remove_container()
+		except Exception as e:
+			self.log.warning(str(e))
+
+		if ex_code > 0:
+			if not self.job_has_failed:
+				self.log.warning('Failure ! (container failed)')
+			else:
+				self.log.warning('Failure ! (script failed)')
+			self._set_global_status(self.js.FAILED)
+			self._runnable.manage_run_failed(1, ex_code)
+		elif get_res:
+			self.log.debug('Success, job completed !')
+			try:
+				self._check_container_logs()
+			except Exception as e:
+				self.log.warning(str(e))
+			self._set_status(self.js.SUCCEED)
+			self._runnable.manage_run_success(0)
+			return True
 		return False
 		
 	# clem 20/09/2016
