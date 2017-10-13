@@ -364,6 +364,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		
 		# parsing volume line from config to assign DockerVolumes object to mount points
 		volumes = self.config_volumes
+		self.my_volumes = list()
 		for each in volumes.split(','):
 			each = each.strip().split(' ')
 			if len(each) == 2:
@@ -801,7 +802,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					self.my_volumes, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
 				self._attach_event_manager()
 				if self._run():
-					return True
+					return self.busy_waiting()
 				else:
 					error = [87, 'container kickoff failed']
 			else:
