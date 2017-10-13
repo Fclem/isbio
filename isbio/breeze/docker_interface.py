@@ -699,7 +699,6 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
-		# from traceback import extract_stack, format_list
 		try:
 			settings.NO_SGEID_EXPIRY = 60 # FIXME
 			self._docker_storage.upload_self() # update the cloud version of azure_storage.py
@@ -709,10 +708,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					remove_file_safe(self.assembly_archive_path)
 				return True
 		except Exception as e:
-			# stack = '\n' + ''.join(format_list(extract_stack()))
-			# self.log.error('%s%s' % (str(e), stack))
 			self.log.error(str(e))
-			raise
 		return False
 
 	# clem 10/05/2016
@@ -812,10 +808,9 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				error = [88, 'assembly upload failed']
 		except Exception as e:
 			error = [90, str(e)]
-			self.log.error(error[1])
-			self._set_global_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, error[0])
-			raise
+		self.log.error(error[1])
+		self._set_global_status(self.js.FAILED)
+		self._runnable.manage_run_failed(1, error[0])
 		return False
 
 	# clem 21/04/2016

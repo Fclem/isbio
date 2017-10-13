@@ -63,7 +63,7 @@ class FimmStorage(StorageServicePrototype):
 		if not container:
 			container = self.container
 		result = '%s/%s/%s' % (STORAGE_FOLDER, container, remote_path)
-		dir_path = os.path.isdir(os.path.dirname(result))
+		dir_path = os.path.dirname(result)
 		if not os.path.isdir(dir_path):
 			os.makedirs(dir_path)
 		return result
