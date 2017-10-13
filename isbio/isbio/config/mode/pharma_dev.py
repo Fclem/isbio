@@ -4,7 +4,7 @@ TEMPLATE_DEBUG = False
 DEBUG = True
 
 # contains everything else (including breeze generated content) than the breeze web source code and static files
-PROJECT_FOLDER_PREFIX = ''
+PROJECT_FOLDER_PREFIX = '/fs'
 BREEZE_FOLDER = '%s-ph2/' % BREEZE_PROD_FOLDER
 
 SHINY_MODE = 'remote'
