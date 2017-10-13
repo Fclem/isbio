@@ -10,6 +10,8 @@ BREEZE_FOLDER = '%s-ph2/' % BREEZE_PROD_FOLDER
 SHINY_MODE = 'remote'
 SHINY_LOCAL_ENABLE = False
 
+SET_SHOW_ALL_USERS = False
+
 ENABLE_NOTEBOOK = True
 
 import sys
