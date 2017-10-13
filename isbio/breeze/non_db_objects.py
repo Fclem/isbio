@@ -1050,6 +1050,7 @@ class RunServer(object):
 	storage_path = str()
 	_reports_path = str()
 	_swap_object = None
+	skip_parsing = False # FIXME hack
 
 	project_prefix = settings.PROJECT_FOLDER_PREFIX
 	# lookup only sourced files inside PROJECT_FOLDER
@@ -1267,9 +1268,10 @@ class RunServer(object):
 			self.count['abs'] += 1
 			line = SrcObj(el[0])
 			if self._not_excluded(line.path):
-				# change the path to a relative one for the target server
-				file_obj.replace(line, line.new)
-				print 'replacing #%s# with #%s#' % (line, line.new)
+				if not self.skip_parsing:
+					# change the path to a relative one for the target server
+					file_obj.replace(line, line.new)
+					print 'replacing #%s# with #%s#' % (line, line.new)
 				# remote location on a local mount
 				new_path = '%s%s' % (self.storage_path, line.path)
 				new_file = FileParser(line.path, new_path)

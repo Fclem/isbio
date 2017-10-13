@@ -689,7 +689,9 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
-		return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER) if self.config_do_assemble else True
+		# return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER) if self.config_do_assemble else True
+		self.run_server.skip_parsing = not self.config_do_assemble
+		return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER)
 
 	# clem 24/05/2016
 	@property
