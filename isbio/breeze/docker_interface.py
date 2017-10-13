@@ -699,6 +699,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
+		from traceback import extract_stack, format_list
 		try:
 			settings.NO_SGEID_EXPIRY = 60 # FIXME
 			self._docker_storage.upload_self() # update the cloud version of azure_storage.py
@@ -708,7 +709,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					remove_file_safe(self.assembly_archive_path)
 				return True
 		except Exception as e:
-			self.log.error('%s%s' % (str(e), get_stack()))
+			stack = '\n' + ''.join(format_list(extract_stack()))
+			self.log.error('%s%s' % (str(e), stack))
 		return False
 
 	# clem 10/05/2016
