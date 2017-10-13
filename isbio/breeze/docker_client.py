@@ -11,7 +11,7 @@ import time
 import re
 import string
 
-__version__ = '0.1.9'
+__version__ = '0.1.10'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
@@ -1210,7 +1210,8 @@ class DockerClient(object):
 			kwargs.update({'name' : run.container_given_name })
 			name_str = '--name %s ' % kwargs['name']
 		
-		self._log('docker run %s %s %s-e %s\n%s' % (image_name, run.cmd, name_str, run.env, str(host_conf)))
+		self._log('docker run %s %s-e %s\\\t%s\n%s' %
+				(image_name, name_str, run.env, run.cmd, str(host_conf)))
 		
 		# Create the container
 		container = self.get_container(self.cli.create_container(image_name, run.cmd, **kwargs)['Id'])
