@@ -4,7 +4,7 @@ TEMPLATE_DEBUG = False
 DEBUG = True
 
 # contains everything else (including breeze generated content) than the breeze web source code and static files
-PROJECT_FOLDER_PREFIX = '/fs'
+PROJECT_FOLDER_PREFIX = ''
 BREEZE_FOLDER = '%s-ph2/' % BREEZE_PROD_FOLDER
 
 SHINY_MODE = 'remote'
@@ -28,9 +28,8 @@ LOGGING = {
 			'datefmt': USUAL_DATE_FORMAT,
 		},
 		'request_format': {
-			'format': '%(remote_addr)s %(username)s "%(request_method)s '
-					  '%(path_info)s %(server_protocol)s" %(http_user_agent)s '
-					  '%(message)s %(asctime)s',
+			'format': '%(remote_addr)s %(username)s "%(request_method)s %(path_info)s %(server_protocol)s" '
+			'%(http_user_agent)s %(message)s %(asctime)s',
 		},
 	},
 	'filters'                 : {
