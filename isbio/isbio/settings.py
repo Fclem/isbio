@@ -327,6 +327,7 @@ DJANGO_ROOT = recur(2, os.path.dirname, os.path.realpath(__file__)) + '/'
 TEMPLATE_FOLDER = DJANGO_ROOT + 'templates/' # source templates (not HTML ones)
 
 DJANGO_AUTH_MODEL_BACKEND_PY_PATH = 'django.contrib.auth.backends.ModelBackend'
+CAS_NG_BACKEND_PY_PATH = 'my_django.cas_ng_custom.CASBackend'
 AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
 AUTH0_CUSTOM_BACKEND_PY_PATH = 'custom_auth0.auth_backend.Auth0Backend'
 
