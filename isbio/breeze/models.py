@@ -1876,11 +1876,15 @@ class Runnable(FolderObj, ObjectsWithACL):
 		:type status: str
 
 		"""
+		if self._status == JobStat.DONE:
+			return
 		if self._breeze_stat == JobStat.SUCCEED or self._breeze_stat == JobStat.ABORTED or status is None:
 			return # Once the job is marked as done, its stat cannot be changed anymore
 
 		# we use JobStat object to provide further extensibility to the job management system
 		_status, _breeze_stat, progress, text = JobStat(status).status_logic()
+		if progress < self.progress:
+			return # HACK
 		l1, l2 = '', ''
 
 		if _status is not None:
