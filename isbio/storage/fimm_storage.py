@@ -69,7 +69,7 @@ class FimmStorage(StorageServicePrototype):
 		return result
 	
 	# def _copy_file(self, remote_path, local_path, container=None, verbose=True):
-	def _copy_file(self, source, destination, container=None, verbose=True):
+	def _copy_file(self, source, destination, verbose=True):
 		""" copy a local file to the a specified path on the local shared storage folder
 
 		:param source: Name/path of the file as to be stored in local shared storage folder
@@ -85,7 +85,7 @@ class FimmStorage(StorageServicePrototype):
 		:raise: IOError or FileNotFoundError
 		"""
 		if verbose:
-			self._print_call('_copy_file', (source, destination, container))
+			self._print_call('_copy_file', (source, destination))
 		if os.path.exists(source):
 			shutil.copyfile(source, destination)
 		else:
@@ -109,8 +109,9 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: str
 		:raise: IOError or FileNotFoundError
 		"""
-		target_path = self._make_path(target_path, container)
-		return self._copy_file(source_path, target_path, container, verbose)
+		if verbose:
+			self._print_call('upload', (target_path, source_path, container))
+		return self._copy_file(source_path, self._make_path(target_path, container), verbose)
 	
 	# clem 28/04/201
 	def download(self, target_path, source_path, container=None, verbose=True):
@@ -130,8 +131,9 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
-		target_path = self._make_path(target_path, container)
-		return self._copy_file(target_path, source_path, container, verbose)
+		if verbose:
+			self._print_call('download', (target_path, source_path, container))
+		return self._copy_file(self._make_path(target_path, container), source_path, verbose)
 	
 	# clem 28/04/201
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
@@ -149,10 +151,10 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
+		if verbose:
+			self._print_call('erase', (target_path, container))
 		target_path = self._make_path(target_path, container)
 		if os.path.exists(target_path):
-			if verbose:
-				self._print_call('erase', (target_path, container))
 			os.remove(target_path)
 			return True
 		if not no_fail:
