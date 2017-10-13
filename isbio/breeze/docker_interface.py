@@ -367,7 +367,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		for each in volumes.split(','):
 			each = each.strip().split(' ')
 			if len(each) == 2:
-				each[2] = 'ro'
+				each.append('ro')
 			self.my_volumes.append(DockerVolume(each[0], each[1], each[2]))
 		self.log.debug(str(self.my_volumes))
 
