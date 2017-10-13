@@ -48,6 +48,7 @@ else:
 		urlpatterns += [
 			url(r'^accounts/login$', login, name='cas_ng_login'),
 			url(r'^$', login, name='cas_ng_login1'),
+			url(r'^login_page/?$', login, name='cas_ng_login1'),
 			url(r'^accounts/logout$', logout, name='cas_ng_logout'),
 			url(r'^logout/?$', logout, name='cas_ng_logout1'),
 			url(r'^accounts/callback$', callback, name='cas_ng_proxy_callback'),
