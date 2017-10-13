@@ -59,22 +59,23 @@ class FimmStorage(StorageServicePrototype):
 		"""
 		return {}
 	
-	def _make_path(self, remote_path, container=''):
+	def _make_path(self, file_path, container=''):
 		if not container:
 			container = self.container
-		result = '%s/%s/%s' % (STORAGE_FOLDER, container, remote_path)
+		result = '%s/%s/%s' % (STORAGE_FOLDER, container, file_path)
 		dir_path = os.path.dirname(result)
 		if not os.path.isdir(dir_path):
 			os.makedirs(dir_path)
 		return result
 	
-	def _copy_file(self, remote_path, local_path, container=None, verbose=True):
+	# def _copy_file(self, remote_path, local_path, container=None, verbose=True):
+	def _copy_file(self, source, destination, container=None, verbose=True):
 		""" copy a local file to the a specified path on the local shared storage folder
 
-		:param remote_path: Name/path of the file as to be stored in local shared storage folder
-		:type remote_path: basestring_t
-		:param local_path: Path of the local file to be copied
-		:type local_path: basestring_t
+		:param source: Name/path of the file as to be stored in local shared storage folder
+		:type source: basestring_t
+		:param destination: Path of the local file to be copied
+		:type destination: basestring_t
 		:param container: Name of the container to use to store the blob (default to self.container)
 		:type container: basestring_t | None
 		:param verbose: Print actions (default to True)
@@ -84,23 +85,22 @@ class FimmStorage(StorageServicePrototype):
 		:raise: IOError or FileNotFoundError
 		"""
 		if verbose:
-			self._print_call('_copy_file', (remote_path, local_path, container))
-		if os.path.exists(local_path):
-			remote_path = self._make_path(remote_path, container)
-			shutil.copyfile(local_path, remote_path)
+			self._print_call('_copy_file', (source, destination, container))
+		if os.path.exists(source):
+			shutil.copyfile(source, destination)
 		else:
-			raise FileNotFoundError("File '%s' not found in '%s' !" % (os.path.basename(local_path),
-			os.path.dirname(local_path)))
+			raise FileNotFoundError("File '%s' not found in '%s' !" % (os.path.basename(source),
+			os.path.dirname(source)))
 		return True
 	
 	# clem 28/04/201
-	def upload(self, target_path, file_path, container=None, verbose=True):
+	def upload(self, target_path, source_path, container=None, verbose=True):
 		""" "Upload" wrapper/interface for docker-interface of copy_file
 
 		:param target_path: Name/path of the object as to be stored in * storage
 		:type target_path: basestring_t
-		:param file_path: Path of the local file to upload
-		:type file_path: basestring_t
+		:param source_path: Path of the local file to upload
+		:type source_path: basestring_t
 		:param container: Name of the container to use to store the blob (default to self.container)
 		:type container: basestring_t | None
 		:param verbose: Print actions (default to True)
@@ -109,18 +109,19 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: str
 		:raise: IOError or FileNotFoundError
 		"""
-		return target_path if self._copy_file(target_path, file_path, container, verbose) else ''
+		target_path = self._make_path(target_path, container)
+		return self._copy_file(target_path, source_path, container, verbose)
 	
 	# clem 28/04/201
-	def download(self, target_path, file_path, container=None, verbose=True):
+	def download(self, target_path, source_path, container=None, verbose=True):
 		""" Download wrapper for * storage :\n
 		download a blob from the default container (or a specified one) from * storage and save it as a local file
 		if the container does not exists, the operation will fail
 
 		:param target_path: Name/path of the object to retrieve from * storage
 		:type target_path: basestring_t
-		:param file_path: Path of the local file to save the downloaded blob
-		:type file_path: basestring_t
+		:param source_path: Path of the local file to save the downloaded blob
+		:type source_path: basestring_t
 		:param container: Name of the container to use to store the blob (default to self.container)
 		:type container: basestring_t | None
 		:param verbose: Print actions (default to True)
@@ -129,7 +130,8 @@ class FimmStorage(StorageServicePrototype):
 		:rtype: bool
 		:raise: self.missing_res_error
 		"""
-		return self._copy_file(target_path, file_path, container, verbose)
+		target_path = self._make_path(target_path, container)
+		return self._copy_file(source_path , target_path, container, verbose)
 	
 	# clem 28/04/201
 	def erase(self, target_path, container=None, verbose=True, no_fail=False):
