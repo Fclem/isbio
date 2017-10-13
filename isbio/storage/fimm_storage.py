@@ -1,7 +1,7 @@
 from storage_module_prototype import * # import interface, already has os, sys and abc
 import shutil
 
-__version__ = '0.1'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '13/10/2017'
 
@@ -84,7 +84,7 @@ class FimmStorage(StorageServicePrototype):
 		:raise: IOError or FileNotFoundError
 		"""
 		if verbose:
-			self._print_call('_copy_file', (container, remote_path, local_path, container))
+			self._print_call('_copy_file', (remote_path, local_path, container))
 		if os.path.exists(local_path):
 			remote_path = self._make_path(remote_path, container)
 			shutil.copyfile(local_path, remote_path)
