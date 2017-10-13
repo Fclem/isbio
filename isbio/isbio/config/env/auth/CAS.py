@@ -11,9 +11,10 @@ def check_cas(server_ip, server_url):
 	if is_host_online(server_ip, 2):
 		try:
 			return test_url(server_url)
-		except Exception:
+		except Exception as _:
 			pass
 	return False
+
 
 AUTHENTICATION_BACKENDS = (
 	'django.contrib.auth.backends.ModelBackend',
