@@ -844,6 +844,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		return False
 
 	# clem 06/05/2016
+	@new_thread
 	def abort(self):
 		if self._runnable.breeze_stat != self.js.DONE:
 			self._set_global_status(self.js.ABORT)
