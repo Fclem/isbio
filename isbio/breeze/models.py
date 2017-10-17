@@ -1988,8 +1988,8 @@ class Runnable(FolderObj, ObjectsWithACL):
 
 	def delete(self, using=None):
 		if not self.read_only:
-			# new_thread(self.abort)() # new thread prevents blocking when dealing with several deletion of containers
-			self.abort()
+			new_thread(self.abort)() # new thread prevents blocking when dealing with several deletion of containers
+			# self.abort()
 			txt = str(self)
 			super(Runnable, self).delete(using=using) # Call the "real" delete() method.
 			get_logger().info("%s has been deleted" % txt)
