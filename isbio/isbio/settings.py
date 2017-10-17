@@ -1,21 +1,23 @@
 # Django settings for isbio project.
 # from configurations import Settings
+from __future__ import print_function
 import logging
 import os
 import socket
 import time
 from datetime import datetime
+# noinspection PyUnresolvedReferences
 from utilz import git, TermColoring, recur, recur_rec, get_key, import_env, file_content, is_host_online,  test_url, \
 	magic_const, get_md5
 
 ENABLE_DATADOG = False
 ENABLE_ROLLBAR = False
-statsd = False
 try:
 	from datadog import statsd
 	if ENABLE_DATADOG:
 		ENABLE_DATADOG = True
-except Exception:
+except ImportError:
+	statsd = None
 	ENABLE_DATADOG = False
 	
 ENABLE_REMOTE_FW = False
@@ -67,7 +69,7 @@ DATABASES = {
 		'PORT'		: '3306', # Set to empty string for default. Not used with sqlite3.
 		'OPTIONS'	: {
 			"init_command": "SET default_storage_engine=INNODB; SET SESSION TRANSACTION ISOLATION LEVEL READ "
-							"COMMITTED",
+			"COMMITTED",
 		}
 		# "init_command": "SET transaction isolation level READ COMMITTED", }
 	}
@@ -158,6 +160,7 @@ SECRET_KEY = get_key(SECRET_KEY_FN)
 # AUTH_USER_MODEL = 'breeze.OrderedUser'
 # AUTH_USER_MODEL = 'breeze.CustomUser' # FIXME
 
+# noinspection SpellCheckingInspection
 INSTALLED_APPS = [
 	'suit',
 	'django.contrib.admin',
@@ -172,11 +175,10 @@ INSTALLED_APPS = [
 	'shiny.apps.Config',
 	'dbviewer.apps.Config',
 	'compute.apps.Config',
+	'storage.apps.Config',
 	'down.apps.Config',
-	# 'south',
 	'gunicorn',
 	'mathfilters',
-	# 'django_auth0', # moved to config/auth0.py
 	'hello_auth.apps.Config',
 	'api.apps.Config',
 	'webhooks.apps.Config',
@@ -186,6 +188,7 @@ INSTALLED_APPS = [
 	'django_extensions'
 ]
 
+# noinspection SpellCheckingInspection
 MIDDLEWARE_CLASSES = [
 	'breeze.middlewares.BreezeAwake',
 	'django.middleware.security.SecurityMiddleware',
@@ -196,7 +199,6 @@ MIDDLEWARE_CLASSES = [
 	'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
 	'django.contrib.messages.middleware.MessageMiddleware',
 	'django.middleware.clickjacking.XFrameOptionsMiddleware',
-	# 'django.middleware.doc.XViewMiddleware',
 	'breeze.middlewares.JobKeeper',
 	'breeze.middlewares.CheckUserProfile',
 	'breeze.middlewares.ContextualRequest',
@@ -292,7 +294,6 @@ class DomainList(object):
 	FIMM_PH = ['breeze-newph.fimm.fi', 'breeze-ph.fimm.fi', ]
 	FIMM_DEV = ['breeze-dev.fimm.fi', ]
 	FIMM_PROD = ['breeze-fimm.fimm.fi', 'breeze-new.fimm.fi', ]
-	# FIMM_CLOUD = ['breeze-cloud.fimm.fi', ]
 	FIMM_CLOUD = ['breeze.fimm.fi', ]
 	
 	@classmethod
@@ -307,6 +308,7 @@ class DomainList(object):
 				domain = cls.FIMM_PROD if MODE_PROD else cls.FIMM_PH if PHARMA_MODE else cls.FIMM_DEV
 			elif RUN_ENV_CLASS is ConfigEnvironments.FIMM_cloud:
 				domain = cls.FIMM_CLOUD
+		# noinspection PyUnboundLocalVariable
 		return domain[0]
 
 
@@ -325,7 +327,7 @@ DJANGO_ROOT = recur(2, os.path.dirname, os.path.realpath(__file__)) + '/'
 TEMPLATE_FOLDER = DJANGO_ROOT + 'templates/' # source templates (not HTML ones)
 
 DJANGO_AUTH_MODEL_BACKEND_PY_PATH = 'django.contrib.auth.backends.ModelBackend'
-# CAS_NG_BACKEND_PY_PATH = 'my_django.cas_ng_custom.CASBackend'
+CAS_NG_BACKEND_PY_PATH = 'my_django.cas_ng_custom.CASBackend'
 AUTH0_BACKEND_PY_PATH = 'django_auth0.auth_backend.Auth0Backend'
 AUTH0_CUSTOM_BACKEND_PY_PATH = 'custom_auth0.auth_backend.Auth0Backend'
 
@@ -338,7 +340,7 @@ FULL_HOST_NAME = socket.gethostname()
 HOST_NAME = str.split(FULL_HOST_NAME, '.')[0]
 HTTP_SCHEME = 'https'
 
-# do not move. here because some utils function useses it
+# do not move. here because some utils function use it
 FIMM_NETWORK = '128.214.0.0/16'
 
 from config import *
@@ -352,7 +354,7 @@ if not os.path.isdir(PROJECT_PATH):
 PROD_PATH = '%s%s' % (PROJECT_FOLDER, BREEZE_FOLDER)
 R_ENGINE_SUB_PATH = 'R/bin/R ' # FIXME LEGACY ONLY
 R_ENGINE_PATH = PROD_PATH + R_ENGINE_SUB_PATH
-if not os.path.isfile( R_ENGINE_PATH.strip()):
+if not os.path.isfile(R_ENGINE_PATH.strip()):
 	PROJECT_FOLDER = '/%s/' % PROJECT_FOLDER_NAME
 	R_ENGINE_PATH = PROD_PATH + R_ENGINE_SUB_PATH # FIXME Legacy
 
@@ -380,7 +382,7 @@ SH_LOG_FOLDER = '.log'
 GENERAL_SH_BASE_NAME = 'run_job'
 GENERAL_SH_NAME = '%s.sh' % GENERAL_SH_BASE_NAME
 GENERAL_SH_CONF_NAME = '%s_conf.sh' % GENERAL_SH_BASE_NAME
-DOCKER_SH_NAME = 'run.sh'
+DOCKER_SH_STAGE2_NAME = 'run.sh'
 
 REPORTS_CACHE_INTERNAL_URL = '/cached/reports/'
 
@@ -426,7 +428,7 @@ ENC_SESSION_ID_COOKIE_NAME = get_md5('seed')
 ##
 BOOTSTRAP_SH_TEMPLATE = TEMPLATE_FOLDER + GENERAL_SH_NAME
 BOOTSTRAP_SH_CONF_TEMPLATE = TEMPLATE_FOLDER + GENERAL_SH_CONF_NAME
-DOCKER_BOOTSTRAP_SH_TEMPLATE = TEMPLATE_FOLDER + DOCKER_SH_NAME
+DOCKER_STAGE2_SH_TEMPLATE = TEMPLATE_FOLDER + DOCKER_SH_STAGE2_NAME
 
 NOZZLE_TEMPLATE_FOLDER = TEMPLATE_FOLDER + 'nozzle_templates/'
 TAGS_TEMPLATE_PATH = NOZZLE_TEMPLATE_FOLDER + 'tag.R'
@@ -478,7 +480,7 @@ FOLDERS_LST = [TEMPLATE_FOLDER, SHINY_REPORT_TEMPLATE_PATH, SHINY_REPORTS, SHINY
 	STATIC_ROOT, TARGET_CONFIG_PATH, EXEC_CONFIG_PATH, ENGINE_CONFIG_PATH]
 
 ##
-# System Autocheck config
+# System Auto-checks config
 ##
 # this is used to avoid 504 Gateway time-out from ngnix with is currently set to 600 sec = 10 min
 # LONG_POLL_TIME_OUT_REFRESH = 540 # 9 minutes
@@ -493,7 +495,7 @@ SPECIAL_CODE_FOLDER = PROJECT_PATH + 'code/'
 FS_SIG_FILE = PROJECT_PATH + 'fs_sig.md5'
 FS_LIST_FILE = PROJECT_PATH + 'fs_checksums.json'
 FOLDERS_TO_CHECK = [TEMPLATE_FOLDER, SHINY_TAGS, REPORT_TYPE_PATH, # SHINY_REPORTS,SPECIAL_CODE_FOLDER  ,
-	RSCRIPTS_PATH, MOULD_FOLDER, STATIC_ROOT, DATASETS_FOLDER]
+	RSCRIPTS_PATH, MOULD_FOLDER, STATIC_ROOT, DATASETS_FOLDER, CONFIG_PATH]
 
 # STATIC URL MAPPINGS
 
@@ -548,10 +550,14 @@ if ENABLE_ROLLBAR:
 		}
 	
 		rollbar.init(**ROLLBAR)
-	except Exception:
+	except ImportError as e:
 		ENABLE_ROLLBAR = False
-		logging.getLogger().error('Unable to init rollbar')
-		pass
+		logging.getLogger().warning('Unable to import rollbar: %s' % str(e))
+		rollbar = None
+	except Exception as e:
+		ENABLE_ROLLBAR = False
+		logging.getLogger().error('Unable to import rollbar: %s' % str(e))
+		rollbar = None
 
 
 def make_run_file():
@@ -563,7 +569,7 @@ def make_run_file():
 # FIXME obsolete
 if os.path.isfile('running'):
 	# First time
-	print '__breeze__started__'
+	print('__breeze__started__')
 	logging.info('__breeze__started__')
 
 	os.remove('running')
@@ -571,23 +577,23 @@ else:
 	make_run_file()
 	# Second time
 	time.sleep(1)
-	print '__breeze__load/reload__'
+	print('__breeze__load/reload__')
 	logging.info('__breeze__load/reload__')
-	print 'source home : ' + SOURCE_ROOT
+	print('source home : ' + SOURCE_ROOT)
 	logging.debug('source home : ' + SOURCE_ROOT)
-	print 'project home : ' + PROJECT_PATH
+	print('project home : ' + PROJECT_PATH)
 	logging.debug('project home : ' + PROJECT_PATH)
-	print 'Logging on %s\nSettings loaded. Running branch %s, mode %s on %s' % \
+	print('Logging on %s\nSettings loaded. Running branch %s, mode %s on %s' %
 		(TermColoring.bold(LOG_PATH), TermColoring.ok_blue(git.get_branch_from_fs(SOURCE_ROOT)), TermColoring.ok_blue(
-			TermColoring.bold(RUN_MODE)), TermColoring.ok_blue(FULL_HOST_NAME))
+			TermColoring.bold(RUN_MODE)), TermColoring.ok_blue(FULL_HOST_NAME)))
 	git_stat = git.get_status()
-	print git_stat
+	print(git_stat)
 	logging.info('Settings loaded. Running %s on %s' % (RUN_MODE, FULL_HOST_NAME))
 	logging.info(git_stat)
 	from api import code_v1
 	code_v1.do_self_git_pull()
 	if PHARMA_MODE:
-		print TermColoring.bold('RUNNING WITH PHARMA')
+		print(TermColoring.bold('RUNNING WITH PHARMA'))
 print('debug mode is %s' % ('ON' if DEBUG else 'OFF'))
 
 

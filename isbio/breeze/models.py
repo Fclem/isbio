@@ -460,7 +460,7 @@ class EngineConfig(ConfigObject, CustomModel):
 	# institute = ForeignKey(Institute, default=Institute.default)
 
 	# def file_name(self, filename):
-	#	return super(EngineConfig, self).file_name(filename)
+	# 	return super(EngineConfig, self).file_name(filename)
 
 	config_file = models.FileField(upload_to=generic_super_fn_spe, blank=False, db_column='config',
 		help_text="The config file for this engine resource")
@@ -667,7 +667,10 @@ class ComputeTarget(ConfigObject, CustomModel):
 	# clem 16/05/2016
 	@property
 	def engine_section(self):
-		return self.config.items(self.target_engine_name)
+		if self.config.has_section(self.target_engine_name):
+			return self.config.items(self.target_engine_name)
+		else:
+			return list()
 
 	# clem 13/05/2016
 	@property
@@ -725,15 +728,15 @@ class ComputeTarget(ConfigObject, CustomModel):
 	@property
 	def storage_module(self):
 		""" The python module used as the storage interface for this target
-
-		:rtype: module
 		"""
 		if not self._storage_module:
 			try:
-				self._storage_module = importlib.import_module('breeze.%s' % self.target_storage_engine)
+				# from storage import StorageModulePrototype
+				self._storage_module = importlib.import_module('storage.%s' % self.target_storage_engine)
+				# assert isinstance(self._storage_module, StorageModulePrototype)
 			except ImportError as e:
 				self.log.error(str(e))
-				raise e
+				raise StorageModuleNotFound
 		return self._storage_module
 
 	#
@@ -1682,7 +1685,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 			'poke_url'     : self.poke_url,
 			'arch_cmd'     : self.target_obj.exec_obj.exec_arch_cmd,
 			'version_cmd'  : self.target_obj.exec_obj.exec_version_cmd,
-			'engine': str(self.target_obj.compute_interface.name()),
+			'engine'       : str(self.target_obj.compute_interface.name()),
 		}
 		conf_file_dict.update(base_var_dict)
 		
@@ -1873,11 +1876,15 @@ class Runnable(FolderObj, ObjectsWithACL):
 		:type status: str
 
 		"""
+		if self._status == JobState.DONE:
+			return
 		if self._breeze_stat == JobStat.SUCCEED or self._breeze_stat == JobStat.ABORTED or status is None:
 			return # Once the job is marked as done, its stat cannot be changed anymore
 
 		# we use JobStat object to provide further extensibility to the job management system
 		_status, _breeze_stat, progress, text = JobStat(status).status_logic()
+		# if progress < self.progress:
+		#	return # HACK
 		l1, l2 = '', ''
 
 		if _status is not None:
@@ -2130,7 +2137,7 @@ class Runnable(FolderObj, ObjectsWithACL):
 	
 	# clem 10/07/2017
 	def send_completion_mail(self, success, message=''):
-		from django.core.urlresolvers import reverse
+		# from django.core.urlresolvers import reverse
 		
 		def make_full_url(path):
 			return 'https://%s%s' % (settings.DOMAIN[0], path)
@@ -2150,7 +2157,8 @@ class Runnable(FolderObj, ObjectsWithACL):
 			subject = 'Report %s has failed' % self.name
 			message += '\n\nAdmins have been advised and will look into the matter.\n\nBest,\nThe Breeze team.'
 			from django.core.mail import EmailMessage
-			EmailMessage(subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
+			admin_subject = '%s\'s report %s has failed' % (author.get_full_name(), self.name)
+			EmailMessage(admin_subject, message, settings.EMAIL_SENDER, [settings.ADMINS[0][1]]).send()
 		if not author.is_guest:
 			author.email_user(subject, message, settings.EMAIL_SENDER)
 
@@ -2653,6 +2661,8 @@ class Report(Runnable, AutoJSON):
 	def delete(self, using=None):
 		if self.type.shiny_report_id > 0:
 			self.type.shiny_report.unlink_report(self)
+		
+		self.target_obj.compute_interface.delete()
 		
 		return super(Report, self).delete(using=using) # Call the "real" delete() method.
 	

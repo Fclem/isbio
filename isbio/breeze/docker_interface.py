@@ -2,13 +2,13 @@ from compute_interface_module import * # has os, abc, self.js, Runnable, Compute
 from docker_client import *
 from django.conf import settings
 from utils import safe_rm
-from blob_storage_module import StorageModule
+from storage import StorageModulePrototype # StorageServicePrototype
 from breeze.non_db_objects import RunServer
 import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.9.3'
+__version__ = '0.11'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -16,7 +16,6 @@ KEEP_TEMP_FILE = False # i.e. debug
 
 # clem 21/10/2016
 class DockerInterfaceConnector(ComputeInterfaceBase):
-	# __metaclass__ = abc.ABCMeta
 	ssh_tunnel = None
 	_client = None
 	__connect_port = None
@@ -36,13 +35,18 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	CONFIG_DAEMON_URL = 'daemon_url'
 	# from exec/docker
 	CONFIG_SUP_SECTION = 'docker'
-	CONFIG_SUP_CONTAINER = 'container'
+	CONFIG_SUP_IMAGE = 'image'
 	CONFIG_SUP_CONT_CMD = 'cont_cmd'
+	CONFIG_VOLUMES = 'volumes'
+	DO_ASSEMBLE = 'parse_source'
 	
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
 		"""
 
-		:type storage_backend: module
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: the storage backend python module as defined in the target
+		:type storage_backend: StorageModulePrototype
 		"""
 		super(DockerInterfaceConnector, self).__init__(compute_target, storage_backend)
 		# TODO rework the ssh configuration vs daemon conf
@@ -77,14 +81,28 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	
 	# clem 17/06/2016
 	@property
-	def config_container(self):
-		# return self.engine_obj.get(self.CONFIG_CONTAINER)
-		return self.get_exec_specific(self.CONFIG_SUP_CONTAINER)
+	def config_image(self):
+		return self.get_exec_specific(self.CONFIG_SUP_IMAGE)
+	
+	# clem 13/10/2017
+	@property
+	def config_volumes(self):
+		# return self.get_exec_specific(self.CONFIG_VOLUMES)
+		return self.engine_obj.get(self.CONFIG_VOLUMES)
+	
+	# clem 13/10/2017
+	@property
+	def config_do_assemble(self):
+		try:
+			result = self.engine_obj.get(self.DO_ASSEMBLE).lower() in ['true', 'on', 'yes']
+		except Exception as e:
+			self.log.warning(str(e))
+			result = True
+		return result
 	
 	# clem 17/06/2016
 	@property
 	def config_cmd(self):
-		# return self.engine_obj.get(self.CONFIG_CMD)
 		return self.get_exec_specific(self.CONFIG_SUP_CONT_CMD)
 	
 	# clem 17/06/2016
@@ -124,7 +142,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	
 	# clem 17/05/2016
 	@property
-	def docker_repo(self): # TODO check
+	def docker_repo(self):
 		return DockerRepo(self.config_hub_login, self.docker_hub_pwd, email=self.config_hub_email)
 	
 	#########################
@@ -161,6 +179,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		return self.__online_accessor(True)
 	
 	# clem 21/10/2016
+	# noinspection PyBroadException
 	@property
 	def can_connect(self):
 		try:
@@ -168,10 +187,10 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 				try:
 					self.client.close()
 					self._client = None
-				except:
+				except Exception:
 					pass
 				return True
-		except:
+		except Exception:
 			return False
 	
 	# clem 12/10/2016
@@ -184,13 +203,14 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		:rtype: int
 		"""
 		if not self.__connect_port: # 24/08/2017 trying to fix ssh tunneling
-			# if self.target_obj.target_use_tunnel:
-			#	self.__connect_port = self._get_a_port()
-			#else:
+			# if self.target_obj.target_use_tunnel: # FIXME
+			# 	self.__connect_port = self._get_a_port()
+			# else:
 			self.__connect_port = self.config_daemon_port
 		return self.__connect_port
 	
 	# clem 10/05/2016
+	# noinspection PyBroadException
 	def _get_a_port(self):
 		""" Give the port number of an existing ssh tunnel, or return a free port if no (or more than 1) tunnel exists
 
@@ -216,7 +236,8 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		return int(get_free_port())
 	
 	# clem 08/09/2016 # This might succeed even if there is not endpoint if using an external tunneling
-	def _test_connection(self, target, handle_exceptions=False):
+	@staticmethod
+	def _test_connection(target, handle_exceptions=False):
 		time_out = 2
 		import socket
 		
@@ -231,8 +252,8 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 				return do_test_tcp()
 			except socket.timeout:
 				logger.warning('connect %s: Time-out' % str(target))
-			except socket.error as e:
-				logger.warning('connect %s: %s' % (str(target), e[1]))
+			except socket.error as e: # FIXME look it up
+				logger.warning('connect %s: %s' % (str(target), e))
 			except Exception as e:
 				logger.exception('connect %s' % str((type(e), e)))
 			return False
@@ -248,7 +269,6 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 					return False
 			if not (self.enabled and self._online and self._do_connect()):
 				logger.error('FAILURE connecting to docker daemon, cannot proceed')
-				# self._set_status(self.js.FAILED)
 				raise DaemonNotConnected
 		return True
 	
@@ -262,7 +282,6 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 	# clem 07/04/2016
 	def _do_connect(self):
 		if not self._client:
-			# auto_watcher = bool(self.target_obj.runnable)
 			auto_watcher = True
 			self._client = get_docker_client(self.config_daemon_url_base, self.docker_repo, False, auto_watcher)
 		self.connected = bool(self._client.cli)
@@ -308,31 +327,23 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 
 # clem 15/03/2016
 class DockerInterface(DockerInterfaceConnector, ComputeInterface):
-	# ssh_tunnel = None
 	auto_remove = True
-	__docker_storage = None
-	_data_storage = None
-	_jobs_storage = None
 	_run_server = None
 	run_id = '' # stores the md5 of the sent archive ie. the job id
 	proc = None
-	# _client = None
 	_container_lock = None
 	_label = ''
-	my_volume = DockerVolume('/home/breeze/data/', '/breeze') # FIXME (shouldn't be static)
+	my_volumes = list()
 	my_run = None
 	_container = None
 	_container_logs = ''
 	cat = DockerEventCategories
-	# _connect_port = None
-	# connected = False
 
 	# SSH_CMD_BASE = ['ssh', '-CfNnL']
 	# SSH_KILL_ALL = 'killall ssh && killall ssh'
 	# SSH_LOOKUP_BASE = 'ps aux|grep "%s"|grep -v grep'
 	# CONTAINER SPECIFIC
 	NORMAL_ENDING = ['Running R script... done !', 'Success !', 'done']
-	AZURE_KEY_VAR = 'AZURE_KEY'
 
 	LINE3 = '\x1b[34mCreating archive /root/out.tar.xz'
 	LINE2 = '\x1b[1m''create_blob_from_path\x1b[0m(' # FIXME NOT ABSTRACT
@@ -342,13 +353,18 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 	START_TIMEOUT = 30 # Start timeout in seconds #FIXME HACK
 
-	job_file_archive_name = 'temp.tar.bz2'
-	container_log_file_name = 'container.log'
+	job_file_archive_name = 'temp.tar.bz2' # FIXME : Move to config ?
+	container_log_file_name = 'container.log'  # FIXME : Move to config
 
 	def __init__(self, compute_target, storage_backend=None, auto_connect=False):
-		"""
-
-		:type storage_backend: module
+		""" TODO
+		
+		:param compute_target: the compute target for this job
+		:type compute_target: ComputeTarget
+		:param storage_backend: a storage module implementing StorageModulePrototype
+		:type storage_backend: StorageModulePrototype
+		:param auto_connect: Should a connection be established upon instantiation
+		:type auto_connect: bool
 		"""
 		super(DockerInterface, self).__init__(compute_target, storage_backend, auto_connect)
 		# TODO fully integrate !optional! tunneling
@@ -356,9 +372,19 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		if self._runnable.breeze_stat != self.js.INIT: # TODO improve
 			self._status = self._runnable.breeze_stat
 		self._container_lock = Lock()
+		
+		# parsing volume line from config to assign DockerVolumes object to mount points
+		volumes = self.config_volumes
+		self.my_volumes = list()
+		for each in volumes.split(','):
+			each = each.strip().split(' ')
+			if len(each) == 2:
+				each.append('ro')
+			self.my_volumes.append(DockerVolume(each[0], each[1], each[2]))
+		self.log.debug(str(self.my_volumes))
 
-	# ALL CONFIG SPECIFICs MOVED TO CONNECTOR
-	# ALL CONNECTION SPECIFICs MOVED TO CONNECTOR
+	# ALL CONFIG SPECIFIC MOVED TO CONNECTOR
+	# ALL CONNECTION SPECIFIC MOVED TO CONNECTOR
 	
 	# clem 11/05/2016
 	@property
@@ -368,35 +394,37 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	# clem 11/05/2016
 	@property
 	def log(self):
+		# noinspection PyBroadException
 		try:
 			log_obj = LoggerAdapter(self._compute_target.runnable.log_custom(1), dict())
 			bridge = log_obj.process
 			log_obj.process = lambda msg, kwargs: bridge(self.label + ' ' + str(msg), kwargs)
-		except Exception as e:
+		except Exception:
 			log_obj = None
 		return log_obj or logger
 	
 	# clem 06/10/2016
 	def name(self):
-		img_id = ''
 		try:
-			img_id = self.client.get_image(self.config_container).Id
+			img_id = self.client.get_image(self.config_image).Id
 		except AttributeError:
-			# FIXME very nasty HACK
+			# FIXME backward compatibility safeguard
 			img_id = 'sha256:15d72773148517814d1539647d5aea971ccdef566eafb9f796f975b8325e9731'
-			# img = self.client.get_image('sha256:15d72773148517814d1539647d5aea971ccdef566eafb9f796f975b8325e9731')
-		# return "docker image %s (%s)" % (self.config_container, img.Id)
-		return "docker image %s (%s)" % (self.config_container, img_id)
+		return "docker image %s (%s)" % (self.config_image, img_id)
 
 	#####################
 	#  DOCKER SPECIFIC  #
 	#####################
 
 	def _attach_event_manager(self):
-		if self.my_run and isinstance(self.my_run, DockerRun):
-			self.my_run.event_listener = self._event_manager_wrapper()
-			self.log.debug('Attached event listener to run')
-		return True
+		try:
+			if self.my_run and isinstance(self.my_run, DockerRun):
+				self.my_run.event_listener = self._event_manager_wrapper()
+				self.log.debug('Attached event listener to run')
+			return True
+		except Exception as e:
+			self.log.error(str(e))
+		return False
 
 	# clem 25/05/2016
 	@property
@@ -415,7 +443,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 				else:
 					self.log.info('Start TO, starting not possible since status is %s ' %
 						self._container.status_text)
-					self._set_status(self.js.FAILED)
+					self._set_global_status(self.js.FAILED)
 					self._runnable.manage_run_failed(0, 888)
 
 	# clem 25/05/2016
@@ -434,7 +462,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 							if self._container.is_dead:
 								self.log.warning('container is dead !')
 					except AttributeError:
-						self.log.exception('AttributeError: %s' % str(self._container.status_obj))
+						self.log.error('AttributeError: %s' % str(self._container.status_obj))
 				else: # TODO : has to set job to failed
 					self.log.error('Container not found !')
 					self._set_global_status(self.js.FAILED)
@@ -460,13 +488,17 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		return True
 
 	def _run(self):
-		container = self.client.run(self.my_run)
-		with self._container_lock:
-			self._container = container
-		self.log.debug('Got %s' % repr(self._container))
-		self._runnable.sgeid = self._container.short_id
-		self._set_global_status(self.js.SUBMITTED)
-		return True
+		try:
+			container = self.client.run(self.my_run)
+			with self._container_lock:
+				self._container = container
+			self.log.debug('Got %s' % repr(self._container))
+			self._runnable.sgeid = self._container.short_id
+			self._set_global_status(self.js.SUBMITTED)
+			return True
+		except Exception as e:
+			self.log.error(str(e))
+		return False
 
 	def _event_manager_wrapper(self):
 		def my_event_manager(event):
@@ -499,41 +531,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 	#  STORAGE INTERFACE  #
 	#######################
 
-	# clem 20/04/2016
-	@property
-	def _job_storage(self):
-		""" The storage backend to use to store the jobs-to-run archives
-
-		:return: an implementation of
-		:rtype: StorageModule
-		"""
-		if not self._jobs_storage:
-			self._jobs_storage = self._get_storage(self.storage_backend.jobs_container())
-		return self._jobs_storage
-
-	# clem 21/04/2016
-	@property
-	def _result_storage(self):
-		""" The storage backend to use to store the results archives
-
-		:return: an implementation of
-		:rtype: StorageModule
-		"""
-		if not self._data_storage:
-			self._data_storage = self._get_storage(self.storage_backend.data_container())
-		return self._data_storage
-
-	# clem 21/04/2016
-	@property
-	def _docker_storage(self):
-		""" The storage backend to use to store the storage backend files
-
-		:return: an implementation of
-		:rtype: StorageModule
-		"""
-		if not self.__docker_storage:
-			self.__docker_storage = self._get_storage(self.storage_backend.management_container())
-		return self.__docker_storage
+	# 15/09/2017 moved to super class (compute_interface_module)
+	# _job_storage
+	# _result_storage
+	# _docker_storage
 
 	#######################
 	#  ASSEMBLY SPECIFIC  #
@@ -597,7 +598,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: the path
 		:rtype: str
 		"""
-		return self.assembly_folder_path + settings.DOCKER_SH_NAME
+		return self.assembly_folder_path + settings.DOCKER_SH_STAGE2_NAME
 
 	# clem 24/05/2016
 	@property
@@ -607,9 +608,10 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: the path
 		:rtype: str
 		"""
-		return self.runnable_path + settings.DOCKER_SH_NAME + '.log'
+		return self.runnable_path + settings.DOCKER_SH_STAGE2_NAME + '.log'
 
-	def _remove_sup(self, path):
+	@staticmethod
+	def _remove_sup(path):
 		""" removes the PROJECT_FOLDER_PREFIX from the path
 
 		:param path: the path to handle
@@ -673,7 +675,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			'run_job_sh'	: settings.GENERAL_SH_NAME,
 		}
 
-		res = gen_file_from_template(settings.DOCKER_BOOTSTRAP_SH_TEMPLATE, conf_dict, self._sh_file_path)
+		res = gen_file_from_template(settings.DOCKER_STAGE2_SH_TEMPLATE, conf_dict, self._sh_file_path)
 		chmod(self._sh_file_path, ACL.RX_RX_)
 
 		return res
@@ -687,6 +689,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
+		# return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER) if self.config_do_assemble else True
+		self.run_server.skip_parsing = not self.config_do_assemble
 		return self.run_server.parse_all(settings.SPECIAL_CODE_FOLDER)
 
 	# clem 24/05/2016
@@ -709,12 +713,16 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		:return: is success
 		:rtype: bool
 		"""
-		self._docker_storage.upload_self() # update the cloud version of azure_storage.py
-		self.run_id = get_file_md5(self.assembly_archive_path) # use the archive hash as an id for storage
-		if self._job_storage.upload(self.run_id, self.assembly_archive_path):
-			if not KEEP_TEMP_FILE:
-				remove_file_safe(self.assembly_archive_path)
-			return True
+		try:
+			settings.NO_SGEID_EXPIRY = 60 # FIXME
+			self._docker_storage.upload_self() # update the cloud version of azure_storage.py
+			self.run_id = get_file_md5(self.assembly_archive_path) # use the archive hash as an id for storage
+			if self._job_storage.upload(self.run_id, self.assembly_archive_path):
+				if not KEEP_TEMP_FILE:
+					remove_file_safe(self.assembly_archive_path)
+				return True
+		except Exception as e:
+			self.log.error(str(e))
 		return False
 
 	# clem 10/05/2016
@@ -759,7 +767,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		cont = self.container
 		log = str(cont.logs)
 		the_end = log.split('\n')[-6:-1] # copy the last 5 lines
-		for (k, v) in self.LINES.iteritems():
+		for (k, v) in self.LINES.items():
 			if the_end[k].startswith(v):
 				del the_end[k]
 		if the_end != self.NORMAL_ENDING:
@@ -790,27 +798,32 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					safe_rm(self.assembly_folder_path) # delete the temp folder used to create the archive
 				return True
 
-		self.log.exception('Job super-assembly failed')
-		self._set_status(self.js.FAILED)
+		self.log.error('Job super-assembly failed')
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, 89)
 		return False
 
 	def send_job(self):
 		self._set_global_status(self.js.PREPARE_RUN) # TODO change
-		if self._upload_assembly():
-			env = { 'AZURE_KEY': self._job_storage.ACCOUNT_KEY } # passing the blob storage secret key to the cont
-			# TODO add host_sup passing
-			self.my_run = DockerRun(self.config_container, self.config_cmd % self.run_id, self.my_volume, env=env,
-				cont_name='%s_%s' % (self._runnable.short_id , self._runnable.author))
-			self._attach_event_manager()
-			if self._run():
-				return True
+		
+		try:
+			if self.apply_config() and self._upload_assembly():
+				env = self.remote_env_conf
+				# TODO add host_sup passing
+				self.my_run = DockerRun(self.config_image,
+					self.config_cmd % '%s %s' % (self.run_id, self._compute_target.target_storage_engine),
+					self.my_volumes, env=env, cont_name='%s_%s' % (self._runnable.short_id, self._runnable.author))
+				self._attach_event_manager()
+				if self._run():
+					return self.busy_waiting()
+				else:
+					error = [87, 'container kickoff failed']
 			else:
-				error = [87, 'container kickoff failed']
-		else:
-			error = [88, 'assembly upload failed']
-		self.log.exception(error[1])
-		self._set_status(self.js.FAILED)
+				error = [88, 'assembly upload failed']
+		except Exception as e:
+			error = [90, str(e)]
+		self.log.error(error[1])
+		self._set_global_status(self.js.FAILED)
 		self._runnable.manage_run_failed(1, error[0])
 		return False
 
@@ -826,11 +839,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					return True
 		except self._missing_exception:
 			self.log.error('No result found for job %s' % self.run_id)
-			self._set_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, 92)
 			raise
-		self._set_status(self.js.FAILED)
-		self._runnable.manage_run_failed(1, 91)
 		return False
 
 	# clem 06/05/2016
@@ -842,19 +851,19 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 					try:
 						self.container.stop()
 					except Exception as e:
-						self.log.exception('Stopping container failed : %s' % str(e))
+						self.log.error('Stopping container failed : %s' % str(e))
 					try:
 						self.container.kill()
 					except Exception as e:
-						self.log.exception('Killing container failed : %s' % str(e))
+						self.log.error('Killing container failed : %s' % str(e))
 					try:
 						if self.auto_remove:
 							self.container.remove_container()
 					except Exception as e:
-						self.log.exception('Removing container failed : %s' % str(e))
+						self.log.error('Removing container failed : %s' % str(e))
 			except Exception as e:
-				self.log.exception(str(e))
-			self._set_status(self.js.ABORTED)
+				self.log.error(str(e))
+			self._set_global_status(self.js.ABORTED)
 			self._runnable.manage_run_aborted(1, 95)
 			return True
 		return False
@@ -872,7 +881,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self._check_start_timeout()
 		return self._status
 
-	# clem 06/05/2016 # TODO improve (status assessment)
+	# clem 06/05/2016
 	def job_is_done(self):
 		cont = self.container
 		assert isinstance(cont, DockerContainer)
@@ -880,32 +889,48 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		self.log.info('Died code %s. Total execution time : %s' % (cont.exit_code, cont.delta_display))
 		try:
 			get_res = self.get_results()
-			# ex_code = cont.status_obj.ExitCode
-			ex_code = cont.exit_code
+		except Exception as e:
+			self.log.error(e)
+			self.log.warning('Failure ! (breeze failed while getting back results)')
+			self._set_global_status(self.js.FAILED)
+			self._runnable.manage_run_failed(0, 92)
+			return False
+			
+		ex_code = cont.exit_code
+		try:
 			self._save_container_log()
-	
 			if self.auto_remove:
 				cont.remove_container()
-	
-			if ex_code > 0:
-				if not self.job_has_failed:
-					self.log.warning('Failure ! (container failed)')
-				else:
-					self.log.warning('Failure ! (script failed)')
-				self._set_status(self.js.FAILED)
-				self._runnable.manage_run_failed(1, ex_code)
-				return False
-			elif get_res:
-				self.log.debug('Success, job completed !')
-				self._check_container_logs()
-				self._set_status(self.js.SUCCEED)
-				self._runnable.manage_run_success(0)
-				return True
 		except Exception as e:
-			self.log.exception(e)
-		self.log.warning('Failure ! (breeze failed while getting back results)')
-		self._set_status(self.js.FAILED)
-		self._runnable.manage_run_failed(0, 999)
+			self.log.warning(str(e))
+
+		if ex_code > 0:
+			if not self.job_has_failed:
+				self.log.warning('Failure ! (container failed)')
+			else:
+				self.log.warning('Failure ! (script failed)')
+			self._set_global_status(self.js.FAILED)
+			self._runnable.manage_run_failed(1, ex_code)
+		elif get_res:
+			self.log.debug('Success, job completed !')
+			try:
+				self._check_container_logs()
+			except Exception as e:
+				self.log.warning(str(e))
+			self._set_status(self.js.SUCCEED)
+			self._runnable.manage_run_success(0)
+			return True
+		return False
+		
+	# clem 20/09/2016
+	def delete(self):
+		""" implements necessary cleanup feature for deletion of parent object """
+		try:
+			if self.container:
+				self.container.remove_container()
+			return True
+		except Exception as e:
+			self.log.warning('Cannot delete %s: %s' % (self.container.name, str(e)))
 		return False
 
 

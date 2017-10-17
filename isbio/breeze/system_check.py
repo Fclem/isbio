@@ -801,6 +801,7 @@ CHECK_LIST = [
 		ex=ShinyNotResponding),
 	# SysCheckUnit(check_docker_connection, 'docker-endp', 'Docker Endpoint', '', RunType.runtime,
 	# 	ex=DockerNotResponding),
+	SysCheckUnit(check_cas, 'cas', 'CAS server', 'CAS SERVER\t\t', RunType.both, ex=CASUnreachable, mandatory=True),
 	SysCheckUnit(check_csc_shiny, 'csc_shiny', 'CSC Shiny %s server' % proto, 'CSC SHINY %s\t\t' % proto,
 		RunType.runtime, ex=ShinyUnreachable),
 	SysCheckUnit(check_watcher, 'watcher', 'JobKeeper', 'JOB_KEEPER\t\t', RunType.runtime, ex=WatcherIsNotRunning),

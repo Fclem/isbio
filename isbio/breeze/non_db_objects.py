@@ -6,6 +6,7 @@ from django import VERSION
 from django.template.context import RequestContext as ReqCont
 from django.contrib.auth.models import User
 from django.http import HttpRequest
+from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError, DEFAULTSECT
 
 __version__ = '0.2.1'
 __author__ = 'clem'
@@ -602,11 +603,49 @@ class FolderObj(object):
 		abstract = True
 
 
+# clem 14/09/2017
+class MySafeConfigParser(SafeConfigParser):
+	"""Can get options() without defaults
+	"""
+
+	def items(self, section, raw=False, vars=None, no_defaults=True):
+		"""Return a list of tuples with (name, value) for each option
+			in the section.
+			
+			All % interpolations are expanded in the return values, based on the
+			defaults passed into the constructor, unless the optional argument
+			`raw' is true.  Additional substitutions may be provided using the
+			`vars' argument, which must be a dictionary whose contents overrides
+			any pre-existing defaults.
+			
+			The section DEFAULT is special.
+		"""
+		d = dict() if no_defaults else self._defaults.copy()
+		try:
+			d.update(self._sections[section])
+		except KeyError:
+			if section != DEFAULTSECT:
+				raise NoSectionError(section)
+		# Update with the entry specific variables
+		if vars:
+			for key, value in vars.items():
+				d[self.optionxform(key)] = value
+		options = d.keys()
+		if "__name__" in options:
+			options.remove("__name__")
+		if raw:
+			return [(option, d[option])
+				for option in options]
+		else:
+			return [(option, self._interpolate(section, option, d[option], d))
+				for option in options]
+
+
 # clem 13/05/2016
 # META_CLASS
 class ConfigObject(FolderObj):
 	# __metaclass__ = abc.ABCMeta # problem with meta-subclassing
-	from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError
+	# from ConfigParser import SafeConfigParser, NoSectionError, NoOptionError
 	_not = "Class %s doesn't implement %s()"
 	BASE_FOLDER_NAME = settings.CONFIG_FN
 	ALLOW_DOWNLOAD = False
@@ -650,7 +689,9 @@ class ConfigObject(FolderObj):
 	# clem 27/05/2016
 	def _load_config(self):
 		""" Load the config file in a ConfigParser.SafeConfigParser object """
-		config = self.SafeConfigParser()
+		# config = self.SafeConfigParser()
+		config = MySafeConfigParser()
+		config.optionxform = str
 		config.readfp(open(self.config_file.path))
 		self.log.debug(
 			'Config : loaded and parsed %s / %s ' % (os.path.basename(self.config_file.path), self.__class__.__name__))
@@ -685,7 +726,7 @@ class ConfigObject(FolderObj):
 		"""
 		try:
 			return self.config.get(section, option)
-		except (self.NoSectionError, AttributeError, self.NoOptionError) as e:
+		except (NoSectionError, AttributeError, NoOptionError) as e:
 			self.log.warning('While parsing file ')
 			pp(self.config.__dict__)
 			raise
@@ -1009,6 +1050,7 @@ class RunServer(object):
 	storage_path = str()
 	_reports_path = str()
 	_swap_object = None
+	skip_parsing = False # FIXME hack
 
 	project_prefix = settings.PROJECT_FOLDER_PREFIX
 	# lookup only sourced files inside PROJECT_FOLDER
@@ -1226,9 +1268,10 @@ class RunServer(object):
 			self.count['abs'] += 1
 			line = SrcObj(el[0])
 			if self._not_excluded(line.path):
-				# change the path to a relative one for the target server
-				file_obj.replace(line, line.new)
-				print 'replacing #%s# with #%s#' % (line, line.new)
+				if not self.skip_parsing:
+					# change the path to a relative one for the target server
+					file_obj.replace(line, line.new)
+					print 'replacing #%s# with #%s#' % (line, line.new)
 				# remote location on a local mount
 				new_path = '%s%s' % (self.storage_path, line.path)
 				new_file = FileParser(line.path, new_path)

@@ -19,7 +19,7 @@ export NEXT_SH=./'$run_job_sh'
 ## END OF BREEZE_CONFIG
 export JOB_FOLDER=${HOME}${ABS_PATH}
 export OUT_FILE_PATH=${HOME}'/'${OUT_FILE}
-
+# FIXME move all that into container bootstrap script
 END_C='\033[39m'
 BLUE='\033[34m'
 RED='\033[31m'
@@ -44,7 +44,7 @@ EX=$?
 	rm ${OUT_FILE_PATH} > /dev/null 2>&1
 	echo -ne ${BLUE}'Creating archive '${OUT_FILE_PATH}' ...'${END_C} && echo 'done'
 	tar jcf ${OUT_FILE_PATH} .
-	${AZURE_PY} save
+	${AZURE_PY} save # FIXME obsolete
 	echo 'done'
 # else
 #	echo 'INTERUPTED, exit code was '${EX}

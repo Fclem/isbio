@@ -223,6 +223,11 @@ def list_functions_from_module(a_module):
 		if isinstance(a_module.__dict__.get(a), types.FunctionType)]
 
 
+def get_stack():
+	from traceback import extract_stack, format_list
+	return '\n' + ''.join(format_list(extract_stack()))
+
+
 ####################
 # CUSTOMIZED TYPES #
 ####################

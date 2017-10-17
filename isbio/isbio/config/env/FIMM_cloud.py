@@ -8,3 +8,7 @@ ALLOWED_HOSTS += ['192.168.4.135', 'breeze-cloud.fimm.fi']
 BREEZE_TITLE = 'C-BREEZE2' + ('-DEV' if DEV_MODE else '')
 BREEZE_TITLE_LONG = 'Cloud Breeze2' + (' (dev)' if DEV_MODE else '')
 
+# STORAGE_FOLDER_NAME = 'storage'
+# STORAGE_FOLDER = '%s%s/' % (PROJECT_FOLDER, STORAGE_FOLDER_NAME)
+# STORAGE_PLACE = '%s/' % STORAGE_FOLDER_NAME
+

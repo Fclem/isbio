@@ -148,7 +148,7 @@ def _reattach_the_job(dbitem):
 			if statsd:
 				statsd.increment('python.breeze.running_jobs')
 	except Exception as e:
-		dbitem.log.exception('unhandled exception : %s' % e)
+		dbitem.log.error('unhandled exception : %s' % e)
 		return False
 
 
@@ -170,7 +170,7 @@ def _spawn_the_job(dbitem):
 			if statsd:
 				statsd.increment('python.breeze.running_jobs')
 		except Exception as e:
-			dbitem.log.exception('unhandled exception : %s' % e)
+			dbitem.log.error('unhandled exception : %s' % e)
 			return False
 	else:
 		dbitem.breeze_stat = JobStat.ABORTED
