@@ -9,13 +9,17 @@ import json
 import requests
 import time
 import re
-import string
+import six
 
-__version__ = '0.1.10'
+__version__ = '0.1.12'
 __author__ = 'clem'
 DOCKER_HUB_URL = 'https://index.docker.io'
 
 a_lock = Lock()
+# noinspection PyShadowingBuiltins
+str = six.binary_type # this is on purpose for compatibility, without replacing all references
+# noinspection PyShadowingBuiltins
+basestring = six.string_types  # this is on purpose for compatibility, without replacing all references
 
 
 # clem 07/04/2016
@@ -44,6 +48,11 @@ class DockerVolume(object):
 	# clem 15/03/2016
 	def pretty_print(self):
 		advanced_pretty_print(self.__dict__)
+
+	# clem 17/10/2017
+	@property
+	def dump(self):
+		return '{0}:{1}:{2}'.format(self.path, self.mount_point, self.mode)
 
 	# clem 14/03/2016
 	def __str__(self):
@@ -105,8 +114,8 @@ class DockerRun(object):
 				container.register_event_listener(self.event_listener)
 
 	# clem 14/03/2016
-	@property # renamed from config_dict on 28/11/2016
-	def volume_dict(self):
+	@property # FIXME Obsolete | renamed from config_dict on 28/11/2016
+	def volume_dict(self): # broken design as two mount points cannot be referenced by the same source path
 		a_dict = dict()
 		vol_list = self._volumes if isinstance(self._volumes, list) else [self._volumes]
 		for each in vol_list:
@@ -116,6 +125,12 @@ class DockerRun(object):
 				'mode': each.mode,
 			}
 		return a_dict
+	
+	# clem 17/10/2017
+	@property
+	def volume_list(self):
+		vol_list = self._volumes if isinstance(self._volumes, list) else [self._volumes]
+		return [x.dump for x in vol_list]
 	
 	# clem 28/11/2016
 	@property
@@ -130,7 +145,7 @@ class DockerRun(object):
 	# clem 28/11/2016
 	@property
 	def config_dict(self):
-		return {'binds': self.volume_dict, 'extra_hosts': self.extra_host_dict}
+		return {'binds': self.volume_list, 'extra_hosts': self.extra_host_dict}
 
 	# clem 16/03/2016
 	@property # temp wrapper
@@ -146,7 +161,7 @@ class DockerRun(object):
 		elif isinstance(client, DockerClient):
 			self._image = client.get_image(self.image_full_name)
 			return self.link_image()
-		return DockerImage({ 'RepoTags': self.image_full_name })
+		return DockerImage({'RepoTags': self.image_full_name})
 
 	# clem 15/03/2016
 	def pretty_print(self):
@@ -169,11 +184,11 @@ class DockerRepo(object):
 
 	def __init__(self, login, pwd, email='', url=DOCKER_HUB_URL):
 		try:
-			assert isinstance(login, basestring) and isinstance(pwd, basestring) and isinstance(email, basestring) and \
-			isinstance(url, basestring)
+			assert isinstance(login, basestring) and isinstance(pwd, basestring) and\
+				isinstance(email, basestring) and isinstance(url, basestring)
 		except AssertionError as e:
-			print 'CRITICAL : %s' % e
-			print 'args: %s' % (str((login, pwd, email, url)))
+			print('CRITICAL : %s' % e)
+			print('args: %s' % (str((login, pwd, email, url))))
 		self.login = login
 		self.pwd = pwd
 		self.email = email
@@ -596,7 +611,7 @@ class DockerEventCategories(object):
 	RESTART = 'A:restart'
 	UNKNOWN = ''
 
-	a_dict = { CREATE: CREATE, START: START, DIE: DIE, KILL: KILL, PAUSE: PAUSE, UNPAUSE: UNPAUSE, CONNECT: CONNECT,
+	a_dict = {CREATE: CREATE, START: START, DIE: DIE, KILL: KILL, PAUSE: PAUSE, UNPAUSE: UNPAUSE, CONNECT: CONNECT,
 				DISCONNECT: DISCONNECT, MOUNT: MOUNT, UNMOUNT: UNMOUNT, RESTART: RESTART}
 
 	def __init__(self):
@@ -875,7 +890,7 @@ class TermStreamer(object):
 				curses.echo()
 				curses.nocbreak()
 				curses.endwin()
-			except Exception:
+			except curses.error:
 				pass
 
 	def __delete__(self, _):
@@ -884,12 +899,12 @@ class TermStreamer(object):
 	def close(self):
 		self.__exit__()
 
-	@classmethod
-	def _legacy_term_stream(self, a_dict):
+	@staticmethod
+	def _legacy_term_stream(a_dict):
 		import sys
 		import os
 		os.system('clear')
-		for value in a_dict.itervalues():
+		for value in a_dict.values():
 			sys.stdout.write('%s\n' % value)
 			sys.stdout.flush()  # As suggested by Rom Ruben
 
@@ -900,7 +915,7 @@ class TermStreamer(object):
 			return self._legacy_term_stream(a_dict)
 		i = 0
 		try:
-			for value in a_dict.itervalues():
+			for value in a_dict.values():
 				i += 1
 				self.stdscr.addstr(i, 0, str(value).ljust(80))
 		except error:
@@ -1019,10 +1034,10 @@ class DockerClient(object):
 						advanced_pretty_print(obj)
 			else:
 				if direct:
-					print str(obj) + str(sup_text)
+					print(str(obj) + str(sup_text))
 				else:
 					with self._console_mutex:
-						print str(obj) + str(sup_text)
+						print(str(obj) + str(sup_text))
 		# TODO log
 
 	# clem 10/03/2016
@@ -1036,8 +1051,8 @@ class DockerClient(object):
 		self._log(obj, True, sup_text)
 
 	# clem 16/03/2016
-	@classmethod
-	def _json_parse(self, obj):
+	@staticmethod
+	def _json_parse(obj):
 		if type(obj) is str:
 			try:
 				obj = json.loads(obj)
@@ -1125,24 +1140,24 @@ class DockerClient(object):
 		image_name = run.image_full_name
 		if not isinstance(run.image, DockerImage) and image_name not in self.images_by_repo_tag:
 			# image not found, let's try to pull it
-			img = run.link_image(self)
+			run.link_image(self) # no need for the returned DockerImage
 			# self._log('Unable to find image \'%s\' locally, let\'s try pulling it...' % image_name)
 			# return self.pull(img.repo_and_name, img.tag)
 		return True
 
 	# clem 17/03/2016
-	def __error_managed(func):
+	# noinspection PyMethodParameters
+	def __error_managed(func): # no self is NOT an error here as this is a decorator
 		""" Error management wrapper for _run and _start
 
-		:type func: function
-		:rtype: function
+		:type func: callable
+		:rtype: callable
 		"""
 
 		def decorated_func(self, arg):
 			assert isinstance(self, DockerClient) and isinstance(arg, (DockerRun, DockerContainer))
 			
 			def exception_handler(*args, **kwargs):
-				# kwargs.update('stack_off')
 				return self._exception_handler(*args, stack_offset=2, **kwargs)
 			
 			msg = 'creation' if isinstance(arg, DockerRun) else 'start'
@@ -1154,7 +1169,6 @@ class DockerClient(object):
 			except NotFound as e:
 				exception_handler(e, '%s: %s' % (msg, str(e)))
 			except APIError as e:
-				# self._log('Container %s failed : %s' % (msg, e))
 				self._log('Container %s failed : %s [%s]' % (msg, e, self._readable_time_stamp))
 				if self.DEV and isinstance(arg, DockerContainer): # FIXME dev code
 					out_log = self.logs(arg.Id)
@@ -1169,6 +1183,7 @@ class DockerClient(object):
 		return decorated_func
 
 	_error_managed = staticmethod(__error_managed)
+	error_managed = _error_managed.__func__
 
 	# clem 28/11/2016
 	def _host_config_dict(self, run_instance):
@@ -1181,7 +1196,8 @@ class DockerClient(object):
 		return self.cli.create_host_config(**run_instance.config_dict)
 
 	# clem 09/03/2016
-	@_error_managed.__func__
+	# noinspection PyCallingNonCallable
+	@error_managed
 	def _run(self, run):
 		"""
 		TBD
@@ -1199,7 +1215,7 @@ class DockerClient(object):
 		host_conf = self._host_config_dict(run)
 		
 		kwargs = {
-			'volumes'    : run.volume_dict.keys(),
+			# 'volumes'    : run.volume_dict.keys(), # FIXME useless
 			'environment': run.env,
 			'host_config': host_conf,
 		}
@@ -1207,7 +1223,7 @@ class DockerClient(object):
 		# container name
 		name_str = ''
 		if run.container_given_name:
-			kwargs.update({'name' : run.container_given_name })
+			kwargs.update({'name' : run.container_given_name})
 			name_str = '--name %s ' % kwargs['name']
 		
 		self._log('docker run %s %s-e %s \\\n\t%s\n\t%s' %
@@ -1224,7 +1240,8 @@ class DockerClient(object):
 
 	# clem 17/03/2016
 	@new_thread
-	@_error_managed.__func__
+	# noinspection PyCallingNonCallable
+	@error_managed
 	def _start(self, container):
 		"""
 		:type container: basestring | DockerContainer
@@ -1423,7 +1440,7 @@ class DockerClient(object):
 
 	# clem 31/03/2016
 	# def show_info(self):
-	# 	print self.info()
+	# 	print(self.info())
 
 	#
 	# DOCKER CLIENT MAPPINGS
@@ -1793,6 +1810,7 @@ class DockerClient(object):
 
 		:rtype: None
 		"""
+		# noinspection PyUnresolvedReferences
 		try:
 			self._log('Event watcher started')
 			for event in self.cli.events(): # Generator, do no run code in here, but rather in _new_event for non blocking
@@ -1801,7 +1819,6 @@ class DockerClient(object):
 				self._new_event(event)
 		except requests.exceptions.ConnectionError as e:
 			self._exception_handler(e, 'Starting event watcher failed: %s' % e)
-		# except requests.packages.urllib3.
 		except requests.packages.urllib3.exceptions.ProtocolError as e:
 			self._raw_cli = None
 			self._exception_handler(e, 'Lost connection to docker daemon: %s' % e)
