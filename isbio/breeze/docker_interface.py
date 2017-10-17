@@ -858,11 +858,6 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 						self.container.kill()
 					except Exception as e:
 						self.log.error('Killing container failed : %s' % str(e))
-					try:
-						if self.auto_remove:
-							self.container.remove_container()
-					except Exception as e:
-						self.log.error('Removing container failed : %s' % str(e))
 			except Exception as e:
 				self.log.error(str(e))
 			self._set_global_status(self.js.ABORTED)
@@ -885,45 +880,45 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 	# clem 06/05/2016
 	def job_is_done(self):
-		if self._runnable.aborting:
-			return False
-		cont = self.container
-		assert isinstance(cont, DockerContainer)
-		self._set_global_status(self.js.GETTING_RESULTS)
-		self.log.info('Died code %s. Total execution time : %s' % (cont.exit_code, cont.delta_display))
-		try:
-			get_res = self.get_results()
-		except Exception as e:
-			self.log.error(e)
-			self.log.warning('Failure ! (breeze failed while getting back results)')
-			self._set_global_status(self.js.FAILED)
-			self._runnable.manage_run_failed(0, 92)
-			return False
-			
+		cont = self.container # type: DockerContainer
 		ex_code = cont.exit_code
+		
+		self.log.info('Died code %s. Total execution time : %s' % (ex_code, cont.delta_display))
+		if not self._runnable.aborting:
+			self._set_global_status(self.js.GETTING_RESULTS)
+			try:
+				get_res = self.get_results()
+			except Exception as e:
+				self.log.error(e)
+				self.log.warning('Failure ! (breeze failed while getting back results)')
+				self._set_global_status(self.js.FAILED)
+				self._runnable.manage_run_failed(0, 92)
+				return False
+		
 		try:
 			self._save_container_log()
-			if self.auto_remove:
+			if self.auto_remove and not self._runnable.aborting:
 				cont.remove_container()
 		except Exception as e:
 			self.log.warning(str(e))
-
-		if ex_code > 0:
-			if not self.job_has_failed:
-				self.log.warning('Failure ! (container failed)')
-			else:
-				self.log.warning('Failure ! (script failed)')
-			self._set_global_status(self.js.FAILED)
-			self._runnable.manage_run_failed(1, ex_code)
-		elif get_res:
-			self.log.debug('Success, job completed !')
-			try:
-				self._check_container_logs()
-			except Exception as e:
-				self.log.warning(str(e))
-			self._set_status(self.js.SUCCEED)
-			self._runnable.manage_run_success(0)
-			return True
+		
+		if not self._runnable.aborting:
+			if ex_code > 0:
+				if not self.job_has_failed:
+					self.log.warning('Failure ! (container failed)')
+				else:
+					self.log.warning('Failure ! (script failed)')
+				self._set_global_status(self.js.FAILED)
+				self._runnable.manage_run_failed(1, ex_code)
+			elif get_res:
+				self.log.debug('Success, job completed !')
+				try:
+					self._check_container_logs()
+				except Exception as e:
+					self.log.warning(str(e))
+				self._set_status(self.js.SUCCEED)
+				self._runnable.manage_run_success(0)
+				return True
 		return False
 		
 	# clem 20/09/2016
