@@ -24,11 +24,19 @@ END_C='\033[39m'
 BLUE='\033[34m'
 RED='\033[31m'
 # Gros hack tout vilain # TODO finish
-ln -s $HOME /fs
-ln -s $HOME/projects /fs/projects
-ln -s $HOME/projects /projects
-ln -s /projects/breeze/code/RMySqlLib /projects/breeze/RORALib
-ln -s /projects/breeze/code/RMySqlLib /projects/breeze/code/RORALib
+# ln -s $HOME /fs
+# HOME/projects/breeze-ph2/db/
+# /data-ph/breeze/db/datasets	/projects/breeze/db/datasets ro
+# /data-ph/breeze/code			/projects/breeze/code ro
+ln -s . /fs
+ln -s /projects/breeze/ /projects/breeze-ph2
+ln -s $HOME/projects/breeze-ph2/db/reports/ /projects/breeze/db/reports
+# ln -s $HOME/projects/breeze $HOME/projects/breeze-ph2
+ln -s $HOME/projects/breeze-ph2/ $HOME/projects/breeze
+ln -s $HOME/ $HOME/fs
+ln -s /projects/breeze/code/ $HOME/projects/breeze/code
+# ln -s /projects/breeze/code/RMySqlLib /projects/breeze/RORALib
+# ln -s /projects/breeze/code/RMySqlLib /projects/breeze/code/RORALib
 # move to the job sub folder
 echo -e ${BLUE}'cd '${JOB_FOLDER}''${END_C}
 cd ${JOB_FOLDER}
@@ -43,7 +51,7 @@ EX=$?
 	# preventive delete (suppressing errors)
 	rm ${OUT_FILE_PATH} > /dev/null 2>&1
 	echo -ne ${BLUE}'Creating archive '${OUT_FILE_PATH}' ...'${END_C} && echo 'done'
-	tar jcf ${OUT_FILE_PATH} .
+	tar  --no-acls --owner=breeze -jcf ${OUT_FILE_PATH} .
 	${AZURE_PY} save # FIXME obsolete
 	echo 'done'
 # else
