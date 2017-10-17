@@ -1885,7 +1885,7 @@ def abort_sge(request, object_id, object_type):
 
 	if s:
 		# return HttpResponseRedirect('/jobs/') # FIXME hardcoded url
-		return HttpResponseRedirect(request.META.HTTP_REFERER) # FIXME hardcoded url
+		return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/jobs/')) # FIXME hardcoded url
 	else:
 		log.error("aborting job/report %s failed" % object_id)
 		return jobs(request, error_msg="%s\nOn DRMAA job/report id %s\nPlease contact Breeze support" % (s, object_id))
