@@ -1606,9 +1606,6 @@ def delete_report(request, rid, redir):
 	report = None
 	try:
 		report = Report.objects.owner_get(request, rid)
-		# Enforce access rights
-		# if report.author != request.user:
-		#	raise PermissionDenied(request=request)
 		report.delete()
 	except ObjectDoesNotExist:
 		return aux.fail_with404(request, 'There is no report with id ' + str(rid) + ' in database')
@@ -3187,3 +3184,25 @@ def news_page(request):
 @login_required
 def tools(request):
 	return render_to_response('tools.html', RequestContext(request, {'tools_status': 'active'}))
+
+
+# clem 18/10/2017
+@login_required
+def git_breeze(request):
+	from api.code_v1 import do_self_git_pull
+	if request.user.is_superuser:
+		do_self_git_pull()
+	else:
+		return PermissionDenied(request=request)
+	return HttpResponseRedirect(reverse(resources))
+
+
+# clem 18/10/2017
+@login_required
+def git_r(request):
+	from api.code_v1 import do_r_source_git_pull
+	if request.user.is_superuser:
+		do_r_source_git_pull()
+	else:
+		return PermissionDenied(request=request)
+	return HttpResponseRedirect(reverse(resources))

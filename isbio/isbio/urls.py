@@ -199,6 +199,8 @@ else:
 		
 		url(r'^resources/?$', v.resources, name='res'),
 		url(r'^resources/invalidate_cache/?$', v.invalidate_cache_view, name='cache.invalidate'),
+		url(r'^resources/git/pull/breeze/?$', v.git_breeze, name='git.pull_breeze'),
+		url(r'^resources/git/pull/dsrt/?$', v.git_r, name='git.pull_r'),
 		url(r'^resources/scripts/(?P<page>\d+)?$', v.manage_scripts, name='res.scripts'),
 		url(r'^resources/scripts/all/(?P<page>\d+)?$', v.manage_scripts, { 'view_all': True },
 			name='res.scripts.all'),
