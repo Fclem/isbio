@@ -8,7 +8,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.11.2'
+__version__ = '0.11.3'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -885,6 +885,8 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 	# clem 06/05/2016
 	def job_is_done(self):
+		if self._runnable.aborting:
+			return False
 		cont = self.container
 		assert isinstance(cont, DockerContainer)
 		self._set_global_status(self.js.GETTING_RESULTS)
