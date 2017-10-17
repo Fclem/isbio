@@ -66,7 +66,7 @@ class CustomManager(Manager):
 		Does NOT implement user access control
 
 		:param kwargs: {id: int or pk: int, user: models.User}
-		:type kwargs: dict
+		:type kwargs: dict[int, User]
 		:raises: ObjectDoesNotExist, InvalidArguments
 		"""
 		if 'user' not in kwargs.keys():
@@ -469,10 +469,10 @@ class ObjectsWithAuth(CustomManager):
 
 		and return it as RO if the user only has read access to it (not owner but shared to him)
 
-		:param kwargs: {id: int or pk: int, user: models.User}
-		:type kwargs: dict
+		:param kwargs:  dict{id: int or pk: int, user: models.User}
+		:type kwargs: dict[int, User]
 		:return:
-		:rtype:
+		:rtype: type(self.model)
 		:raises: PermissionDenied, ObjectDoesNotExist, InvalidArguments
 		"""
 		self.user_get(**kwargs) # get the object if it exists
