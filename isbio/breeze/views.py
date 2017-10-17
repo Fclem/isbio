@@ -1858,8 +1858,15 @@ def run_script(request, jid):
 # FIXME obsolete
 @allow_guest
 def abort_sge(request, object_id, object_type):
+	"""
+	
+	:type request:  HttpRequest
+	:type object_id: int
+	:type object_type: str
+	"""
 	log = logger.getChild('abort_sge')
 	item = None
+	from django.http.request import HttpRequest
 	try:
 		if object_type == "report":
 			item = Report.objects.secure_get(id=object_id, user=request.user) # type:Report
@@ -1877,7 +1884,8 @@ def abort_sge(request, object_id, object_type):
 		pass
 
 	if s:
-		return HttpResponseRedirect('/jobs/') # FIXME hardcoded url
+		# return HttpResponseRedirect('/jobs/') # FIXME hardcoded url
+		return HttpResponseRedirect(request.META.HTTP_REFERER) # FIXME hardcoded url
 	else:
 		log.error("aborting job/report %s failed" % object_id)
 		return jobs(request, error_msg="%s\nOn DRMAA job/report id %s\nPlease contact Breeze support" % (s, object_id))

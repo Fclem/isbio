@@ -137,14 +137,11 @@
 				<div class="well">
 					<h4>Active reports</h4>
 					{% for element in reports %}
+						[ <a href="/abortreports/{{ element.id }}">kill</a> ]
 						<code>{{ element }} : {{ element.name }}, {{ element.author.get_full_name }},
 						{{ element.type.type }}, {{ element.project.name }}, {{ element.target.name }},
 						{{ element.get_status }}
-						</code> <a href="/abortreports/{{ element.id }}">kill</a><br/>
-						<!--
-						<span style="margin-left: 15px">{{ element.object }}</span>
-						
-						<br/><br/>-->
+						</code><br/>
 						{% empty %}
 						Nothing yet.
 					{% endfor %}
