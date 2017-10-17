@@ -8,7 +8,7 @@ import os
 a_lock = Lock()
 container_lock = Lock()
 
-__version__ = '0.11'
+__version__ = '0.11.2'
 __author__ = 'clem'
 __date__ = '15/03/2016'
 KEEP_TEMP_FILE = False # i.e. debug
@@ -179,7 +179,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		return self.__online_accessor(True)
 	
 	# clem 21/10/2016
-	# noinspection PyBroadException
+	# noinspection PyBroadException,PyPep8
 	@property
 	def can_connect(self):
 		try:
@@ -224,7 +224,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 		for line in tmp.readlines():
 			try:
 				lines.append(line.split(' ')[-2].split(':')[0])
-			except Exception:
+			except IndexError:
 				pass
 		if len(lines) > 0:
 			if len(lines) == 1:
@@ -252,7 +252,7 @@ class DockerInterfaceConnector(ComputeInterfaceBase):
 				return do_test_tcp()
 			except socket.timeout:
 				logger.warning('connect %s: Time-out' % str(target))
-			except socket.error as e: # FIXME look it up
+			except socket.error as e:
 				logger.warning('connect %s: %s' % (str(target), e))
 			except Exception as e:
 				logger.exception('connect %s' % str((type(e), e)))
@@ -372,12 +372,12 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		if self._runnable.breeze_stat != self.js.INIT: # TODO improve
 			self._status = self._runnable.breeze_stat
 		self._container_lock = Lock()
-		
 		# parsing volume line from config to assign DockerVolumes object to mount points
 		volumes = self.config_volumes
 		self.my_volumes = list()
 		for each in volumes.split(','):
-			each = each.strip().split(' ')
+			each = each.strip()
+			each = each.split(' ' if ' ' in each else ':')
 			if len(each) == 2:
 				each.append('ro')
 			self.my_volumes.append(DockerVolume(each[0], each[1], each[2]))
@@ -404,6 +404,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 		return log_obj or logger
 	
 	# clem 06/10/2016
+	# noinspection SpellCheckingInspection
 	def name(self):
 		try:
 			img_id = self.client.get_image(self.config_image).Id
