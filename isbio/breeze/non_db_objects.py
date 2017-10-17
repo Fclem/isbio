@@ -860,11 +860,14 @@ class SrcObj(object):
 		return self.str.replace('"', '').replace("'", "")
 
 	@property
-	def new(self): # TODO fix
-		proj = settings.PROJECT_FOLDER.replace('/fs', '')
-		proj_bis = settings.PROJECT_FOLDER
-		return SrcObj(self.str.replace('"%s' % proj, '"~%s' % proj).replace("'%s" % proj, "'~%s" % proj).replace(
-			'"%s' % proj_bis, '"~%s' % proj).replace("'%s" % proj_bis, "'~%s" % proj))
+	def new(self):
+		a_list = ['/fs/projects/breeze/', '/fs/projects/breeze-ph2/', '/projects/breeze/', '/projects/breeze-ph2/', ]
+		string = self.str
+		for each in a_list:
+			string = string.replace('"%s' % each, '"~%s' % each).replace("'%s" % each, "'~%s" % each)
+		# proj = settings.PROJECT_FOLDER.replace('/fs', '')
+		# proj_bis = settings.PROJECT_FOLDER
+		return SrcObj(string)
 
 	# clem 21/10/15
 	@property
