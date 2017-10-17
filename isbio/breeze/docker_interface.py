@@ -660,7 +660,7 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 
 		return custom_copytree(self.runnable_path, self.assembly_folder_path + self.relative_runnable_path,
 			ignore=remote_ignore) and custom_copytree(settings.SPECIAL_CODE_FOLDER,
-			self.assembly_folder_path + settings.SPECIAL_CODE_FOLDER, ignore=code_ignore)
+			self.assembly_folder_path + settings.SPECIAL_CODE_FOLDER, ignore=code_ignore, no_raise=True)
 
 	# clem 23/05/2016
 	def _gen_kick_start_file(self):

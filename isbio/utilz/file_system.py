@@ -181,11 +181,11 @@ class Path(object):
 		return True
 
 
-def custom_copytree(src, dst, symlinks=False, ignore=None, verbose=True, sub=False):
+def custom_copytree(src, dst, symlinks=False, ignore=None, verbose=True, sub=False, no_raise=False):
 	from shutil import copy2, Error, copystat, WindowsError
 
 	if not sub and verbose:
-		print 'copy %s => %s' % (src, dst)
+		get_logger().debug('copy %s => %s' % (src, dst))
 	files_count, folders_count = 0, 0
 
 	names = listdir(src)
@@ -240,14 +240,14 @@ def custom_copytree(src, dst, symlinks=False, ignore=None, verbose=True, sub=Fal
 		copystat(src, dst)
 	except OSError as why:
 		if WindowsError is not None and isinstance(why, WindowsError):
-			# Copying file access times may fail on Windows
-			pass
+			pass  # Copying file access times may fail on Windows
 		else:
 			errors.extend((src, dst, str(why)))
-	if errors:
+	if errors and not no_raise:
 		raise Error(errors)
 	if not sub and verbose:
-		print 'done (%s files and %s folders)' % (files_count, folders_count)
+		get_logger().debug('done (%s files and %s folders, %s error(s))' %
+			(files_count, folders_count, len(errors)))
 	return files_count, folders_count
 
 
