@@ -41,6 +41,7 @@ import sys
 simplejson = json
 logger = utils.logger
 
+# TODO change all the objects.get into objects.secure_get where appropriate
 
 def legacy_request(request):
 	""" Adds back the REQUEST property as dict(self.GET + self.POST) that seems to be missing
@@ -1856,18 +1857,17 @@ def run_script(request, jid):
 
 # FIXME obsolete
 @allow_guest
-def abort_sge(request, id, type):
+def abort_sge(request, object_id, object_type):
 	log = logger.getChild('abort_sge')
-	# assert isinstance(log, logging.getLoggerClass())
 	item = None
 	try:
-		if type == "report":
-			item = Report.objects.get(id=id)
-		elif type == "job":
-			item = Jobs.objects.get(id=id)
+		if object_type == "report":
+			item = Report.objects.secure_get(id=object_id, user=request.user) # type:Report
+		elif object_type == "job":
+			item = Jobs.objects.secure_get(id=object_id, user=request.user) # type:Jobs
 	except (Report.DoesNotExist, Jobs.DoesNotExist):
-		log.error("job/report %s does not exists" % id)
-		return jobs(request, error_msg="job/report  %s  does not exists\nPlease contact Breeze support" % id)
+		log.error("job/report %s does not exists" % object_id)
+		return jobs(request, error_msg="job/report %s does not exists\nPlease contact Breeze support" % object_id)
 
 	s = None
 	try:
@@ -1879,8 +1879,8 @@ def abort_sge(request, id, type):
 	if s:
 		return HttpResponseRedirect('/jobs/') # FIXME hardcoded url
 	else:
-		log.error("aborting job/report %s failed" % id)
-		return jobs(request, error_msg="%s\nOn DRMAA job/report id  %s\nPlease contact Breeze support" % (s, id))
+		log.error("aborting job/report %s failed" % object_id)
+		return jobs(request, error_msg="%s\nOn DRMAA job/report id %s\nPlease contact Breeze support" % (s, object_id))
 
 
 @allow_guest
@@ -2099,8 +2099,7 @@ def send_zipfile(request, jid, mod='', serv_obj=None):
 	# stream otherwise
 	assert issubclass(serv_obj, Runnable)
 	try:
-		run_instance = serv_obj.objects.secure_get(id=jid, user=request.user)
-		assert isinstance(run_instance, Runnable)
+		run_instance = serv_obj.objects.secure_get(id=jid, user=request.user) # type:Runnable
 	except ObjectDoesNotExist:
 		return aux.fail_with404(request, 'There is no record with id ' + jid + ' in DB')
 
@@ -2159,12 +2158,9 @@ def send_file(request, ftype, fname):
 
 	if ftype == 'report':
 		try:
-			fitem = Report.objects.get(id=str(fname))
+			fitem = Report.objects.secure_get(id=str(fname), user=request.user)
 		except ObjectDoesNotExist:
 			return aux.fail_with404(request, 'There is no report with id ' + str(fname) + ' in database')
-		#  Enforce user access restrictions
-		if request.user not in fitem.shared.all() and fitem.author != request.user:
-			raise PermissionDenied(request=request)
 
 		local_path, path_to_file = get_report_path(fitem)
 
