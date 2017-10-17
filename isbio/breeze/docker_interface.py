@@ -851,16 +851,19 @@ class DockerInterface(DockerInterfaceConnector, ComputeInterface):
 			try:
 				if self.container:
 					try:
-						self.container.stop()
+						new_thread(self.container.stop)()
+						# self.container.stop()
 					except Exception as e:
 						self.log.error('Stopping container failed : %s' % str(e))
 					try:
-						self.container.kill()
+						new_thread(self.container.kill)()
+						# self.container.kill()
 					except Exception as e:
 						self.log.error('Killing container failed : %s' % str(e))
 			except Exception as e:
 				self.log.error(str(e))
-			self._set_global_status(self.js.ABORTED)
+			# self._set_global_status(self.js.ABORTED)
+			self._set_status(self.js.ABORTED)
 			self._runnable.manage_run_aborted(1, 95)
 			return True
 		return False

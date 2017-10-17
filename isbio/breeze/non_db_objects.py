@@ -141,7 +141,7 @@ class JobStat(object):
 			return 20
 		elif stat == cls.RUNNING:
 			return 55
-		elif stat == cls.GETTING_RESULTS:
+		elif stat in (cls.GETTING_RESULTS, cls.ABORT):
 			return 85
 		elif stat in (cls.FAILED, cls.SUCCEED, cls.DONE):
 			return 100
@@ -950,11 +950,11 @@ class FileParser(SrcObj):
 
 		import re
 		if self._verbose:
-			print "parsing", self.base_name, 'with', pattern.name.upper(), '...'
+			print("parsing", self.base_name, 'with', pattern.name.upper(), '...')
 		match = re.findall(str(pattern), self.new_content, re.DOTALL)
 		if self._verbose:
 			for each in match:
-				print 'M', each
+				print('M', each)
 		# save this pattern in a list, so we don't parse this file with the same pattern again
 		self.parsed.append(pattern)
 		callback(self, match, pattern)
@@ -989,7 +989,7 @@ class FileParser(SrcObj):
 			while new_script.write(self.new_content):
 				pass
 		if self._verbose:
-			print 'saved!'
+			print('saved!')
 		return True
 
 	@property # TODO code dt mod
@@ -1102,7 +1102,7 @@ class RunServer(object):
 	def _not_excluded(self, a_path):
 		val = self._is_not_excluded(a_path)
 		if not val:
-			print "Skipping %s as it is in %s" % (a_path, self._exclude_path)
+			print("Skipping %s as it is in %s" % (a_path, self._exclude_path))
 		return val
 	
 	# 18/11/2016
@@ -1147,7 +1147,7 @@ class RunServer(object):
 			pattern = r'source\(\s*("([^"]+)"|\'([^\']+)\')\s*\)'
 			match = re.findall(str(pattern), script.read(), re.DOTALL)
 			if verbose:
-				print pf + str(a_source_object.path), ' X ', len(match)
+				print(pf + str(a_source_object.path), ' X ', len(match))
 			for el in match:
 				line = SrcObj(el[0])
 				sub_tree, total, sub_list = self._generate_source_tree(line.path, pf=pf + '\t', verbose=verbose)
@@ -1274,7 +1274,7 @@ class RunServer(object):
 				if not self.skip_parsing:
 					# change the path to a relative one for the target server
 					file_obj.replace(line, line.new)
-					print 'replacing #%s# with #%s#' % (line, line.new)
+					print('replacing #%s# with #%s#' % (line, line.new))
 				# remote location on a local mount
 				new_path = '%s%s' % (self.storage_path, line.path)
 				new_file = FileParser(line.path, new_path)
