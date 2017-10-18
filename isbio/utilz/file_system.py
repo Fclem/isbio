@@ -1,11 +1,13 @@
 import hashlib
+import six
 from sys import stdout
 from multipledispatch import dispatch # enables method overloading
 from os.path import isfile, isdir, islink, exists, getsize, join, basename
 from os import symlink, readlink, listdir, makedirs, access, R_OK, chmod
+import os
 from . import get_logger
 
-__version__ = '0.1'
+__version__ = '0.2'
 __author__ = 'clem'
 __date__ = '27/05/2016'
 
@@ -160,7 +162,7 @@ class Path(object):
 			path = path[:-1]
 
 		try:
-			get_logger().debug("unlinking %s" % path)
+			get_logger().debug("unlinked %s" % path)
 			unlink(path)
 			return True
 		except OSError as e:
@@ -182,6 +184,7 @@ class Path(object):
 
 
 def custom_copytree(src, dst, symlinks=False, ignore=None, verbose=True, sub=False, no_raise=False):
+	# noinspection PyProtectedMember
 	from shutil import copy2, Error, copystat, WindowsError
 
 	if not sub and verbose:
@@ -211,12 +214,12 @@ def custom_copytree(src, dst, symlinks=False, ignore=None, verbose=True, sub=Fal
 		dst_name = join(dst, name)
 		try:
 			if symlinks and islink(src_name):
-				linkto = readlink(src_name)
-				symlink(linkto, dst_name)
+				link_to = readlink(src_name)
+				symlink(link_to, dst_name)
 				if verbose:
-					if isdir(linkto):
+					if isdir(link_to):
 						folders_count += 1
-					elif isfile(linkto):
+					elif isfile(link_to):
 						files_count += 1
 					dot()
 			elif isdir(src_name):
@@ -304,13 +307,18 @@ def is_readable(file_path):
 
 # clem 09/10/2015
 def set_file_acl(path, perm=ACL.RW_R_, silent_fail=False):
-	""" Change file permission to <i>perm</i> (default is RW_R_)
+	""" Change file permission to perm (default is RW_R_)
+	
+	:param path: the path of the file to change the permissions of
 	:type path: str
-	:type perm: int
-	:type silent_fail: bool
+	:param perm: the permission to apply. Use ACL class, defaults to ACL.RW_R_
+	:type perm: int | None
+	:param silent_fail: do not raise on failure, defaults to False
+	:type silent_fail: bool | None
+	:return: has changes been made or not (does not imply success or failure)
 	:rtype: bool
 	"""
-	if not is_readable(path):
+	if not is_readable(path) and (isfile(path) or islink(path)):
 		try:
 			chmod(path, perm)
 			get_logger().info('changed {0} to {1:#o}'.format(path, perm))
@@ -318,13 +326,62 @@ def set_file_acl(path, perm=ACL.RW_R_, silent_fail=False):
 		except OSError as e:
 			get_logger().exception(str(e))
 			if not silent_fail:
-				raise OSError(e)
+				raise
+	return False
+
+
+# clem 17/10/2017
+def set_dir_acl(path, perm=ACL.RW_R_, recursive=False, silent_fail=False):
+	""" Change file permission to perm (default is RW_R_)
+	
+	:param path: the path of the directory to change the permissions of
+	:type path: str
+	:param perm: the permission to apply. Use ACL class, defaults to ACL.RW_R_
+	:type perm: int | None
+	:param recursive: Apply this change recursively, defaults to False
+	:type recursive: bool | None
+	:param silent_fail: do not raise on failure, defaults to False
+	:type silent_fail: bool | None
+	:return: has changes been made or not (does not imply success or failure)
+	:rtype: bool
+	"""
+	if not is_readable(path) and isdir(path):
+		try:
+			chmod(path, perm)
+			get_logger().info('changed {0} to {1:#o}'.format(path, perm))
+			return True
+		except OSError as e:
+			get_logger().exception(str(e))
+			if not silent_fail:
+				raise
+	return False
+
+
+# clem 17/10/2017
+def set_acl_auto(path, perm=ACL.RW_R_, recursive=False, silent_fail=False):
+	""" Change file or directory permission to perm (default is RW_R_)
+	
+	:param path: the path of the file or directory to change the permissions of
+	:type path: str
+	:param perm: the permission to apply. Use ACL class, defaults to ACL.RW_R_
+	:type perm: int | None
+	:param recursive: If path is a folder, applies this change recursively, defaults to False
+	:type recursive: bool | None
+	:param silent_fail: do not raise on failure, defaults to False
+	:type silent_fail: bool | None
+	:return: has changes been made or not (does not imply success or failure)
+	:rtype: bool
+	"""
+	if isdir(path):
+		return set_dir_acl(path, perm, recursive, silent_fail)
+	elif isfile(path) or islink(path):
+		return set_dir_acl(path, perm, silent_fail)
 	return False
 
 
 # moved here on 19/05/2016
 # TODO : Review
-@dispatch(basestring)
+@dispatch(six.string_types)
 def file_mod_time(path):
 	from os.path import getmtime # , join
 
@@ -332,7 +389,7 @@ def file_mod_time(path):
 
 
 # moved here on 19/05/2016
-@dispatch(basestring, basestring)
+@dispatch(six.string_types, six.string_types)
 def file_mod_time(dir_name, fname):
 	from os.path import join
 
@@ -385,7 +442,7 @@ def extract_tarfile(input_filename, destination_dir, do_raise=True):
 			tar.extractall(destination_dir)
 		return True
 	except Exception as e:
-		get_logger().log.error('Error creating %s : %s' % (input_filename, str(e)))
+		get_logger().error('Error creating %s : %s' % (input_filename, str(e)))
 		if do_raise:
 			raise
 	return False
@@ -444,28 +501,37 @@ class UnitSystem(object):
 
 
 def _file_size2human(bytes_count, system=UnitSystem.traditional, digit=0):
-	"""Human-readable file size.
-
+	""" return a Human-readable file size as a string, from an arbitrary number of bytes
+	
 	Using the traditional system, where a factor of 1024 is used::
-
+	
 	>>> _file_size2human(10)
 	'10B'
+	
 	>>> _file_size2human(100)
 	'100B'
+	
 	>>> _file_size2human(1000)
 	'1000B'
+	
 	>>> _file_size2human(2000)
 	'1K'
+	
 	>>> _file_size2human(10000)
 	'9K'
+	
 	>>> _file_size2human(20000)
 	'19K'
+	
 	>>> _file_size2human(100000)
 	'97K'
+	
 	>>> _file_size2human(200000)
 	'195K'
+	
 	>>> _file_size2human(1000000)
 	'976K'
+	
 	>>> _file_size2human(2000000)
 	'1M'
 
@@ -473,28 +539,40 @@ def _file_size2human(bytes_count, system=UnitSystem.traditional, digit=0):
 
 	>>> _file_size2human(10, system=UnitSystem.si)
 	'10B'
+	
 	>>> _file_size2human(100, system=UnitSystem.si)
 	'100B'
+	
 	>>> _file_size2human(1000, system=UnitSystem.si)
 	'1K'
+	
 	>>> _file_size2human(2000, system=UnitSystem.si)
 	'2K'
+	
 	>>> _file_size2human(10000, system=UnitSystem.si)
 	'10K'
+	
 	>>> _file_size2human(20000, system=UnitSystem.si)
 	'20K'
+	
 	>>> _file_size2human(100000, system=UnitSystem.si)
 	'100K'
+	
 	>>> _file_size2human(200000, system=UnitSystem.si)
 	'200K'
+	
 	>>> _file_size2human(1000000, system=UnitSystem.si)
 	'1M'
+	
 	>>> _file_size2human(2000000, system=UnitSystem.si)
 	'2M'
 
+	:param bytes_count: the number of bytes to convert to a higher factor
 	:type bytes_count: int
-	:type system: Systems
-	:type digit: int
+	:param system: The unit system to use, chosen from UnitSystem, defaults to UnitSystem.traditional
+	:type system: list | None
+	:param digit: numbers of digits to display, defaults to 0
+	:type digit: int | None
 	:rtype str
 	"""
 	factor, suffix = 1, '' # ONLY for the IDE not to complain about reference before assignment
@@ -515,9 +593,19 @@ def _file_size2human(bytes_count, system=UnitSystem.traditional, digit=0):
 def human_readable_byte_size(size_value, unit=None, digit=2):
 	""" Human-readable file size.
 
+	:param size_value: the number of bytes to convert to a higher factor
 	:type size_value: int
-	:type unit: filesize.UnitSystem
-	:type digit: int
-	:rtype: str
+	:param unit: The unit system to use, chosen from UnitSystem, defaults to UnitSystem.traditional
+	:type unit: list | None
+	:param digit: numbers of digits to display, defaults to 2
+	:type digit: int | None
+	:rtype str
 	"""
 	return _file_size2human(size_value, system=UnitSystem.traditional if not unit else unit, digit=digit)
+
+
+###
+#   Clem 17/10/2017 from FClem/py-sandbox
+###
+
+
