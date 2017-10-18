@@ -46,7 +46,8 @@ LOG_HIT_PATH = '%s%s' % (LOG_FOLDER, log_hit_fname)
 TEMPLATE_DEBUG = False
 
 ADMINS = (
-	('Clement FIERE', 'clement.fiere@helsinki.fi'),
+	# ('Clement FIERE', 'clement.fiere@helsinki.fi'),
+	('Aleksandr Ianevski', 'aleksandr.ianevski@helsinki.fi'),
 )
 
 MANAGERS = ADMINS
